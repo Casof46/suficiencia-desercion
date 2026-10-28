@@ -1,0 +1,82 @@
+flowchart LR
+    subgraph Presentacion["Presentación"]
+        P1["Página Datos"]
+        P7["Página Exploración"]
+        P2["Página Escenarios"]
+        P4["Página Protocolo"]
+        P3["Página Experimentos"]
+        P8["Página Evaluación final"]
+        P5["Página Interpretabilidad"]
+        P6["Página Trazabilidad"]
+        CLI["CLI"]
+    end
+    subgraph Aplicacion["Aplicación"]
+        S1["ServicioDatos"]
+        S8["ServicioExploracion"]
+        S2["ServicioEscenarios"]
+        S4["ServicioProtocolo"]
+        S3["ServicioExperimentos"]
+        S5["ServicioEvaluacionFinal"]
+        S6["ServicioInterpretabilidad"]
+        S7["ServicioReportes"]
+    end
+    subgraph Dominio["Dominio metodológico"]
+        D1["Diccionario, objetivo y estados de etiqueta"]
+        D2["Ventanas, conjuntos, escenarios"]
+        D6["Poblaciones por ventana D1-D3"]
+        D3["Verificador anti-fuga"]
+        D4["Protocolo, criterio y regla de suficiencia"]
+        D7["Selección y congelamiento"]
+        D8["Referencia R0 y comparación pareada"]
+        D5["Puertos"]
+    end
+    subgraph Experimentacion["Experimentación"]
+        E1["Fábrica de modelos"]
+        E2["Pipelines y validación cronológica"]
+        E3["Métricas e intervalos"]
+        E4["Explicadores SHAP/LIME"]
+    end
+    subgraph Persistencia["Persistencia"]
+        R1["Lectores CSV/Excel"]
+        R2["Seudonimizador"]
+        R3["Repositorio SQLite"]
+        R4["Almacén de artefactos"]
+        R5["Capturador de entorno"]
+    end
+    P1 --> S1
+    P7 --> S8
+    P2 --> S2
+    P4 --> S4
+    P3 --> S3
+    P8 --> S5
+    P5 --> S6
+    P6 --> S7
+    CLI --> S1
+    CLI --> S3
+    CLI --> S5
+    S1 --> D1
+    S8 --> D6
+    S2 --> D2
+    S2 --> D3
+    S2 --> D6
+    S4 --> D4
+    S3 --> D7
+    S5 --> D4
+    S5 --> D7
+    S5 --> D8
+    S3 --> E1
+    S3 --> E2
+    S3 --> E3
+    S5 --> E3
+    S6 --> E4
+    S1 --> R1
+    S1 --> R2
+    S3 --> R3
+    S3 --> R4
+    S4 --> R3
+    S5 --> R3
+    S7 --> R3
+    S3 --> R5
+    E2 --> D5
+    R3 --> D5
+    R4 --> D5

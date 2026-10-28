@@ -1,0 +1,61 @@
+# Contratos de dependencias entre capas (seccion 5 de la especificacion v0.4).
+# Este archivo debe ser solo ASCII: import-linter lo lee con la codificacion
+# regional del sistema, que en Windows no es UTF-8 (defecto D-19).
+# Se verifican con: lint-imports   (prueba PA-01 en tests/architecture/).
+# Que controla y que no: docs/arquitectura/estructura_repositorio.md.
+
+[importlinter]
+root_package = suficiencia
+include_external_packages = True
+
+[importlinter:contract:capas]
+name = Capas: ui > application > (experimentation | persistence) > domain
+type = layers
+layers =
+    suficiencia.ui
+    suficiencia.application
+    suficiencia.experimentation | suficiencia.persistence
+    suficiencia.domain
+
+[importlinter:contract:ui-solo-aplicacion]
+name = La interfaz solo usa la capa de aplicacion (RF-UI-02)
+type = forbidden
+source_modules =
+    suficiencia.ui
+forbidden_modules =
+    suficiencia.domain
+    suficiencia.experimentation
+    suficiencia.persistence
+# Solo se prohiben los imports directos: la cadena ui -> application -> domain es
+# el uso previsto por la arquitectura y no debe contar como violacion.
+allow_indirect_imports = True
+
+[importlinter:contract:dominio-sin-dependencias-externas]
+name = El dominio no usa interfaz, aprendizaje automatico ni almacenamiento (RNF-01)
+type = forbidden
+source_modules =
+    suficiencia.domain
+forbidden_modules =
+    streamlit
+    plotly
+    sklearn
+    xgboost
+    lightgbm
+    shap
+    lime
+    sqlite3
+    yaml
+    pyarrow
+    openpyxl
+    joblib
+
+[importlinter:contract:motor-sin-streamlit]
+name = Ninguna capa salvo la interfaz importa Streamlit o Plotly (RNF-01)
+type = forbidden
+source_modules =
+    suficiencia.application
+    suficiencia.experimentation
+    suficiencia.persistence
+forbidden_modules =
+    streamlit
+    plotly

@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+# Nombre provisional: depende de la recomendación REC-05, todavía no aceptada.
+# Ver docs/arquitectura/decisiones_h2_0.md (D-02).
+name = "suficiencia"
+version = "0.1.0.dev0"
+description = "Motor y aplicación local para el método temporal de suficiencia de información en la detección temprana del riesgo de deserción académica."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Uso académico; licencia pendiente de definir por el equipo" }
+authors = [{ name = "Equipo de investigación (Javier y Jorge)" }]
+classifiers = ["Private :: Do Not Upload"]
+
+# Dependencias de ejecución del hito H2.0: solo lo que H2.0 usa.
+# Las bibliotecas de fases posteriores (pandas, scikit-learn, XGBoost, LightGBM,
+# SHAP, LIME, Streamlit, Plotly...) se añaden en el hito que las necesite.
+dependencies = [
+    "PyYAML>=6.0",  # lectura de config/*.yaml (RNF-10)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",          # ejecución de pruebas
+    "ruff>=0.6",            # estilo, errores comunes y orden de imports
+    "mypy>=1.10",           # verificación de tipos (RNF-11)
+    "import-linter>=2.0",   # contratos de dependencias entre capas (RNF-01, PA-01)
+    "types-PyYAML>=6.0",    # tipos de PyYAML para mypy
+    "hatchling>=1.25",      # backend de construcción, fijado en el lock para instalar sin red
+    "editables>=0.5",       # requerido por hatchling para la instalación editable (-e .)
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/suficiencia"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+xfail_strict = true
+markers = [
+    "requiere_git: la prueba necesita el ejecutable git; se omite si no está disponible",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "PTH"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests", "scripts"]
+mypy_path = "src"

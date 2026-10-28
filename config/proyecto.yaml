@@ -1,0 +1,19 @@
+# Configuración del proyecto (sección 6 de la especificación v0.4).
+# Archivo versionado y no sensible: no contiene datos, credenciales ni valores
+# metodológicos. Las rutas son relativas a la raíz del repositorio.
+version_configuracion: 1
+
+proyecto:
+  nombre: "Método temporal de suficiencia de información - deserción académica"
+  version_especificacion: "0.4"
+
+rutas:
+  datos: data               # NO versionado; ver data/README.md
+  espacio_trabajo: workspace  # NO versionado; registros y artefactos (RNF-07)
+  reportes: reports         # NO versionado; reportes generados
+
+reproducibilidad:
+  # Se fija en el hito que use componentes aleatorios (RF-M3-06).
+  semilla_global: null
+  # RNF-03 y sección 5.2: se fija después de medir la variación real.
+  tolerancia_metricas: null

@@ -1,0 +1,78 @@
+erDiagram
+    DATASET ||--o{ REGISTRO_ESTUDIANTE : contiene
+    DATASET ||--o{ VARIABLE : contiene
+    DICCIONARIO ||--|{ VARIABLE : describe
+    DATASET ||--|| INFORME_AUDITORIA : genera
+    DEFINICION_OBJETIVO ||--o{ REGISTRO_ESTUDIANTE : etiqueta
+    VARIABLE }o--|| BLOQUE : pertenece
+    VARIABLE }o--|| VENTANA : disponible_desde
+    CONJUNTO }o--|{ BLOQUE : agrupa
+    ESCENARIO }o--|| VENTANA : usa
+    ESCENARIO }o--|| CONJUNTO : usa
+    ESCENARIO }o--o{ VARIABLE : incluye
+    POBLACION_VENTANA }o--|| VENTANA : define
+    POBLACION_VENTANA }o--o{ REGISTRO_ESTUDIANTE : incluye
+    PARTICION }o--|| DATASET : divide
+    PROTOCOLO_CONFIRMATORIO ||--|| CRITERIO_SUFICIENCIA : contiene
+    PROTOCOLO_CONFIRMATORIO ||--o{ DESVIACION_PROTOCOLO : registra
+    EXPERIMENTO }o--|| ESCENARIO : evalua
+    EXPERIMENTO }o--|| POBLACION_VENTANA : usa
+    EXPERIMENTO }o--|| CONFIG_MODELO : usa
+    EXPERIMENTO }o--|| PARTICION : usa
+    EXPERIMENTO }o--o| PROTOCOLO_CONFIRMATORIO : sigue
+    EXPERIMENTO ||--o{ RESULTADO_METRICA : produce
+    EXPERIMENTO ||--o| MODELO_ENTRENADO : produce
+    EXPERIMENTO ||--o| CONFIG_CONGELADA : congela
+    CONFIG_CONGELADA ||--o{ EXPLICACION : explica
+    EVALUACION_SUFICIENCIA }o--|| PROTOCOLO_CONFIRMATORIO : aplica
+    EVALUACION_SUFICIENCIA }o--|{ CONFIG_CONGELADA : evalua
+    ACCESO_PRUEBA }o--|| PARTICION : registra
+    ACCESO_PRUEBA }o--|| EVALUACION_SUFICIENCIA : motivado_por
+    DECISION_METODOLOGICA ||--o{ PROTOCOLO_CONFIRMATORIO : respalda
+    EVALUACION_COMPARATIVA }o--|| EVALUACION_SUFICIENCIA : complementa
+    EVALUACION_COMPARATIVA }o--|{ CONFIG_CONGELADA : compara
+
+    REGISTRO_ESTUDIANTE {
+        string seudonimo
+        string cohorte
+        string periodo_evento
+        string ultimo_periodo_observado
+        string estado_etiqueta
+        string motivo_exclusion
+    }
+    POBLACION_VENTANA {
+        string diseno
+        string ventana
+        int n_estudiantes
+        int n_eventos
+    }
+    EXPERIMENTO {
+        string id
+        string modo
+        int semilla
+        string commit
+        string entorno
+        datetime fecha
+    }
+    PROTOCOLO_CONFIRMATORIO {
+        string version
+        string estado
+        string huella
+        string aprobado_por
+        datetime aprobado_en
+    }
+    CONFIG_CONGELADA {
+        string huella
+        string algoritmo
+        string umbral_regla
+        string rol
+        datetime congelada_en
+    }
+    RESULTADO_METRICA {
+        string metrica
+        string particion
+        float valor
+        float prevalencia
+        float ic_inferior
+        float ic_superior
+    }

@@ -1,0 +1,89 @@
+# =============================================================================
+# Exclusiones del control de versiones (RNF-05, RNF-07, riesgos RS-01 y RS-03).
+# Regla general: NINGÚN dato institucional, personal o derivado entra al
+# repositorio. Las excepciones se marcan con "!" y son solo archivos README.
+# La prueba PA-04 (tests/architecture/test_privacidad_repositorio.py) verifica
+# estas reglas. Si cambia este archivo, ejecute las pruebas.
+# =============================================================================
+
+# --- Datos, espacio de trabajo y reportes generados (sección 6) --------------
+/data/*
+!/data/README.md
+/workspace/
+/reports/
+
+# --- Formatos de datos en cualquier carpeta ----------------------------------
+# Excel/CSV institucionales, datasets de experimentación y exportaciones.
+*.csv
+*.tsv
+*.xlsx
+*.xlsm
+*.xls
+*.ods
+*.parquet
+*.feather
+*.arrow
+*.json.gz
+*.sav
+*.dta
+*.zip
+*.7z
+*.rar
+
+# --- Bases de datos locales generadas en ejecución (DP-16 pendiente) ---------
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.duckdb
+
+# --- Modelos entrenados y artefactos grandes ---------------------------------
+*.joblib
+*.pkl
+*.pickle
+*.onnx
+*.h5
+*.npy
+*.npz
+mlruns/
+
+# --- Credenciales y secretos -------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+*secret*
+.streamlit/secrets.toml
+
+# --- Entornos virtuales ------------------------------------------------------
+.venv/
+venv/
+env/
+.python-version
+
+# --- Cachés y archivos temporales --------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.import_linter_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+*.tmp
+*.log
+~$*
+
+# --- Sistema operativo y editores --------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/

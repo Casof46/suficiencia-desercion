@@ -1,0 +1,32 @@
+flowchart TD
+    A0{"¿Autorización y protección de datos? (DP-02, DP-14)"}
+    A0 -- No --> A1["No se cargan datos reales"]
+    A0 -- Sí --> A["Archivo fuente autorizado"]
+    A --> B["M1: seudonimizar y validar contra diccionario (DP-03, DP-15)"]
+    B --> C{"¿Errores críticos en auditoría?"}
+    C -- Sí --> C1["Corregir datos o diccionario"] --> B
+    C -- No --> D["M1: periodo del evento y estados de etiqueta (DP-01, DP-18)"]
+    D --> X1["E1 parte A: viabilidad sin usar el resultado, todas las cohortes"]
+    X1 --> F["M2: 32 escenarios, anti-fuga y factibilidad"]
+    F --> G["M2: poblaciones por ventana según diseño (DP-04)"]
+    G --> H["M2: partición cronológica por cohortes (DP-05, DP-08h)"]
+    H --> J[("Prueba final SELLADA")]
+    H --> K["Partición de desarrollo"]
+    K --> X2["E1 parte B: descriptivos solo en desarrollo, sin modelos, incluidos D1-D3 (RF-M2-12)"]
+    X2 --> P{"E2: ¿Protocolo confirmatorio aprobado? (DP-06 a DP-10, DP-12, DP-17, DP-19, DP-20)"}
+    P -- No --> P1["Bloquear experimentos confirmatorios"]
+    P -- Sí --> L["E3, M3: escenario × modelo con validación cronológica"]
+    L --> M["E3, M4: seleccionar modelo y umbral solo en desarrollo (DP-10)"]
+    M --> N["E3, M4: congelar configuraciones con huella"]
+    N --> Q["E4, M4: evaluación final única: seleccionada, R0 y controles"]
+    L --> R0["E3, M4: construir y congelar R0 y controles con su regla (DP-19)"]
+    R0 --> Q
+    J --> Q
+    Q --> R["M4: regla de suficiencia con control de multiplicidad (DP-08)"]
+    R --> S{"¿Algún escenario cumple?"}
+    S -- Sí --> T["Escenario suficiente: ventana + conjunto"]
+    S -- No --> U["Resultado: ningún escenario cumple"]
+    T --> CMP["CU-12: evaluación comparativa frente a R0, sin nuevo acceso a la prueba (DP-20)"]
+    CMP --> V["M5: SHAP y análisis por bloque (DP-11)"]
+    U --> CMP
+    V --> W["M6: registro, exportación y reporte (DP-13, DP-16)"]

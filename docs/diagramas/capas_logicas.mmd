@@ -1,0 +1,16 @@
+flowchart TB
+    UI["Presentación<br/>Streamlit + Plotly"]
+    CLI["Línea de comandos<br/>(motor sin interfaz)"]
+    API["API futura<br/>(no se implementa en v1)"]
+    APP["Aplicación<br/>servicios de casos de uso + contratos de entrada/salida"]
+    DOM["Dominio metodológico<br/>ventanas, bloques, escenarios, objetivo, poblaciones, protocolo, regla de suficiencia, reglas anti-fuga"]
+    EXP["Experimentación<br/>pipelines, modelos, validación, métricas, SHAP/LIME"]
+    PER["Persistencia<br/>lectores CSV/Excel, Parquet, SQLite, artefactos"]
+    UI --> APP
+    CLI --> APP
+    API -.-> APP
+    APP --> DOM
+    APP --> EXP
+    APP --> PER
+    EXP --> DOM
+    PER --> DOM

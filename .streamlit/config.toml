@@ -1,0 +1,5 @@
+# Configuración de Streamlit del proyecto (RNF-06, prueba PA-03).
+# Streamlit aún no se instala (H2.0); este archivo deja fijada desde el inicio
+# la desactivación de la recopilación de estadísticas de uso.
+[browser]
+gatherUsageStats = false
