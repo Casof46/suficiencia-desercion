@@ -6,11 +6,11 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 
 | Elemento | Estado |
 | --- | --- |
-| Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**; propuesta de acta en `docs/gestion/acta_cierre_fase_1_propuesta.md`. H2.0 se construyó sobre la v0.4, y `config/proyecto.yaml` aún la declara: la v0.5 no cambia nada de lo que H2.0 implementa |
-| Hito actual | **H2.0 — repositorio y entorno reproducible**, ejecutado con un contrato provisional y pendiente de aceptación por el equipo |
-| Funcionalidad | Ninguna funcionalidad metodológica todavía. Solo la estructura de capas, el lector de configuración y las comprobaciones de calidad |
-| Decisiones metodológicas | DP-01 a DP-20 abiertas; REC-01 a REC-05 sin aceptar |
-| Nombre del paquete | `suficiencia`, **provisional** hasta que se decida REC-05 |
+| Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**; propuesta de acta en `docs/gestion/acta_cierre_fase_1_propuesta.md`. H2.0 se construyó sobre la v0.4 y H2.1 sobre la v0.5 |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) ejecutado, pendiente de verificación en Windows y de aceptación. H2.2 y H2.3 autorizados, no iniciados |
+| Funcionalidad | Ninguna funcionalidad metodológica todavía. Hay capas con contratos verificados, servicios sin lógica científica, el comando `suficiencia` y las comprobaciones de calidad |
+| Decisiones metodológicas | DP-01 a DP-20 abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 sin aceptar |
+| Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
 > **Datos institucionales.** No coloque datos reales en este repositorio, no los suba a repositorios públicos ni privados y no los envíe a servicios externos o asistentes de IA sin autorización expresa. Las condiciones previas están en la sección H.1 del documento "Fase 1 — Auditoría final y acta de cierre". La seudonimización no equivale a anonimización.
 
@@ -40,11 +40,21 @@ python3.12 -m venv .venv
 .venv/bin/python scripts/verificar.py
 ```
 
-El último comando ejecuta ruff, mypy, import-linter y pytest, y termina con `OK` en las cinco comprobaciones. Explicación paso a paso y solución de problemas en `docs/desarrollo/entorno_reproducible.md`.
+El último comando ejecuta ruff, mypy, import-linter y pytest, y termina con `OK` en las cinco comprobaciones. Si ya tenía el entorno de un hito anterior, repita los dos comandos `pip install` para actualizarlo. Explicación paso a paso y solución de problemas en `docs/desarrollo/entorno_reproducible.md`.
+
+## Línea de comandos
+
+Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
+
+```powershell
+.venv\Scripts\suficiencia estado            # servicios, casos de uso y en qué hito se construye cada uno
+.venv\Scripts\suficiencia config validar    # valida config/proyecto.yaml
+.venv\Scripts\suficiencia ejecutar CU-03    # hoy responde que el caso de uso aún no está implementado
+```
 
 ## Control de versiones
 
-El repositorio se entrega **sin historial git**: el primer commit corresponde al equipo. Para crearlo:
+El equipo creó el primer commit el 28 de octubre de 2026. Para crear un repositorio nuevo desde una copia sin historial:
 
 ```bash
 git init
@@ -66,7 +76,7 @@ suficiencia-desercion/
 ├── .streamlit/config.toml  # telemetría desactivada (Streamlit aún no se instala)
 ├── config/proyecto.yaml    # configuración no sensible del proyecto
 ├── data/README.md          # carpeta de datos NO versionada
-├── src/suficiencia/        # paquete: domain, application, experimentation, persistence, ui
+├── src/suficiencia/        # paquete: cinco capas y la línea de comandos (cli.py)
 ├── tests/                  # unit/ y architecture/
 ├── scripts/verificar.py    # todas las comprobaciones con un solo comando
 └── docs/                   # especificación, diagramas, arquitectura, desarrollo y gestión
@@ -82,8 +92,8 @@ Detalle de cada carpeta y de los límites entre capas: `docs/arquitectura/estruc
 | `docs/especificacion/especificacion_fase_1_v0.4.md` | Copia de la v0.4, base de H2.0 |
 | `docs/diagramas/*.mmd` | Fuentes Mermaid de los cuatro diagramas |
 | `docs/gestion/acta_cierre_fase_1_propuesta.md` | Propuesta de acta de cierre de la Fase 1 (sin firmar) |
-| `docs/gestion/registro_h2_0.md` | Registro del hito: archivos, pruebas y resultados reales |
-| `docs/arquitectura/decisiones_h2_0.md` | Decisiones técnicas, alternativas, supuestos y pendientes |
+| `docs/gestion/registro_h2_0.md`, `registro_h2_1.md` | Registro de cada hito: archivos, criterios y resultados reales |
+| `docs/arquitectura/decisiones_h2_0.md`, `decisiones_h2_1.md` | Decisiones técnicas, alternativas, desviaciones y pendientes |
 | `docs/arquitectura/estructura_repositorio.md` | Estructura y límites de los módulos |
 | `docs/desarrollo/entorno_reproducible.md` | Creación y verificación del entorno |
-| `docs/desarrollo/pruebas_h2_0.md` | Pruebas, comandos y criterios de aceptación de H2.0 |
+| `docs/desarrollo/pruebas_h2_0.md`, `pruebas_h2_1.md` | Pruebas, comandos, criterios de aceptación y resultados de cada hito |

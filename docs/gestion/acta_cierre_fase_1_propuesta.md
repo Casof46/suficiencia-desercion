@@ -1,6 +1,6 @@
 # Acta de cierre de la Fase 1 — PROPUESTA
 
-> **Estado: propuesta sin firmar.** Este documento no registra ninguna aprobación, firma, acuerdo ni autorización. Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. Ninguna recomendación REC-01 a REC-05 ni decisión DP-01 a DP-20 figura aquí como aceptada o resuelta.
+> **Estado: propuesta sin firmar, con decisiones parciales del equipo.** Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. El 28 de octubre de 2026, Javier comunicó en nombre del equipo las decisiones marcadas en los apartados 5.1 y 6; falta la firma de Javier y Jorge en el apartado 8. REC-01 a REC-03 y las decisiones DP-01 a DP-20 siguen sin aceptar ni resolver.
 
 ## 1. Identificación
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proyecto | Método temporal para determinar la suficiencia de información en la detección temprana del riesgo de deserción académica |
 | Documento revisado | "Fase 1 — Especificación funcional y arquitectura de software", versión 0.5 |
-| Ubicación vigente | Documento en línea de la especificación (revisión 174 del historial). Copia de referencia en `docs/especificacion/` |
+| Ubicación vigente | Documento en línea de la especificación (revisión 179 del historial). Copia de referencia en `docs/especificacion/` |
 | Documentos de apoyo | "Fase 1 — Auditoría final y acta de cierre"; "Cierre de la Fase 1 — Paquete de revisión y decisión" (referencia histórica) |
 | Versiones anteriores | v0.4 (revisión 114), v0.3 (revisión 79) y v0.2 (revisión 46) en el historial del documento |
 | Fecha de preparación de esta propuesta | 21 de octubre de 2026; actualizada a la v0.5 el 28 de octubre de 2026 |
@@ -67,10 +67,10 @@ De los 15 criterios cumplidos documentalmente:
 - [ ] Leímos la v0.5 y confirmamos CA-01, CA-04, CA-06, CA-08, CA-09 y CA-20.
 - [ ] Revisamos la cadena de dependencias de los apartados 14.3 y 14.4 y confirmamos CA-05 y CA-07.
 - [ ] Abrimos la especificación en el visor y los cuatro diagramas se ven completos en las secciones 5, 7, 8.1 y 8.2 (CA-18).
-- [ ] REC-04, priorización N1–N3: aceptada / modificada / rechazada (tachar). Detalle: ____________________
-- [ ] REC-05, dependencias y nombre del paquete: aceptada / modificada / rechazada. Nombre del paquete: ____________________
+- [x] REC-04, priorización N1–N3: **aceptada** (28 de octubre de 2026). Detalle: sin modificaciones; los hitos siguen el orden del plan y la interfaz completa se construye después del motor.
+- [x] REC-05, dependencias y nombre del paquete: **aceptada** (28 de octubre de 2026). Nombre del paquete: `suficiencia`. Cada dependencia se añade en el hito que la usa.
 - [ ] Responsable asignado a cada uno de los 29 riesgos de la sección 11 (CA-21).
-- [ ] Alcance de la Fase 2: se autorizan los hitos ____________________ (CA-24).
+- [x] Alcance de la Fase 2: se autorizan los hitos **H2.1 a H2.3** (28 de octubre de 2026) (CA-24). H2.4 en adelante esperan al apartado 5.2.
 
 **5.2 Confirmaciones de la asesoría**
 
@@ -99,14 +99,16 @@ Recomendación técnica, no vinculante: la segunda opción. H2.0 a H2.3 no depen
 **Hecho registrado:** el 21 de octubre de 2026, a pedido de Javier, se ejecutó técnicamente H2.0 con ese contrato provisional, antes de la firma de esta acta. Esa ejecución **no equivale a la aprobación formal de la Fase 1** ni a la aceptación de REC-05. Su aceptación como hito queda sujeta a:
 
 - [ ] Que el equipo apruebe la Fase 1 con o sin condiciones (apartado 5.3).
-- [ ] Que el equipo decida REC-05 y, si cambia el nombre del paquete o la lista de dependencias, que se ajuste el repositorio.
-- [ ] Que un miembro del equipo reproduzca la instalación y las comprobaciones en Windows siguiendo `docs/desarrollo/entorno_reproducible.md`.
+- [x] Que el equipo decida REC-05 y, si cambia el nombre del paquete o la lista de dependencias, que se ajuste el repositorio. Aceptada sin cambios; no hubo que ajustar nada.
+- [x] Que un miembro del equipo reproduzca la instalación y las comprobaciones en Windows siguiendo `docs/desarrollo/entorno_reproducible.md`. Hecho el 28 de octubre de 2026 en la PC de Jorge.
 
-Aceptación de H2.0 por el equipo: aceptado / con observaciones / rechazado. Responsable: ____________________ Fecha: ____________________
+Aceptación de H2.0 por el equipo: **aceptado**. Comunicado por: Javier, en nombre del equipo. Fecha: 28 de octubre de 2026. Verificado en Windows con Python 3.13.0 en la PC de Jorge (84 pruebas pasan); ver `docs/gestion/registro_h2_0.md`.
+
+La decisión de cierre del apartado 5.3 sigue sin marcar: el equipo aceptó H2.0 y autorizó H2.1 a H2.3 sin esperar la aprobación formal de la Fase 1 ni la revisión de la asesoría. Esos hitos no dependen de ninguna decisión metodológica.
 
 ## 7. Actividades expresamente excluidas de esta autorización
 
-- Hitos H2.1 a H2.8.
+- Hitos H2.4 a H2.8. (H2.1 a H2.3 quedaron autorizados en el apartado 5.1.)
 - Cualquier carga, copia o procesamiento de datos institucionales reales.
 - La definición de deserción, los umbrales o márgenes de suficiencia, los cortes cronológicos, los procedimientos de multiplicidad, la referencia R0, el margen de no inferioridad frente a ella y cualquier otro valor metodológico.
 - Entrenamiento de modelos, selección de modelos, evaluación final, evaluación comparativa frente a R0 e interpretabilidad (SHAP y LIME).

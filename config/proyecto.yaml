@@ -1,11 +1,11 @@
-# Configuración del proyecto (sección 6 de la especificación v0.4).
+# Configuración del proyecto (sección 6 de la especificación v0.5).
 # Archivo versionado y no sensible: no contiene datos, credenciales ni valores
 # metodológicos. Las rutas son relativas a la raíz del repositorio.
 version_configuracion: 1
 
 proyecto:
   nombre: "Método temporal de suficiencia de información - deserción académica"
-  version_especificacion: "0.4"
+  version_especificacion: "0.5"
 
 rutas:
   datos: data               # NO versionado; ver data/README.md

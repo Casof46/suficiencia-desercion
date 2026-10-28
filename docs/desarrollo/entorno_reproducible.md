@@ -1,6 +1,6 @@
 # Entorno reproducible
 
-Pasos exactos para crear, verificar y mantener el entorno de desarrollo del hito H2.0. Solo se necesitan Python y `pip`. No se usan servicios cloud, credenciales, bases de datos ni conexiones con la universidad.
+Pasos exactos para crear, verificar y mantener el entorno de desarrollo (desde H2.0; actualizado en H2.1). Solo se necesitan Python y `pip`. No se usan servicios cloud, credenciales, bases de datos ni conexiones con la universidad.
 
 ## 1. Versión de Python
 
@@ -47,6 +47,17 @@ python3.12 -m venv .venv
 
 La primera instalación necesita acceso a PyPI. Después, las comprobaciones funcionan sin red.
 
+### Actualizar un entorno existente
+
+Cuando un hito cambia `requirements.lock` o `pyproject.toml` (por ejemplo, H2.1 añadió pydantic y el comando `suficiencia`), repita los dos comandos de instalación sobre el mismo `.venv`:
+
+```powershell
+.venv\Scripts\python -m pip install --require-hashes -r requirements.lock
+.venv\Scripts\python -m pip install --no-deps --no-build-isolation -e .
+```
+
+El primero añade o cambia los paquetes y el segundo registra los comandos nuevos. Si algo falla, borre la carpeta `.venv` y créela de nuevo.
+
 ### Activación opcional
 
 Si prefiere activar el entorno:
@@ -56,6 +67,12 @@ Si prefiere activar el entorno:
 - Linux o macOS: `source .venv/bin/activate`
 
 ## 3. Verificar el entorno
+
+Además de las comprobaciones, el comando del motor debe responder (desde H2.1):
+
+```powershell
+.venv\Scripts\suficiencia estado
+```
 
 ```powershell
 .venv\Scripts\python scripts\verificar.py        # Windows

@@ -3,5 +3,5 @@
 Es la superficie que usarán la interfaz, la línea de comandos y una futura API
 (RNF-14). Puede usar ``domain``, ``experimentation`` y ``persistence``.
 No puede importar Streamlit ni la capa ``ui``.
-Vacía en H2.0: su contenido empieza en H2.1.
+Desde H2.1: contratos, errores, servicios sin lógica científica y composición.
 """

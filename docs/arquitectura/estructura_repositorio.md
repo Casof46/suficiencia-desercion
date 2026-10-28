@@ -1,6 +1,6 @@
 # Estructura del repositorio y límites de los módulos
 
-La estructura sigue la sección 6 de la especificación v0.4, reducida a lo que H2.0 necesita. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
+La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 y H2.1 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
 
 ## 1. Árbol actual
 
@@ -17,40 +17,52 @@ suficiencia-desercion/
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
-│   ├── especificacion/especificacion_fase_1_v0.4.md   # copia de referencia
+│   ├── especificacion/         # copias de referencia de la v0.5 (vigente) y la v0.4
 │   ├── diagramas/              # fuentes Mermaid de los cuatro diagramas
-│   ├── arquitectura/           # decisiones_h2_0.md, este documento
-│   ├── desarrollo/             # entorno_reproducible.md, pruebas_h2_0.md
-│   └── gestion/                # acta_cierre_fase_1_propuesta.md, registro_h2_0.md
+│   ├── arquitectura/           # decisiones_h2_0.md, decisiones_h2_1.md, este documento
+│   ├── desarrollo/             # entorno_reproducible.md, pruebas_h2_0.md, pruebas_h2_1.md
+│   └── gestion/                # acta, registro_h2_0.md, registro_h2_1.md
 ├── scripts/
 │   └── verificar.py            # ejecuta todas las comprobaciones
 ├── src/suficiencia/
 │   ├── __init__.py             # versión y descripción de las capas
-│   ├── domain/                 # vacía en H2.0
-│   ├── application/            # vacía en H2.0
-│   ├── experimentation/        # vacía en H2.0
+│   ├── cli.py                  # línea de comandos `suficiencia` (H2.1); solo usa application
+│   ├── domain/
+│   │   ├── errores.py          # errores con causa y acción sugerida (RNF-15)
+│   │   ├── huella.py           # huella SHA-256 (RNF-16)
+│   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
+│   │   └── puertos.py          # FuenteConfiguracion, AlmacenArtefactos
+│   ├── application/
+│   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
+│   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
+│   │   ├── _base.py            # base de los servicios de casos de uso
+│   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
+│   │   └── composicion.py      # construye los servicios con sus adaptadores
+│   ├── experimentation/        # vacía todavía
 │   ├── persistence/
-│   │   └── configuracion.py    # lector de config/proyecto.yaml
-│   └── ui/                     # vacía en H2.0
+│   │   └── configuracion.py    # lector de config/proyecto.yaml; implementa FuenteConfiguracion
+│   └── ui/                     # vacía todavía
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── unit/                   # paquete, configuración, red
-    └── architecture/           # contratos de capas, privacidad, alcance de H2.0
+    └── architecture/           # contratos de capas, línea de comandos, privacidad, alcance
 ```
 
 ## 2. Equivalencia con la sección 6 de la especificación
 
-| Especificación v0.4 | Repositorio H2.0 | Motivo |
+| Especificación v0.5 | Repositorio (H2.1) | Motivo |
 | --- | --- | --- |
 | `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | Solo `config/proyecto.yaml` | El resto pertenece a H2.2 y siguientes. Se mantiene el nombre `config/` de la especificación, no `configs/` |
 | `data/raw`, `interim`, `processed` | `data/README.md` | Las subcarpetas se crean al usarse; nunca se versionan |
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
-| `docs/especificacion/` | Copia de referencia de la v0.4 | Igual |
+| `docs/especificacion/` | Copias de referencia de la v0.5 y la v0.4 | Igual |
 | `docs/diagramas/` | Cuatro archivos `.mmd` | Igual |
 | `docs/decisiones/` | No existe todavía | Se creará al resolverse la primera decisión DP (RF-M6-05). Las decisiones técnicas de H2.0 están en `docs/arquitectura/decisiones_h2_0.md`, que no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
-| `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | Cumple la estructura; el contenido empieza en H2.1 |
-| `src/suficiencia/cli.py` | No existe | Corresponde a H2.1 |
+| `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | No existen todavía | Se crean en H2.2 a H2.7 |
+| Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
+| `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
 | `tests/{unit,integration,acceptance,architecture,fixtures}` | Solo `unit/` y `architecture/` | Las demás se crean con su primera prueba |
 | `scripts/` | `scripts/verificar.py` | Windows no incluye `make` |
 | `notebooks/` | No existe | Sin uso en H2.0 |
@@ -63,7 +75,9 @@ suficiencia-desercion/
 | `application` | `domain`, `experimentation`, `persistence` | `ui`, Streamlit, Plotly | `capas`, `motor-sin-streamlit` |
 | `experimentation` | `domain` | `ui`, `application`, `persistence`, Streamlit, Plotly | `capas`, `motor-sin-streamlit` |
 | `persistence` | `domain` | `ui`, `application`, `experimentation`, Streamlit, Plotly | `capas`, `motor-sin-streamlit` |
-| `domain` | Ninguna capa del paquete | Todas las demás capas y Streamlit, Plotly, scikit-learn, XGBoost, LightGBM, SHAP, LIME, sqlite3, PyYAML, pyarrow, openpyxl y joblib | `capas`, `dominio-sin-dependencias-externas` |
+| `domain` | Ninguna capa del paquete | Todas las demás capas y Streamlit, Plotly, scikit-learn, XGBoost, LightGBM, SHAP, LIME, sqlite3, PyYAML, pydantic, pyarrow, openpyxl y joblib | `capas`, `dominio-sin-dependencias-externas` |
+| `cli` (raíz del paquete) | `application` | `domain`, `experimentation`, `persistence`, `ui`, Streamlit, Plotly | `cli-solo-aplicacion`, `motor-sin-streamlit` |
+| Todas las capas | — | `cli` | `capas-no-usan-cli` |
 
 ### Qué controlan los contratos
 
@@ -71,7 +85,7 @@ Todo lo que sigue se comprobó con el control negativo de `tests/architecture/te
 
 - Las sentencias `import x` y `from x import y` de los archivos `.py` dentro de `src/suficiencia`, incluidos los imports dentro de funciones.
 - En el contrato `capas`, las cadenas indirectas: una capa inferior no puede llegar a una superior ni siquiera a través de un módulo intermedio.
-- En `ui-solo-aplicacion`, solo los imports **directos** (`allow_indirect_imports = True`). La cadena `ui → application → domain` es el uso previsto y no cuenta como violación. Sin esta opción, el contrato se rompería en cuanto la aplicación usara el dominio. Una prueba de regresión lo protege.
+- En `ui-solo-aplicacion` y `cli-solo-aplicacion`, solo los imports **directos** (`allow_indirect_imports = True`). Las cadenas `ui → application → domain` y `cli → application → domain` son el uso previsto y no cuentan como violación. Sin esta opción, el contrato se rompería en cuanto la aplicación usara el dominio. Una prueba de regresión lo protege.
 - Imports de los módulos externos de la lista, aunque no estén instalados.
 
 ### Qué no controlan
@@ -80,8 +94,9 @@ Todo lo que sigue se comprobó con el control negativo de `tests/architecture/te
 - Dependencias a través de bibliotecas de terceros: si una biblioteca permitida importa Streamlit, el contrato no lo ve.
 - El uso de archivos, red o bases de datos sin un import (por ejemplo, abrir un `.sqlite` con otra biblioteca). Para SQLite existe además una prueba específica mientras DP-16 esté pendiente.
 - El código fuera de `src/suficiencia` (pruebas, scripts).
-- Hoy los contratos se cumplen de forma trivial porque las capas están vacías. Por eso existe un **control negativo**: un paquete temporal que viola los mismos tipos de contrato y debe fallar (`tests/architecture/test_contratos_capas.py`).
+- El **control negativo** (`tests/architecture/test_contratos_capas.py`) crea un paquete temporal que viola cada tipo de contrato (17 violaciones) y comprueba que falla. Desde H2.1 los contratos ya no se cumplen de forma trivial: la aplicación usa el dominio y la persistencia, y la CLI usa la aplicación.
+- Que todo módulo de la raíz del paquete esté en algún contrato lo comprueba una prueba aparte.
 
 ### Composición de dependencias
 
-La especificación define puertos en el dominio que implementan `experimentation` y `persistence`, y servicios en `application` que los usan. En H2.0 no existe ningún puerto ni servicio; se crean en H2.1.
+El dominio define puertos (`domain/puertos.py`) que implementan `persistence` y, más adelante, `experimentation`. Los servicios de `application` reciben las implementaciones ya construidas. El único lugar que elige qué adaptador implementa cada puerto es `application/composicion.py`; la CLI y la futura interfaz obtienen allí los servicios. Así las pruebas sustituyen un adaptador por otro sin archivos (por ejemplo, `tests/unit/test_servicios_aplicacion.py` usa una `FuenteConfiguracion` en memoria).

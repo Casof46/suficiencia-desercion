@@ -46,7 +46,7 @@ Qué controlan y qué no controlan los contratos: `docs/arquitectura/estructura_
 
 ## 4. Resultados reales
 
-Las filas de Linux se ejecutaron el 21 de octubre de 2026 sobre copias limpias del repositorio, con 30 funciones y 83 casos, antes de D-19. Cada copia excluía `.venv` y cachés y siguió exactamente los comandos Linux de `entorno_reproducible.md`. La fila de Windows se ejecutó el 28 de octubre de 2026 en la PC de un miembro del equipo, también antes de D-19; tras D-19 se repitió en Linux con Python 3.12.3: 83 pasan y 1 se omite.
+Las filas de Linux se ejecutaron el 21 de octubre de 2026 sobre copias limpias del repositorio, con 30 funciones y 83 casos, antes de D-19. Cada copia excluía `.venv` y cachés y siguió exactamente los comandos Linux de `entorno_reproducible.md`. Las filas de Windows se ejecutaron el 28 de octubre de 2026 en la PC de un miembro del equipo, la primera antes de D-19 y las otras dos después. Tras D-19 también se repitió en Linux con Python 3.12.3 (83 pasan y 1 se omite), y en una copia con todos los archivos convertidos a fin de línea CRLF, como los deja Git en Windows: las cinco comprobaciones en `OK`.
 
 | Entorno | Instalación desde el bloqueo | ruff check | ruff format | mypy | import-linter | pytest | Código de salida |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -55,7 +55,8 @@ Las filas de Linux se ejecutaron el 21 de octubre de 2026 sobre copias limpias d
 | Linux, Python 3.13.16, pip 26.2.1 | Igual | Sin hallazgos | Igual | Igual | Igual | 82 pasan, 1 omitida | 0 |
 | Linux, Python 3.12.3, con `git init` y `git add -A` (sin commit) | — | — | — | — | — | **83 pasan, 0 omitidas** | 0 |
 | Windows, Python 3.13.0, en la PC de Jorge (28 de octubre de 2026, antes de D-19) | Desde el bloqueo, sin errores | Sin hallazgos | 25 archivos con formato correcto | Sin errores en 15 archivos | 4 contratos cumplidos, con los nombres mal mostrados (D-19) | 82 pasan, 1 omitida | 0 |
-| Windows, tras D-19 | **Pendiente de repetir** | — | — | — | — | — | — |
+| Windows, Python 3.13.0, tras D-19 | Sin reinstalar (las dependencias no cambiaron) | Sin hallazgos | 25 archivos con formato correcto | Sin errores en 15 archivos | 4 contratos cumplidos, nombres bien mostrados | 83 pasan, 1 omitida | 0 |
+| Windows, Python 3.13.0, tras `git init`, `git add .` y el primer commit (`cb9a955`) | — | Sin hallazgos | Igual | Igual | Igual | **84 pasan, 0 omitidas** | 0 |
 | macOS | **No comprobado** | — | — | — | — | — | — |
 
 En la última fila se crearon antes archivos sensibles ficticios (`data/raw/m.xlsx`, `workspace/r.sqlite`, `reports/x.csv` y `.env`). Tras `git add -A`, ninguno quedó preparado para versionar; de `data/` solo se preparó `data/README.md`.
@@ -76,7 +77,7 @@ En la última fila se crearon antes archivos sensibles ficticios (`data/raw/m.xl
 
 ## 5. Lo que estas pruebas no cubren
 
-- La instalación en macOS, y la repetición en Windows tras D-19: debe hacerlas el equipo.
+- La instalación en macOS: debe hacerla el equipo, si alguien usará ese sistema.
 - PA-01 y PA-02 completas, con servicios reales y la línea de comandos: corresponden a H2.1.
 - Cualquier lógica del método (ventanas, escenarios, anti-fuga, objetivo, protocolo): hitos H2.2 y siguientes.
 - La cobertura de código: su meta (RNF-11) aún no está fijada.

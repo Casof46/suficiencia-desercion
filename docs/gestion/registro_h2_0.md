@@ -6,7 +6,7 @@
 | Solicitado por | Javier |
 | Base | Especificación Fase 1 v0.4; documento "Fase 1 — Auditoría final y acta de cierre" (sección G) |
 | Autorización formal | **No registrada.** El acta de cierre de la Fase 1 está sin firmar; H2.0 se ejecutó con el contrato provisional descrito en su apartado 6 |
-| Estado del hito | **Ejecutado técnicamente; pendiente de aceptación por el equipo** |
+| Estado del hito | **Aceptado por el equipo** el 28 de octubre de 2026 (acta, apartado 6) |
 
 ## 1. Archivos
 
@@ -58,7 +58,8 @@ Detalle en `docs/desarrollo/pruebas_h2_0.md`, sección 4. Resumen:
 - Con `git init` y `git add -A`: las 83 pasan, y ningún archivo sensible ficticio queda preparado para versionar.
 - Controles negativos: una violación deliberada de capas hace fallar la verificación, y retirar la corrección D-15 hace fallar su prueba de regresión.
 - Windows: el 28 de octubre de 2026, en la PC de Jorge con Python 3.13.0, la instalación desde el bloqueo y `scripts/verificar.py` terminaron con las cinco comprobaciones en `OK` (82 pasan, 1 omitida). El primer intento falló porque no se había descomprimido el ZIP y se usó `py -3.12` sin esa versión instalada; con los pasos de la documentación funcionó.
-- Esa ejecución mostró el defecto D-19 (tildes mal mostradas por import-linter en Windows). Se corrigió, se añadió una prueba (ahora 84 casos) y se comprobó en Linux; falta repetirlo en Windows.
+- Esa ejecución mostró el defecto D-19 (tildes mal mostradas por import-linter en Windows). Se corrigió y se añadió una prueba (ahora 84 casos). Repetido en Windows: 83 pasan y 1 se omite; tras el primer commit del equipo (`cb9a955`), pasan los 84.
+- Git en Windows avisa que convertirá los finales de línea LF a CRLF. Es inofensivo: una copia con todos los archivos en CRLF pasa las cinco comprobaciones.
 - **No ejecutado:** instalación y pruebas en macOS.
 
 ## 4. Matriz de criterios de aceptación de H2.0
@@ -66,17 +67,17 @@ Detalle en `docs/desarrollo/pruebas_h2_0.md`, sección 4. Resumen:
 | # | Criterio | Estado | Evidencia |
 | --- | --- | --- | --- |
 | 1 | Estructura creada y documentada | Cumplido | Árbol en `estructura_repositorio.md`; la prueba `test_no_existen_subpaquetes_fuera_de_las_cinco_capas` fija las capas |
-| 2 | El entorno puede reconstruirse a partir de las instrucciones | **Cumplido en Linux y en Windows; pendiente repetir en Windows tras D-19** | Linux: copias limpias con 3.11, 3.12 y 3.13. Windows: Python 3.13.0, 28 de octubre de 2026 |
+| 2 | El entorno puede reconstruirse a partir de las instrucciones | Cumplido en Linux y en Windows | Linux: copias limpias con 3.11, 3.12 y 3.13. Windows: Python 3.13.0, 28 de octubre de 2026, antes y después de D-19. macOS no comprobado |
 | 3 | Dependencias justificadas y fijadas de forma reproducible | Cumplido | Tabla 2; `requirements.lock` con hashes; pruebas `test_toda_dependencia_directa_esta_fijada_en_el_lock` y `test_el_lock_fija_versiones_exactas_con_hashes`. El nombre y la lista dependen de REC-05 (provisional) |
 | 4 | El paquete puede importarse | Cumplido | `tests/unit/test_paquete.py`, en las tres versiones |
 | 5 | Pruebas ejecutadas y resultados registrados | Cumplido | `pruebas_h2_0.md`, sección 4 |
 | 6 | Restricciones de arquitectura comprobadas por herramientas | Cumplido, con alcance limitado | import-linter con 4 contratos; control negativo de 11 violaciones; límites documentados. Las capas están vacías, así que el cumplimiento real se pondrá a prueba desde H2.1 |
 | 7 | Archivos sensibles excluidos del control de versiones | Cumplido | PA-04: 23 rutas sensibles ignoradas y comprobación en un repositorio git real |
-| 8 | Otra persona puede reproducir las comprobaciones | **Reproducido; pendiente de confirmación del equipo** | Instalación y comprobaciones en la PC de Jorge, en Windows, siguiendo la documentación con indicaciones por chat |
+| 8 | Otra persona puede reproducir las comprobaciones | Cumplido; confirmado por el equipo al aceptar H2.0 | Instalación y comprobaciones en la PC de Jorge, en Windows, siguiendo la documentación con indicaciones por chat |
 | 9 | Decisiones pendientes y supuestos identificados | Cumplido | `decisiones_h2_0.md`: decisiones, desviaciones, supuestos y pendientes |
 | 10 | Sin funcionalidades de hitos posteriores | Cumplido | Solo existe el lector de configuración; `test_h2_0_no_incorpora_bibliotecas_de_fases_posteriores`; sin CLI, puertos, servicios, Streamlit ni SQLite |
 
-**Conclusión:** 8 criterios cumplidos; el criterio 2 falta repetirlo en Windows tras D-19 y el criterio 8 requiere la confirmación del equipo. El hito no se declara completado hasta que el equipo lo acepte en el apartado 6 del acta.
+**Conclusión:** los 10 criterios están cumplidos y el equipo aceptó el hito el 28 de octubre de 2026.
 
 ## 5. Limitaciones y riesgos
 
@@ -84,5 +85,5 @@ Detalle en `docs/desarrollo/pruebas_h2_0.md`, sección 4. Resumen:
 - La primera instalación necesita acceso a PyPI. Un proxy institucional podría exigir configurar `pip`.
 - Las herramientas del bloqueo son versiones recientes (por ejemplo, pytest 9.1, mypy 2.4, ruff 0.17); un cambio de versión puede producir nuevos avisos. Por eso el bloqueo fija versiones exactas.
 - Los contratos de capas se cumplen hoy de forma trivial; su eficacia está demostrada solo con el control negativo.
-- El nombre del paquete es provisional (REC-05); cambiarlo afecta a varios archivos (D-02).
-- No hay historial git (D-18).
+- El nombre del paquete `suficiencia` quedó confirmado al aceptarse REC-05 (D-02).
+- El historial git empieza con el commit `cb9a955` del equipo (28 de octubre de 2026); los cambios posteriores de la documentación se versionan en commits nuevos.

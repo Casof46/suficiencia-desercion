@@ -1,4 +1,4 @@
-# Contratos de dependencias entre capas (seccion 5 de la especificacion v0.4).
+# Contratos de dependencias entre capas (seccion 5 de la especificacion v0.5).
 # Este archivo debe ser solo ASCII: import-linter lo lee con la codificacion
 # regional del sistema, que en Windows no es UTF-8 (defecto D-19).
 # Se verifican con: lint-imports   (prueba PA-01 en tests/architecture/).
@@ -45,6 +45,7 @@ forbidden_modules =
     lime
     sqlite3
     yaml
+    pydantic
     pyarrow
     openpyxl
     joblib
@@ -56,6 +57,32 @@ source_modules =
     suficiencia.application
     suficiencia.experimentation
     suficiencia.persistence
+    suficiencia.cli
 forbidden_modules =
     streamlit
     plotly
+
+[importlinter:contract:cli-solo-aplicacion]
+name = La linea de comandos solo usa la capa de aplicacion (RNF-02, PA-02)
+type = forbidden
+source_modules =
+    suficiencia.cli
+forbidden_modules =
+    suficiencia.domain
+    suficiencia.experimentation
+    suficiencia.persistence
+    suficiencia.ui
+# Igual que en la interfaz: la cadena cli -> application -> domain es la prevista.
+allow_indirect_imports = True
+
+[importlinter:contract:capas-no-usan-cli]
+name = Ninguna capa importa la linea de comandos
+type = forbidden
+source_modules =
+    suficiencia.domain
+    suficiencia.application
+    suficiencia.experimentation
+    suficiencia.persistence
+    suficiencia.ui
+forbidden_modules =
+    suficiencia.cli

@@ -1,4 +1,4 @@
-<!-- Copia de referencia de solo lectura, exportada el 2026-10-28 desde la revisión 174 del documento en línea.
+<!-- Copia de referencia de solo lectura, exportada el 2026-10-28 desde la revisión 179 del documento en línea.
      La versión vigente es el documento en línea; no editar esta copia: los cambios se hacen allí y se vuelve a exportar. -->
 
 # Fase 1 — Especificación funcional y arquitectura de software
@@ -1468,7 +1468,7 @@ Las decisiones se ordenan por lo que bloquean. Las cuatro primeras dependen de l
 | 4 | DP-11 Alcance de la interpretabilidad | Equipo | Ninguna adicional | Sí |
 | 4 | DP-16 SQLite o archivos | Equipo | Ninguna adicional | Sí |
 
-Recomendaciones de esta especificación que también requieren aprobación expresa del equipo (códigos REC-01 a REC-05; ninguna está aceptada):
+Recomendaciones de esta especificación que también requieren aprobación expresa del equipo (códigos REC-01 a REC-05; el equipo aceptó REC-04 y REC-05 el 28 de octubre de 2026, y REC-01 a REC-03 siguen sin aceptar):
 
 1. REC-01 — Confirmar la validación cronológica como protección esencial y que solo sus cortes concretos quedan en DP-05.
 2. REC-02 — Aceptar las cuatro etapas E1–E4, incluida la prohibición de entrenar modelos con datos reales antes del protocolo.
@@ -1478,7 +1478,7 @@ Recomendaciones de esta especificación que también requieren aprobación expre
 
 ## 16. Estado de los criterios de aceptación
 
-Con la v0.5, 5 de los 26 criterios están cumplidos y verificados mediante una comprobación ejecutada, 15 están cumplidos documentalmente y pendientes de comprobación, 5 esperan una decisión del equipo y 1 la aprobación de la asesoría. Ninguno depende directamente de la institución ni está bloqueado técnicamente. La Fase 1 no está aprobada.
+Con la v0.5 y las decisiones del equipo del 28 de octubre de 2026, 5 de los 26 criterios están cumplidos y verificados mediante una comprobación ejecutada, 3 están cumplidos por decisión del equipo (CA-16, CA-23 y CA-24), 15 están cumplidos documentalmente y pendientes de comprobación, 1 espera una decisión del equipo (CA-21) y 2 la aprobación de la asesoría (CA-10 y CA-22). Ninguno depende directamente de la institución ni está bloqueado técnicamente. La Fase 1 no está aprobada.
 
 "Cumplido y verificado" se usa solo cuando hay una comprobación ejecutada y repetible: el cruce automático de códigos, el análisis con el parser de Mermaid o el renderizado. "Cumplido documentalmente" significa que el contenido existe y fue revisado por inspección, pero falta la confirmación del equipo o una prueba que solo puede ejecutarse en la Fase 2.
 
@@ -1499,15 +1499,15 @@ Con la v0.5, 5 de los 26 criterios están cumplidos y verificados mediante una c
 | CA-13 Contratos para una API | Cumplido documentalmente, pendiente de comprobación | Secciones 5 y 10 | Contratos implementados | Equipo | Se comprueba en el hito H2.1 | No |
 | CA-14 Dependencias justificadas | Cumplido documentalmente, pendiente de comprobación | Sección 5.1; sqlite3 pasa a condicional de DP-16 en la v0.4 | Matriz de versiones compatibles verificada | Equipo | Se comprueba en el hito H2.0 | No |
 | CA-15 Reproducibilidad acotada | Cumplido documentalmente, pendiente de comprobación | Sección 5.2 y RNF-03 | Ejecutar PI-11 | Equipo | Se comprueba en fases con entrenamiento | No |
-| CA-16 Estructura y nombre del paquete aceptados | Pendiente de decisión del equipo | Sección 6 y REC-05 | Registro de la decisión | Equipo | Decidir REC-05 | Inicio de la Fase 2 (H2.0) |
+| CA-16 Estructura y nombre del paquete aceptados | Cumplido por decisión del equipo (REC-05 aceptada el 28 de octubre de 2026) | Sección 6 y REC-05 | Registro de la decisión | Equipo | Decidir REC-05 | Inicio de la Fase 2 (H2.0) |
 | CA-17 Entidades de trazabilidad | Cumplido y verificado | El diagrama entidad-relación se renderiza con sus 25 entidades, incluidas las nueve que exige el criterio | Ninguna | — | — | No |
 | CA-18 Diagramas sin errores | Cumplido documentalmente, pendiente de comprobación | Los cuatro diagramas pasan el parser oficial de Mermaid 11.17.2 (un diagrama con un error deliberado sí falla), se renderizan en Chromium sin errores, con tantos nodos y relaciones como su código, y se revisaron visualmente | Confirmación de que el visor del documento los muestra | Equipo | Abrir la especificación en el visor y revisar las secciones 5, 7 y 8 | No |
 | CA-19 Cobertura de pruebas | Cumplido y verificado | Cruce automático: todo requisito N1 tiene al menos una prueba en 9.2; se cubren los temas del criterio | Ninguna | — | Mantener la regla de 9.4 | No |
 | CA-20 Sin infraestructura cloud ni de pago | Cumplido documentalmente, pendiente de comprobación | Secciones 5.1 y 10 | Confirmación del equipo | Equipo | Confirmar en el acta | No |
-| CA-21 Responsable por riesgo | Pendiente de decisión del equipo | Columna Responsable creada en la sección 11 | Nombres asignados a los 26 riesgos | Equipo | Asignar responsables | Aprobación formal; antes de usar datos reales |
-| CA-22 Recomendaciones aceptadas o rechazadas | Pendiente de decisión del equipo | REC-01 a REC-05 codificadas en la sección 15 | Decisión registrada por cada REC; REC-01 a REC-03 requieren además la conformidad de la asesoría | Equipo y asesoría | Decidir REC-04 y REC-05 primero; REC-01 a REC-03 con la asesoría | REC-04 y 05: inicio de la Fase 2. REC-01 a 03: H2.4 a H2.6 |
-| CA-23 Priorización aceptada | Pendiente de decisión del equipo | Sección 2.3 completa | Decisión sobre REC-04 | Equipo | Decidir REC-04 | Inicio de la Fase 2 |
-| CA-24 Siguiente fase definida | Pendiente de decisión del equipo | Plan de hitos en el documento de auditoría final | Alcance autorizado | Equipo | Aprobar, modificar o rechazar el plan | Inicio de la Fase 2 |
+| CA-21 Responsable por riesgo | Pendiente de decisión del equipo | Columna Responsable creada en la sección 11 | Nombres asignados a los 29 riesgos | Equipo | Asignar responsables | Aprobación formal; antes de usar datos reales |
+| CA-22 Recomendaciones aceptadas o rechazadas | Pendiente de aprobación de la asesoría (REC-04 y REC-05 aceptadas por el equipo el 28 de octubre de 2026; faltan REC-01 a REC-03) | REC-01 a REC-05 codificadas en la sección 15 | Decisión registrada por cada REC; REC-01 a REC-03 requieren además la conformidad de la asesoría | Equipo y asesoría | Decidir REC-04 y REC-05 primero; REC-01 a REC-03 con la asesoría | REC-04 y 05: inicio de la Fase 2. REC-01 a 03: H2.4 a H2.6 |
+| CA-23 Priorización aceptada | Cumplido por decisión del equipo (REC-04 aceptada el 28 de octubre de 2026) | Sección 2.3 completa | Decisión sobre REC-04 | Equipo | Decidir REC-04 | Inicio de la Fase 2 |
+| CA-24 Siguiente fase definida | Cumplido por decisión del equipo (H2.1 a H2.3 autorizados el 28 de octubre de 2026) | Plan de hitos en el documento de auditoría final | Alcance autorizado | Equipo | Aprobar, modificar o rechazar el plan | Inicio de la Fase 2 |
 | CA-25 Diseño comparativo completo | Cumplido documentalmente, pendiente de comprobación | Secciones 1 y 4 (M4) y apartado 12.3 | Revisión metodológica de la asesoría (forma parte de CA-10) | Equipo y asesoría | Revisar el diseño con la asesoría junto con DP-19 y DP-20 | Aprobación formal; no bloquea H2.0 a H2.3 |
 | CA-26 Trazabilidad de la evaluación comparativa | Cumplido y verificado | Cruce automático sobre la v0.5: ningún código citado sin definición y todo requisito N1 nuevo con al menos una prueba (apartado 14.4) | Ninguna | — | Repetir el cruce tras cada cambio | No |
 
@@ -1518,7 +1518,7 @@ Con la v0.5, 5 de los 26 criterios están cumplidos y verificados mediante una c
 Lo que falta corresponde a personas, no al documento:
 
 - [ ] El equipo confirma los criterios cumplidos documentalmente y la visualización de los diagramas en el visor (CA-18).
-- [ ] El equipo decide REC-04 y REC-05, asigna responsables a los riesgos y define el alcance autorizado de la Fase 2 (CA-16, CA-21 a CA-24).
+- [ ] El equipo asigna responsables a los riesgos (CA-21). Ya decidió el 28 de octubre de 2026: aceptó REC-04 y REC-05 y autorizó los hitos H2.1 a H2.3 (CA-16, CA-23 y CA-24).
 - [ ] La asesoría se pronuncia sobre REC-01 a REC-03 y acuerda el calendario de DP-01, DP-04, DP-05 con DP-08h, DP-08, DP-17, DP-18, DP-19 y DP-20 (CA-10).
 
 Las matrices de decisiones y recomendaciones, el acta de cierre propuesta, el plan de transición y los bloqueos para usar datos reales están en el documento [Fase 1 — Auditoría final y acta de cierre](https://claude.ai/artifact/SRL4hycmBbEoYRmmSs8zhM). El primer hito propuesto para la Fase 2 es H2.0, repositorio y entorno reproducible, que no depende de ninguna decisión metodológica. La evaluación comparativa no cambia el orden de los hitos: se implementará con M4 y, como el resto del protocolo confirmatorio, exige DP-19 y DP-20 aprobadas antes de E3 (sección 8.2).

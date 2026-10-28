@@ -9,7 +9,7 @@ Estados: **Aplicada**, implementada en H2.0 · **Provisional**, implementada y s
 | ID | Decisión | Alternativas consideradas | Motivo | Estado |
 | --- | --- | --- | --- | --- |
 | D-01 | Python mínimo 3.11, recomendado 3.12 | Solo 3.12 o 3.13; admitir 3.10 | La especificación pide 3.11 o superior (5.1); `tomllib` existe desde 3.11; 3.12 tiene amplio soporte de las bibliotecas científicas que llegarán después. Comprobado en 3.11, 3.12 y 3.13 | Aplicada |
-| D-02 | Nombre del paquete `suficiencia` | `suficiencia_desercion`, `metodo_suficiencia` | Es el nombre de la sección 6 de la especificación. **Depende de REC-05, no aceptada.** Cambiarlo afecta a `pyproject.toml`, `src/suficiencia/`, `.importlinter` y los imports de las pruebas | Provisional |
+| D-02 | Nombre del paquete `suficiencia` | `suficiencia_desercion`, `metodo_suficiencia` | Es el nombre de la sección 6 de la especificación. Confirmado al aceptar el equipo REC-05 el 28 de octubre de 2026 | Aplicada |
 | D-03 | Estructura `src/` con instalación editable | Paquete en la raíz; `pythonpath` en pytest | La sección 6 de la especificación lo pide: las pruebas importan el paquete instalado, no archivos sueltos | Aplicada |
 | D-04 | Dependencias de ejecución mínimas: solo PyYAML | Instalar ya la lista completa de 5.1; el contrato provisional del documento de auditoría (pandas, NumPy, pyarrow, openpyxl, pydantic, PyYAML) | La instrucción de H2.0 pide no instalar bibliotecas que todavía no se usan. H2.0 solo lee YAML. **Desviación** respecto del plan de la auditoría (sección G), registrada abajo | Aplicada |
 | D-05 | Bloqueo universal `requirements.lock` con hashes, generado con `uv pip compile --universal` | pip-tools (`pip-compile`); `pip freeze`; `uv.lock` con `uv sync` | pip-tools y `pip freeze` resuelven para una sola plataforma y omiten, por ejemplo, `colorama`, que pytest necesita en Windows; con `--require-hashes` la instalación en Windows fallaría. El archivo resultante se instala con `pip` normal; `uv` solo lo necesita quien regenera el bloqueo. **Desviación menor** respecto de 5.1, que nombraba pip-tools como herramienta condicional sustituible | Aplicada |
@@ -40,7 +40,6 @@ Estados: **Aplicada**, implementada en H2.0 · **Provisional**, implementada y s
 
 ## Supuestos temporales
 
-- El nombre `suficiencia` y la lista de dependencias se mantienen hasta que el equipo decida REC-05.
 - SQLite no forma parte del proyecto hasta que se resuelva DP-16.
 - La instalación en Windows se comprobó una vez, con Python 3.13.0 en la PC de un miembro del equipo. Otras versiones de Python en Windows no se han comprobado.
 - Se supone acceso a PyPI para la primera instalación. Con un proxy institucional, puede hacer falta configurar `pip` según las indicaciones del área de TI.
@@ -49,9 +48,6 @@ Estados: **Aplicada**, implementada en H2.0 · **Provisional**, implementada y s
 
 | Pendiente | Responsable | Cuándo |
 | --- | --- | --- |
-| Decidir REC-05 (nombre y dependencias) | Equipo | Antes de aceptar H2.0 |
-| Repetir `scripts/verificar.py` en Windows tras D-19 (la primera ejecución, del 28 de octubre de 2026, terminó en OK) | Equipo | Antes de aceptar H2.0 |
-| Inicializar git y hacer el primer commit; con el repositorio creado, la prueba PA-04 de archivos versionados deja de omitirse | Equipo | Al aceptar H2.0 |
 | Definir la licencia del repositorio | Equipo | Antes de compartirlo fuera del equipo |
 | Meta de cobertura (RNF-11) e incorporación de pytest-cov | Equipo | Al aprobar la Fase 1 |
 | Matriz de compatibilidad de bibliotecas de aprendizaje automático (CA-14) | Equipo | En el hito que las introduzca |

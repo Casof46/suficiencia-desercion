@@ -34,3 +34,10 @@ def test_no_existen_subpaquetes_fuera_de_las_cinco_capas(raiz: Path) -> None:
     paquete = raiz / "src" / "suficiencia"
     subpaquetes = {p.name for p in paquete.iterdir() if (p / "__init__.py").is_file()}
     assert subpaquetes == set(CAPAS)
+
+
+def test_la_raiz_del_paquete_solo_contiene_la_linea_de_comandos(raiz: Path) -> None:
+    """La lógica vive en las capas; en la raíz solo está la línea de comandos (H2.1)."""
+    paquete = raiz / "src" / "suficiencia"
+    modulos = {p.stem for p in paquete.glob("*.py")}
+    assert modulos == {"__init__", "cli"}

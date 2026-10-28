@@ -1,8 +1,8 @@
-"""Alcance del hito H2.0 (criterio 10) y fijación de dependencias (criterio 3).
+"""Alcance de los hitos construidos y fijación de dependencias.
 
-Estas pruebas protegen las decisiones temporales de H2.0. Cuando un hito
-autorizado incorpore una biblioteca de la lista, debe actualizar esta prueba y
-registrar el cambio en docs/arquitectura/.
+Nació en H2.0 (criterios 3 y 10). Cuando un hito autorizado incorpora una
+biblioteca de la lista, la quita de ``POSTERGADAS`` y registra el cambio en
+docs/arquitectura/. H2.1 incorporó pydantic (decisión D-20).
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import re
 import tomllib
 from pathlib import Path
 
-# Bibliotecas de fases posteriores que H2.0 no instala (decisión D-04).
+# Bibliotecas que ningún hito construido usa todavía (decisión D-04 de H2.0).
 POSTERGADAS = {
     "streamlit",
     "plotly",
@@ -25,7 +25,6 @@ POSTERGADAS = {
     "numpy",
     "pyarrow",
     "openpyxl",
-    "pydantic",
     "joblib",
     "imbalanced-learn",
     "optuna",
@@ -80,9 +79,9 @@ def test_el_lock_fija_versiones_exactas_con_hashes(raiz: Path) -> None:
         assert "--hash=sha256:" in bloque, f"Sin hash: {bloque.splitlines()[0]}"
 
 
-def test_h2_0_no_incorpora_bibliotecas_de_fases_posteriores(raiz: Path) -> None:
+def test_no_se_incorporan_bibliotecas_de_hitos_posteriores(raiz: Path) -> None:
     presentes = (_directas(raiz) | set(_fijadas(raiz))) & POSTERGADAS
-    assert presentes == set(), f"Bibliotecas no autorizadas en H2.0: {sorted(presentes)}"
+    assert presentes == set(), f"Bibliotecas de hitos posteriores: {sorted(presentes)}"
 
 
 def test_ningun_modulo_usa_sqlite_mientras_dp16_este_pendiente(raiz: Path) -> None:

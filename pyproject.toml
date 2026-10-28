@@ -3,8 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-# Nombre provisional: depende de la recomendación REC-05, todavía no aceptada.
-# Ver docs/arquitectura/decisiones_h2_0.md (D-02).
+# Nombre confirmado por el equipo al aceptar REC-05 (28-10-2026). Ver D-02.
 name = "suficiencia"
 version = "0.1.0.dev0"
 description = "Motor y aplicación local para el método temporal de suficiencia de información en la detección temprana del riesgo de deserción académica."
@@ -14,12 +13,17 @@ license = { text = "Uso académico; licencia pendiente de definir por el equipo"
 authors = [{ name = "Equipo de investigación (Javier y Jorge)" }]
 classifiers = ["Private :: Do Not Upload"]
 
-# Dependencias de ejecución del hito H2.0: solo lo que H2.0 usa.
+# Dependencias de ejecución: solo las que usan los hitos ya construidos (REC-05).
 # Las bibliotecas de fases posteriores (pandas, scikit-learn, XGBoost, LightGBM,
 # SHAP, LIME, Streamlit, Plotly...) se añaden en el hito que las necesite.
 dependencies = [
-    "PyYAML>=6.0",  # lectura de config/*.yaml (RNF-10)
+    "PyYAML>=6.0",     # lectura de config/*.yaml (RNF-10); H2.0
+    "pydantic>=2.7",   # contratos de entrada y salida de los servicios (RNF-14); H2.1
 ]
+
+[project.scripts]
+# Línea de comandos del motor (RNF-02, PA-02); H2.1.
+suficiencia = "suficiencia.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -55,5 +59,6 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "PTH"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
 mypy_path = "src"

@@ -1,40 +1,48 @@
 """Lectura y validación de ``config/proyecto.yaml``.
 
-Es el único código funcional del hito H2.0. Valida la estructura del archivo y
-rechaza claves desconocidas, para que un error tipográfico no pase inadvertido.
-No asigna valores por defecto a parámetros que la especificación deja pendientes:
-``semilla_global`` y ``tolerancia_metricas`` pueden ser ``None``.
+Valida la estructura del archivo y rechaza claves desconocidas, para que un error
+tipográfico no pase inadvertido. No asigna valores por defecto a parámetros que la
+especificación deja pendientes: ``semilla_global`` y ``tolerancia_metricas``
+pueden ser ``None``.
+
+:class:`FuenteConfiguracionYaml` implementa el puerto ``FuenteConfiguracion`` del
+dominio (H2.1).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
+
+from suficiencia.domain.errores import ConfiguracionInvalida
+from suficiencia.domain.proyecto import ConfiguracionProyecto
+
+__all__ = [
+    "VERSION_CONFIGURACION_SOPORTADA",
+    "ConfiguracionProyecto",
+    "ErrorConfiguracion",
+    "FuenteConfiguracionYaml",
+    "cargar_configuracion",
+]
 
 VERSION_CONFIGURACION_SOPORTADA = 1
 _RUTAS_REQUERIDAS = ("datos", "espacio_trabajo", "reportes")
 _CLAVES_RAIZ = {"version_configuracion", "proyecto", "rutas", "reproducibilidad"}
 _CLAVES_PROYECTO = {"nombre", "version_especificacion"}
 _CLAVES_REPRODUCIBILIDAD = {"semilla_global", "tolerancia_metricas"}
+_ACCION = (
+    "Corrija el archivo de configuración (ver docs/arquitectura/estructura_repositorio.md) "
+    "y compruébelo con `suficiencia config validar`."
+)
 
 
-class ErrorConfiguracion(ValueError):
+class ErrorConfiguracion(ConfiguracionInvalida, ValueError):
     """La configuración del proyecto no existe o no es válida."""
 
-
-@dataclass(frozen=True)
-class ConfiguracionProyecto:
-    """Configuración validada del proyecto."""
-
-    raiz: Path
-    nombre: str
-    version_especificacion: str
-    rutas: dict[str, Path]
-    semilla_global: int | None
-    tolerancia_metricas: float | None
+    def __init__(self, causa: str, accion: str = _ACCION) -> None:
+        super().__init__(causa, accion)
 
 
 def _seccion(datos: dict[str, Any], nombre: str, permitidas: set[str]) -> dict[str, Any]:
@@ -125,3 +133,13 @@ def cargar_configuracion(archivo: Path) -> ConfiguracionProyecto:
         semilla_global=semilla,
         tolerancia_metricas=float(tolerancia) if tolerancia is not None else None,
     )
+
+
+class FuenteConfiguracionYaml:
+    """Implementa el puerto ``FuenteConfiguracion`` leyendo un archivo YAML."""
+
+    def __init__(self, archivo: Path) -> None:
+        self.archivo = archivo
+
+    def cargar(self) -> ConfiguracionProyecto:
+        return cargar_configuracion(self.archivo)

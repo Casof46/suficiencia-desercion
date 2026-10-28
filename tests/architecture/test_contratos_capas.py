@@ -2,12 +2,13 @@
 
 Qué se comprueba:
 
-1. Los contratos de ``.importlinter`` se cumplen en el paquete real.
+1. Los contratos de ``.importlinter`` se cumplen en el paquete real (PA-01).
 2. Control negativo con los contratos REALES: se copia ``.importlinter`` sobre un
-   paquete temporal con las mismas cinco capas y se comprueba que cada violación
-   prevista rompe un contrato y que los usos legítimos no lo rompen. Sin esto, un
-   contrato mal escrito pasaría siempre, sobre todo mientras las capas estén vacías.
-3. Todas las capas del paquete aparecen en el contrato de capas.
+   paquete temporal con las mismas cinco capas y la línea de comandos, y se
+   comprueba que cada violación prevista rompe un contrato y que los usos
+   legítimos no lo rompen. Sin esto, un contrato mal escrito pasaría siempre.
+3. Todas las capas del paquete aparecen en el contrato de capas, y todo módulo
+   de la raíz del paquete (hoy, ``cli``) está cubierto por algún contrato.
 
 Límites (qué NO cubre import-linter): imports dinámicos (``importlib``,
 ``__import__``), imports dentro de cadenas o ``exec``, dependencias transitivas a
@@ -57,6 +58,14 @@ def test_la_configuracion_de_contratos_es_ascii(raiz: Path) -> None:
     assert not no_ascii, f"Bytes no ASCII en .importlinter: {no_ascii}"
 
 
+def test_los_modulos_de_la_raiz_estan_cubiertos_por_los_contratos(raiz: Path) -> None:
+    """Un módulo nuevo en la raíz del paquete quedaría fuera de las capas sin aviso."""
+    modulos = {p.stem for p in (raiz / "src" / "suficiencia").glob("*.py") if p.stem != "__init__"}
+    contratos = (raiz / ".importlinter").read_text(encoding="utf-8")
+    sin_contrato = {m for m in modulos if f"suficiencia.{m}\n" not in contratos}
+    assert sin_contrato == set()
+
+
 @pytest.fixture
 def paquete_prueba(raiz: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Paquete temporal con las cinco capas y los contratos reales del repositorio."""
@@ -66,6 +75,7 @@ def paquete_prueba(raiz: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     for capa in CAPAS:
         (paquete / capa).mkdir()
         (paquete / capa / "__init__.py").write_text("", encoding="utf-8")
+    (paquete / "cli.py").write_text("VALOR = 1\n", encoding="utf-8")
     contratos = (raiz / ".importlinter").read_text(encoding="utf-8")
     assert "suficiencia" in contratos
     config = tmp_path / ".importlinter"
@@ -76,6 +86,7 @@ def paquete_prueba(raiz: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
 
 def _modulo(config: Path, capa: str, nombre: str, codigo: str) -> None:
+    """Escribe un módulo en una capa; con ``capa=""`` lo escribe en la raíz del paquete."""
     ruta = config.parent / PAQUETE_PRUEBA / capa / f"{nombre}.py"
     ruta.write_text(codigo.replace("PAQ", PAQUETE_PRUEBA), encoding="utf-8")
 
@@ -104,6 +115,12 @@ VIOLACIONES = [
     ),
     pytest.param("application", "import streamlit\n", id="aplicacion-importa-streamlit"),
     pytest.param("persistence", "import plotly\n", id="persistencia-importa-plotly"),
+    pytest.param("domain", "import pydantic\n", id="dominio-importa-pydantic"),
+    pytest.param("CLI", "from PAQ.domain import regla\n", id="cli-importa-dominio-directo"),
+    pytest.param("CLI", "from PAQ.persistence import repo\n", id="cli-importa-persistencia"),
+    pytest.param("CLI", "from PAQ.ui import pantalla\n", id="cli-importa-interfaz"),
+    pytest.param("CLI", "import streamlit\n", id="cli-importa-streamlit"),
+    pytest.param("application", "from PAQ import cli\n", id="aplicacion-importa-cli"),
 ]
 
 
@@ -116,12 +133,15 @@ def test_control_negativo_cada_violacion_rompe_un_contrato(
         _modulo(paquete_prueba, nombre_capa, nombre, "VALOR = 1\n")
     _modulo(paquete_prueba, "experimentation", "m", "VALOR = 1\n")
     _modulo(paquete_prueba, "application", "s", "VALOR = 1\n")
-    _modulo(paquete_prueba, capa, "violacion", codigo)
+    if capa == "CLI":
+        _modulo(paquete_prueba, "", "cli", codigo)
+    else:
+        _modulo(paquete_prueba, capa, "violacion", codigo)
     assert _ejecutar(paquete_prueba) != 0
 
 
 def test_usos_legitimos_no_rompen_los_contratos(paquete_prueba: Path) -> None:
-    """ui -> application -> (persistence | experimentation) -> domain es el flujo previsto."""
+    """cli o ui -> application -> (persistence | experimentation) -> domain es lo previsto."""
     _modulo(paquete_prueba, "domain", "regla", "VALOR = 1\n")
     _modulo(paquete_prueba, "persistence", "repo", "from PAQ.domain import regla\n")
     _modulo(paquete_prueba, "experimentation", "m", "from PAQ.domain import regla\n")
@@ -136,4 +156,6 @@ def test_usos_legitimos_no_rompen_los_contratos(paquete_prueba: Path) -> None:
         paquete_prueba, "ui", "pagina", "import streamlit\nfrom PAQ.application import servicio\n"
     )
     _modulo(paquete_prueba, "persistence", "lector", "import yaml\nimport sqlite3\n")
+    _modulo(paquete_prueba, "application", "contratos", "import pydantic\n")
+    _modulo(paquete_prueba, "", "cli", "import argparse\nfrom PAQ.application import servicio\n")
     assert _ejecutar(paquete_prueba) == 0
