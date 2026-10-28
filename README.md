@@ -7,8 +7,8 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 | Elemento | Estado |
 | --- | --- |
 | Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**; propuesta de acta en `docs/gestion/acta_cierre_fase_1_propuesta.md`. H2.0 se construyó sobre la v0.4 y H2.1 sobre la v0.5 |
-| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) ejecutado, pendiente de verificación en Windows y de aceptación. H2.2 y H2.3 autorizados, no iniciados |
-| Funcionalidad | Ninguna funcionalidad metodológica todavía. Hay capas con contratos verificados, servicios sin lógica científica, el comando `suficiencia` y las comprobaciones de calidad |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) verificado en Linux y Windows, pendiente de aceptación. **H2.2** (escenarios y anti-fuga) ejecutado, pendiente de verificación en Windows. H2.3 autorizado, no iniciado |
+| Funcionalidad | Matriz de 32 escenarios con factibilidad y verificador de fuga temporal (H2.2). Con la configuración del proyecto se detiene por DP-01d y DP-03; con los ejemplos ficticios de `config/ejemplos/` muestra la matriz rotulada como ejemplo |
 | Decisiones metodológicas | DP-01 a DP-20 abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 sin aceptar |
 | Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
@@ -49,7 +49,9 @@ Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
 ```powershell
 .venv\Scripts\suficiencia estado            # servicios, casos de uso y en qué hito se construye cada uno
 .venv\Scripts\suficiencia config validar    # valida config/proyecto.yaml
-.venv\Scripts\suficiencia ejecutar CU-03    # hoy responde que el caso de uso aún no está implementado
+.venv\Scripts\suficiencia escenarios        # se detiene: faltan las fechas índice (DP-01d)
+.venv\Scripts\suficiencia escenarios --configuracion config\ejemplos\escenarios_ficticio.yaml --variables config\ejemplos\variables_ficticias.yaml
+.venv\Scripts\suficiencia ejecutar CU-03    # responde que el caso de uso aún no está implementado
 ```
 
 ## Control de versiones
@@ -92,8 +94,8 @@ Detalle de cada carpeta y de los límites entre capas: `docs/arquitectura/estruc
 | `docs/especificacion/especificacion_fase_1_v0.4.md` | Copia de la v0.4, base de H2.0 |
 | `docs/diagramas/*.mmd` | Fuentes Mermaid de los cuatro diagramas |
 | `docs/gestion/acta_cierre_fase_1_propuesta.md` | Propuesta de acta de cierre de la Fase 1 (sin firmar) |
-| `docs/gestion/registro_h2_0.md`, `registro_h2_1.md` | Registro de cada hito: archivos, criterios y resultados reales |
-| `docs/arquitectura/decisiones_h2_0.md`, `decisiones_h2_1.md` | Decisiones técnicas, alternativas, desviaciones y pendientes |
+| `docs/gestion/registro_h2_*.md` | Registro de cada hito: archivos, criterios y resultados reales |
+| `docs/arquitectura/decisiones_h2_*.md` | Decisiones técnicas, alternativas, desviaciones y pendientes |
 | `docs/arquitectura/estructura_repositorio.md` | Estructura y límites de los módulos |
 | `docs/desarrollo/entorno_reproducible.md` | Creación y verificación del entorno |
-| `docs/desarrollo/pruebas_h2_0.md`, `pruebas_h2_1.md` | Pruebas, comandos, criterios de aceptación y resultados de cada hito |
+| `docs/desarrollo/pruebas_h2_*.md` | Pruebas, comandos, criterios de aceptación y resultados de cada hito |

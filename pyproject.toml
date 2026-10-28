@@ -28,6 +28,7 @@ suficiencia = "suficiencia.cli:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",          # ejecución de pruebas
+    "hypothesis>=6.100",    # pruebas basadas en propiedades (PU-02); H2.2
     "ruff>=0.6",            # estilo, errores comunes y orden de imports
     "mypy>=1.10",           # verificación de tipos (RNF-11)
     "import-linter>=2.0",   # contratos de dependencias entre capas (RNF-01, PA-01)

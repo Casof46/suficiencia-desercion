@@ -16,6 +16,7 @@ from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import (
     CasoDeUso,
     SolicitudCasoDeUso,
+    SolicitudGenerarEscenarios,
     SolicitudValidarConfiguracion,
 )
 from suficiencia.application.errores import (
@@ -24,9 +25,17 @@ from suficiencia.application.errores import (
     ErrorSuficiencia,
 )
 from suficiencia.application.servicio_datos import ServicioDatos
+from suficiencia.application.servicio_escenarios import ServicioEscenarios
 from suficiencia.application.servicio_proyecto import ServicioProyecto
+from suficiencia.domain.escenarios.modelo import (
+    Bloque,
+    CatalogoDeclarado,
+    CatalogoVentanas,
+    Variable,
+    VariablesDeclaradas,
+)
 from suficiencia.domain.proyecto import ConfiguracionProyecto
-from suficiencia.domain.puertos import FuenteConfiguracion
+from suficiencia.domain.puertos import FuenteConfiguracion, FuenteVariables
 
 # Sección 6 de la especificación: qué servicio atiende cada caso de uso.
 REPARTO_ESPERADO = {
@@ -141,3 +150,67 @@ def test_validar_configuracion_invalida_devuelve_el_error_sin_lanzarlo() -> None
     assert not resultado.valida
     assert resultado.error is not None
     assert "Acción sugerida" in resultado.error
+
+
+# H2.2: escenarios ------------------------------------------------------------
+
+
+def test_cu04_muestra_su_avance_y_sigue_incompleto(raiz: Path) -> None:
+    servicios = crear_servicios(raiz)
+    estado = servicios.proyecto.estado()
+    cu04 = next(c for s in estado.servicios for c in s.casos_de_uso if c.codigo == "CU-04")
+    assert not cu04.disponible
+    assert cu04.avance is not None
+    assert "suficiencia escenarios" in cu04.avance
+    with pytest.raises(CasoDeUsoNoDisponible, match="Ya disponible"):
+        servicios.servicio_de("CU-04").ejecutar(SolicitudCasoDeUso(codigo="CU-04"))
+
+
+class _CatalogoEnMemoria:
+    def __init__(self, ficticio: bool) -> None:
+        self.ficticio = ficticio
+
+    def cargar(self) -> CatalogoDeclarado:
+        catalogo = CatalogoVentanas.desde_fechas_indice(
+            {codigo: f"FICTICIA {codigo}" for codigo in ("T0", "T1", "T2", "T3")}
+        )
+        return CatalogoDeclarado(catalogo=catalogo, ficticio=self.ficticio)
+
+
+class _VariablesEnMemoria:
+    def __init__(self, ficticio: bool) -> None:
+        self.ficticio = ficticio
+
+    def cargar(self) -> VariablesDeclaradas:
+        variables = (
+            Variable("a0", Bloque.ACADEMICO, "T0"),
+            Variable("b1", Bloque.CONDUCTUAL, "T1"),
+        )
+        return VariablesDeclaradas(variables=variables, ficticio=self.ficticio)
+
+
+@pytest.mark.parametrize(
+    ("catalogo_ficticio", "variables_ficticias"), [(False, False), (True, False), (False, True)]
+)
+def test_generar_escenarios_usa_los_puertos_y_propaga_el_rotulo_ficticio(
+    catalogo_ficticio: bool, variables_ficticias: bool
+) -> None:
+    rutas: list[tuple[Path, bool]] = []
+
+    def variables(archivo: Path, por_omision: bool) -> FuenteVariables:
+        rutas.append((archivo, por_omision))
+        return _VariablesEnMemoria(variables_ficticias)
+
+    servicio = ServicioEscenarios(
+        raiz=Path("raiz-ficticia"),
+        fuente_catalogo=lambda _archivo: _CatalogoEnMemoria(catalogo_ficticio),
+        fuente_variables=variables,
+    )
+    resultado = servicio.generar_escenarios(SolicitudGenerarEscenarios())
+    assert rutas == [(Path("raiz-ficticia") / "config" / "diccionario" / "variables.yaml", True)]
+    assert resultado.ficticio == (catalogo_ficticio or variables_ficticias)
+    assert len(resultado.escenarios) == 32
+    assert resultado.sin_fuga
+    no_factibles = {e.codigo for e in resultado.escenarios if not e.factible}
+    assert "T0|A+B" in no_factibles
+    assert "T1|A+B" not in no_factibles

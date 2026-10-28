@@ -55,9 +55,13 @@ Ejecutados el 28 de octubre de 2026 sobre copias limpias del repositorio, sin `.
 | Linux, Python 3.12.3 | Igual | Igual | Igual | Igual | Igual | 149 pasan, 1 omitida | 0 |
 | Linux, Python 3.13.16 | Igual | Igual | Igual | Igual | Igual | 149 pasan, 1 omitida | 0 |
 | Linux, Python 3.12.3, con `git init` y `git add -A` | — | — | — | — | — | **150 pasan, 0 omitidas** | 0 |
-| Windows | **Pendiente**: debe ejecutarlo el equipo | — | — | — | — | — | — |
+| Windows, Python 3.13.0, en la PC de Jorge (28 de octubre de 2026), repositorio git existente | Entorno de H2.0 actualizado con los dos comandos de instalación | Sin hallazgos | 48 archivos con formato correcto | Sin errores en 35 archivos | 6 contratos cumplidos | **150 pasan, 0 omitidas** | 0 |
 
 Además se descargaron para Windows de 64 bits con Python 3.13 los paquetes del bloqueo, con sus hashes verificados, incluidas las ruedas nuevas `pydantic` y `pydantic-core`. `colorama` no se descargó porque pip evalúa su marcador con el sistema local; es el mismo archivo que H2.0 ya instaló en Windows.
+
+### Prueba manual en Windows
+
+En la PC de Jorge, el 28 de octubre de 2026: `suficiencia estado` listó los 7 servicios y los 12 casos de uso; `suficiencia config validar` respondió "Configuración válida" con la especificación 0.5 y la semilla y la tolerancia pendientes; `suficiencia ejecutar CU-03` respondió que el caso de uso todavía no está implementado y que se construye en H2.4. Tras esa prueba se corrigió una mayúscula en el texto de los casos de uso de fases posteriores ("una fase posterior a la Fase 2").
 
 ### Controles negativos realizados
 
@@ -67,6 +71,5 @@ Además se descargaron para Windows de 64 bits con Python 3.13 los paquetes del 
 
 ## 5. Lo que estas pruebas no cubren
 
-- La ejecución en Windows de esta versión: debe hacerla el equipo.
 - Los contratos de cada caso de uso (D-21), que se probarán en su hito.
 - Los mensajes de `argparse` que siguen en inglés.

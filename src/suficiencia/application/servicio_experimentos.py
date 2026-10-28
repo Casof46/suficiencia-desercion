@@ -17,7 +17,7 @@ class ServicioExperimentos(ServicioCasosDeUso):
     DESCRIPCION: ClassVar[str] = "Experimentos de desarrollo, selección y congelamiento (M3, M4)."
     CASOS_DE_USO: ClassVar[tuple[DefinicionCasoDeUso, ...]] = (
         DefinicionCasoDeUso(
-            "CU-06", "Ejecutar experimentos de desarrollo", "Fase posterior a la Fase 2"
+            "CU-06", "Ejecutar experimentos de desarrollo", "una fase posterior a la Fase 2"
         ),
         DefinicionCasoDeUso(
             "CU-07",

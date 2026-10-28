@@ -1,6 +1,6 @@
 # Acta de cierre de la Fase 1 — PROPUESTA
 
-> **Estado: propuesta sin firmar, con decisiones parciales del equipo.** Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. El 28 de octubre de 2026, Javier comunicó en nombre del equipo las decisiones marcadas en los apartados 5.1 y 6; falta la firma de Javier y Jorge en el apartado 8. REC-01 a REC-03 y las decisiones DP-01 a DP-20 siguen sin aceptar ni resolver.
+> **Estado: propuesta sin firmar, con decisiones parciales del equipo.** Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. El 28 de octubre de 2026, Jorge comunicó en nombre del equipo las decisiones marcadas en los apartados 5.1 y 6; falta que Javier las confirme y la firma de ambos en el apartado 8. REC-01 a REC-03 y las decisiones DP-01 a DP-20 siguen sin aceptar ni resolver.
 
 ## 1. Identificación
 
@@ -102,7 +102,7 @@ Recomendación técnica, no vinculante: la segunda opción. H2.0 a H2.3 no depen
 - [x] Que el equipo decida REC-05 y, si cambia el nombre del paquete o la lista de dependencias, que se ajuste el repositorio. Aceptada sin cambios; no hubo que ajustar nada.
 - [x] Que un miembro del equipo reproduzca la instalación y las comprobaciones en Windows siguiendo `docs/desarrollo/entorno_reproducible.md`. Hecho el 28 de octubre de 2026 en la PC de Jorge.
 
-Aceptación de H2.0 por el equipo: **aceptado**. Comunicado por: Javier, en nombre del equipo. Fecha: 28 de octubre de 2026. Verificado en Windows con Python 3.13.0 en la PC de Jorge (84 pruebas pasan); ver `docs/gestion/registro_h2_0.md`.
+Aceptación de H2.0 por el equipo: **aceptado**. Comunicado por: Jorge, en nombre del equipo; pendiente de confirmación de Javier. Fecha: 28 de octubre de 2026. Verificado en Windows con Python 3.13.0 en la PC de Jorge (84 pruebas pasan); ver `docs/gestion/registro_h2_0.md`.
 
 La decisión de cierre del apartado 5.3 sigue sin marcar: el equipo aceptó H2.0 y autorizó H2.1 a H2.3 sin esperar la aprobación formal de la Fase 1 ni la revisión de la asesoría. Esos hitos no dependen de ninguna decisión metodológica.
 

@@ -21,11 +21,11 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         DefinicionCasoDeUso(
             "CU-08",
             "Ejecutar evaluación final y regla de suficiencia",
-            "Fase posterior a la Fase 2",
+            "una fase posterior a la Fase 2",
         ),
         DefinicionCasoDeUso(
             "CU-12",
             "Ejecutar la evaluación comparativa frente a la referencia",
-            "Fase posterior a la Fase 2",
+            "una fase posterior a la Fase 2",
         ),
     )

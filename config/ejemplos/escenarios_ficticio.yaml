@@ -1,0 +1,18 @@
+# EJEMPLO FICTICIO para probar el programa. NO es la decisión DP-01d.
+# Las fechas índice son textos inventados; no corresponden a ningún calendario.
+version_escenarios: 1
+ficticio: true
+
+bloques:
+  A: Académico
+  F: Financiero
+  S: Socioeconómico
+  B: Conductual
+
+conjuntos: [A, A+F, A+S, A+B, A+F+S, A+F+B, A+S+B, A+F+S+B]
+
+fechas_indice:
+  T0: "FICTICIA - momento T0 de ejemplo"
+  T1: "FICTICIA - momento T1 de ejemplo"
+  T2: "FICTICIA - momento T2 de ejemplo"
+  T3: "FICTICIA - momento T3 de ejemplo"

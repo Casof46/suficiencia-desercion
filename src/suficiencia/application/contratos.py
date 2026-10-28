@@ -31,6 +31,9 @@ class CasoDeUso(Contrato):
     servicio: str = Field(min_length=1)
     hito: str = Field(min_length=1, description="Hito o fase en que se construye.")
     disponible: bool
+    avance: str | None = Field(
+        default=None, description="Parte ya disponible, si el caso de uso está a medias."
+    )
 
 
 class EstadoServicio(Contrato):
@@ -73,3 +76,39 @@ class ResultadoValidacionConfiguracion(Contrato):
     semilla_global_definida: bool | None = None
     tolerancia_metricas_definida: bool | None = None
     error: str | None = None
+
+
+class SolicitudGenerarEscenarios(Contrato):
+    """Pide construir los 32 escenarios (CU-04, parte de escenarios; H2.2).
+
+    Sin ``configuracion`` se usa ``config/escenarios.yaml``; sin ``variables``, el
+    archivo de variables del proyecto (``config/diccionario/variables.yaml``),
+    que no existe mientras DP-03 siga abierta.
+    """
+
+    configuracion: Path | None = None
+    variables: Path | None = None
+
+
+class VentanaResumen(Contrato):
+    codigo: str
+    fecha_indice: str
+
+
+class EscenarioResumen(Contrato):
+    codigo: str
+    ventana: str
+    conjunto: str
+    factible: bool
+    variables: tuple[str, ...]
+    bloques_sin_variables: tuple[str, ...]
+
+
+class ResultadoEscenarios(Contrato):
+    """Matriz de escenarios ya verificada contra la fuga temporal (RF-M2-04)."""
+
+    ficticio: bool = Field(description="True si la configuración o las variables son un ejemplo.")
+    ventanas: tuple[VentanaResumen, ...]
+    escenarios: tuple[EscenarioResumen, ...]
+    variables_evaluadas: int
+    sin_fuga: bool

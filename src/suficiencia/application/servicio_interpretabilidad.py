@@ -16,5 +16,5 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
     NOMBRE: ClassVar[str] = "interpretabilidad"
     DESCRIPCION: ClassVar[str] = "Explicaciones SHAP y LIME (M5)."
     CASOS_DE_USO: ClassVar[tuple[DefinicionCasoDeUso, ...]] = (
-        DefinicionCasoDeUso("CU-09", "Generar explicaciones", "Fase posterior a la Fase 2"),
+        DefinicionCasoDeUso("CU-09", "Generar explicaciones", "una fase posterior a la Fase 2"),
     )

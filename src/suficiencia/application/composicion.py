@@ -21,7 +21,9 @@ from suficiencia.application.servicio_protocolo import ServicioProtocolo
 from suficiencia.application.servicio_proyecto import ServicioProyecto
 from suficiencia.application.servicio_reportes import ServicioReportes
 from suficiencia.domain.errores import ErrorSuficiencia
+from suficiencia.domain.puertos import FuenteVariables
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
+from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
 
 
 @dataclass(frozen=True)
@@ -29,6 +31,7 @@ class Servicios:
     """Servicios de aplicación listos para usar."""
 
     proyecto: ServicioProyecto
+    escenarios: ServicioEscenarios
     casos_de_uso: tuple[ServicioCasosDeUso, ...]
 
     def servicio_de(self, codigo: str) -> ServicioCasosDeUso:
@@ -42,11 +45,18 @@ class Servicios:
         )
 
 
+def _fuente_variables(archivo: Path, por_omision: bool) -> FuenteVariables:
+    return FuenteVariablesYaml(archivo, por_omision=por_omision)
+
+
 def crear_servicios(raiz: Path) -> Servicios:
     """Construye los servicios para el proyecto ubicado en ``raiz``."""
+    escenarios = ServicioEscenarios(
+        raiz=raiz, fuente_catalogo=FuenteCatalogoYaml, fuente_variables=_fuente_variables
+    )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         ServicioDatos(),
-        ServicioEscenarios(),
+        escenarios,
         ServicioProtocolo(),
         ServicioExperimentos(),
         ServicioEvaluacionFinal(),
@@ -59,4 +69,4 @@ def crear_servicios(raiz: Path) -> Servicios:
         servicios=casos_de_uso,
         fuente_configuracion=FuenteConfiguracionYaml,
     )
-    return Servicios(proyecto=proyecto, casos_de_uso=casos_de_uso)
+    return Servicios(proyecto=proyecto, escenarios=escenarios, casos_de_uso=casos_de_uso)

@@ -3,10 +3,10 @@
 | Campo | Valor |
 | --- | --- |
 | Fecha de ejecución | 28 de octubre de 2026 |
-| Solicitado por | Javier |
+| Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5; plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | El equipo autorizó H2.1 a H2.3 el 28 de octubre de 2026 (acta, apartado 5.1), con REC-04 y REC-05 aceptadas. La Fase 1 sigue sin aprobación formal (apartado 5.3) |
-| Estado del hito | **Ejecutado técnicamente; pendiente de verificación en Windows y de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; pendiente de aceptación por el equipo** |
 
 ## 1. Qué se construyó
 
@@ -47,7 +47,7 @@
 | 3 | Contratos de dependencias verificables (PA-01) | Cumplido | 6 contratos; control negativo con 17 violaciones |
 | 4 | Prueba negativa con un import prohibido | Cumplido | Control negativo automático y control manual (`pruebas_h2_1.md`, sección 4) |
 | 5 | Sin lógica de aprendizaje automático ni interfaz | Cumplido | Ningún caso de uso disponible; bibliotecas postergadas ausentes |
-| 6 | La instalación y las comprobaciones funcionan en el sistema de trabajo | **Cumplido en Linux; pendiente en Windows** | Linux con 3.11, 3.12 y 3.13 |
+| 6 | La instalación y las comprobaciones funcionan en el sistema de trabajo | Cumplido | Linux con 3.11, 3.12 y 3.13; Windows con 3.13.0 en la PC de Jorge: 150 pruebas pasan |
 
 Estos criterios cierran la comprobación de CA-11 a CA-13 de la especificación en lo que H2.1 alcanza: estructura de capas, contratos y ejecución sin interfaz.
 

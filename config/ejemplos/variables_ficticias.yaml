@@ -1,0 +1,18 @@
+# EJEMPLO FICTICIO para probar el programa. NO es el diccionario de variables
+# (DP-03) ni describe datos reales. Los nombres son inventados.
+#
+# El bloque conductual (B) no tiene variables hasta T1, a propósito: así el
+# ejemplo muestra escenarios no factibles en T0 (riesgo RM-09).
+version_variables: 1
+ficticio: true
+
+variables:
+  - {nombre: a_ficticia_ingreso, bloque: A, ventana_minima: T0}
+  - {nombre: a_ficticia_ciclo_1, bloque: A, ventana_minima: T1}
+  - {nombre: a_ficticia_ciclo_2, bloque: A, ventana_minima: T2}
+  - {nombre: a_ficticia_ciclo_3, bloque: A, ventana_minima: T3}
+  - {nombre: f_ficticia_ingreso, bloque: F, ventana_minima: T0}
+  - {nombre: f_ficticia_ciclo_1, bloque: F, ventana_minima: T1}
+  - {nombre: s_ficticia_ingreso, bloque: S, ventana_minima: T0}
+  - {nombre: b_ficticia_ciclo_1, bloque: B, ventana_minima: T1}
+  - {nombre: b_ficticia_ciclo_2, bloque: B, ventana_minima: T2}

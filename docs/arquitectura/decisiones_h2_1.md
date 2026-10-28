@@ -38,6 +38,5 @@ Estados: **Aplicada**, implementada en H2.1 · **Pendiente**, no resuelta.
 
 | Pendiente | Responsable | Cuándo |
 | --- | --- | --- |
-| Ejecutar `scripts/verificar.py` de H2.1 en Windows | Equipo | Antes de aceptar H2.1 |
 | Meta de cobertura (RNF-11) e incorporación de pytest-cov | Equipo | Al aprobar formalmente la Fase 1 |
 | Implementar `AlmacenArtefactos` | — | H2.7, cuando se autorice |

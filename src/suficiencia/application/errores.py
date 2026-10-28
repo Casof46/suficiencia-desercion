@@ -13,11 +13,13 @@ from suficiencia.domain.errores import (
     ErrorSuficiencia,
     HuellaInvalida,
 )
+from suficiencia.domain.escenarios.construccion import FugaTemporal
 
 __all__ = [
     "CasoDeUsoNoDisponible",
     "ConfiguracionInvalida",
     "DecisionPendiente",
     "ErrorSuficiencia",
+    "FugaTemporal",
     "HuellaInvalida",
 ]

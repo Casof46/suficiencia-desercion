@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from hypothesis import settings
+
+# Pruebas basadas en propiedades reproducibles: la misma secuencia de casos en cada
+# ejecución y en cada equipo, sin base de ejemplos guardados. Hypothesis igual crea
+# una carpeta .hypothesis/ de caché, que está excluida de git.
+settings.register_profile("suficiencia", derandomize=True, database=None, deadline=None)
+settings.load_profile("suficiencia")
 
 RAIZ_REPOSITORIO = Path(__file__).resolve().parent.parent
 

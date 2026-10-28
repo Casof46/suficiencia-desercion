@@ -10,6 +10,9 @@ Solo se definen los puertos cuya forma no depende de decisiones abiertas:
   ``persistence.configuracion.FuenteConfiguracionYaml``.
 - :class:`AlmacenArtefactos`: interfaz fijada en H2.1; su implementación llega
   con la trazabilidad (H2.7).
+- :class:`FuenteCatalogoVentanas` y :class:`FuenteVariables`: H2.2, implementados
+  por ``persistence.escenarios_yaml``. En H2.3 el diccionario de variables será
+  otra implementación de ``FuenteVariables``.
 
 Los demás puertos que nombra la especificación se definen en el hito que los usa,
 para no fijar firmas antes de tiempo:
@@ -22,6 +25,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from suficiencia.domain.escenarios.modelo import CatalogoDeclarado, VariablesDeclaradas
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
 
@@ -51,4 +55,30 @@ class AlmacenArtefactos(Protocol):
 
     def existe(self, huella: Huella) -> bool:
         """Indica si hay un contenido guardado con esa huella."""
+        ...
+
+
+class FuenteCatalogoVentanas(Protocol):
+    """Entrega el catálogo de ventanas con sus fechas índice."""
+
+    def cargar(self) -> CatalogoDeclarado:
+        """Devuelve el catálogo y si su origen es un ejemplo ficticio.
+
+        Raises:
+        DecisionPendiente: si falta alguna fecha índice (DP-01d).
+        ConfiguracionInvalida: si la configuración no es válida.
+        """
+        ...
+
+
+class FuenteVariables(Protocol):
+    """Entrega las variables candidatas con su bloque y su ventana mínima."""
+
+    def cargar(self) -> VariablesDeclaradas:
+        """Devuelve las variables y si su origen es un ejemplo ficticio.
+
+        Raises:
+        DecisionPendiente: si las variables reales todavía no están definidas (DP-03).
+        ConfiguracionInvalida: si la definición no es válida.
+        """
         ...

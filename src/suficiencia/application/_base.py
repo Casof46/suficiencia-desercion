@@ -16,14 +16,16 @@ class DefinicionCasoDeUso:
     codigo: str
     nombre: str
     hito: str
+    avance: str | None = None
 
 
 class ServicioCasosDeUso:
     """Servicio que atiende un grupo de casos de uso (sección 6 de la especificación).
 
-    En H2.1 ningún caso de uso tiene lógica: ejecutar uno devuelve un error
-    controlado que indica en qué hito se construye. Cada hito reemplaza ese
-    comportamiento por el método del caso de uso con su contrato.
+    Mientras un caso de uso no esté completo, ejecutarlo devuelve un error
+    controlado que indica en qué hito se construye. Las partes ya construidas se
+    ofrecen como métodos propios del servicio, con su contrato (por ejemplo,
+    ``ServicioEscenarios.generar_escenarios`` desde H2.2).
     """
 
     NOMBRE: ClassVar[str]
@@ -41,6 +43,7 @@ class ServicioCasosDeUso:
                     servicio=self.NOMBRE,
                     hito=caso.hito,
                     disponible=False,
+                    avance=caso.avance,
                 )
                 for caso in self.CASOS_DE_USO
             ),
@@ -49,7 +52,8 @@ class ServicioCasosDeUso:
     def ejecutar(self, solicitud: SolicitudCasoDeUso) -> NoReturn:
         for caso in self.CASOS_DE_USO:
             if caso.codigo == solicitud.codigo:
-                raise CasoDeUsoNoDisponible(caso.codigo, caso.hito)
+                hito = f"{caso.hito}. Ya disponible: {caso.avance}" if caso.avance else caso.hito
+                raise CasoDeUsoNoDisponible(caso.codigo, hito)
         raise ErrorSuficiencia(
             f"El servicio {self.NOMBRE} no atiende el caso de uso {solicitud.codigo}.",
             "Consulte `suficiencia estado` para ver qué servicio atiende cada caso de uso.",

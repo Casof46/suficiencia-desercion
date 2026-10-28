@@ -1,6 +1,6 @@
 # Estructura del repositorio y límites de los módulos
 
-La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 y H2.1 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
+La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 a H2.2 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
 
 ## 1. Árbol actual
 
@@ -13,7 +13,9 @@ suficiencia-desercion/
 ├── .importlinter               # contratos de dependencias entre capas
 ├── .streamlit/config.toml      # telemetría desactivada (RNF-06, PA-03)
 ├── config/
-│   └── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
+│   ├── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
+│   ├── escenarios.yaml         # bloques, conjuntos y fechas índice (pendientes, DP-01d); H2.2
+│   └── ejemplos/               # catálogo y variables FICTICIOS para probar el programa; H2.2
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
@@ -31,7 +33,8 @@ suficiencia-desercion/
 │   │   ├── errores.py          # errores con causa y acción sugerida (RNF-15)
 │   │   ├── huella.py           # huella SHA-256 (RNF-16)
 │   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
-│   │   └── puertos.py          # FuenteConfiguracion, AlmacenArtefactos
+│   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
+│   │   └── escenarios/         # M2: modelo.py (bloques, ventanas, conjuntos, escenarios) y construccion.py (constructor y anti-fuga); H2.2
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
 │   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
@@ -40,7 +43,8 @@ suficiencia-desercion/
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
 │   ├── experimentation/        # vacía todavía
 │   ├── persistence/
-│   │   └── configuracion.py    # lector de config/proyecto.yaml; implementa FuenteConfiguracion
+│   │   ├── configuracion.py    # lector de config/proyecto.yaml; implementa FuenteConfiguracion
+│   │   └── escenarios_yaml.py  # lector de config/escenarios.yaml y de variables; H2.2
 │   └── ui/                     # vacía todavía
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
@@ -52,7 +56,7 @@ suficiencia-desercion/
 
 | Especificación v0.5 | Repositorio (H2.1) | Motivo |
 | --- | --- | --- |
-| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | Solo `config/proyecto.yaml` | El resto pertenece a H2.2 y siguientes. Se mantiene el nombre `config/` de la especificación, no `configs/` |
+| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03; el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
 | `data/raw`, `interim`, `processed` | `data/README.md` | Las subcarpetas se crean al usarse; nunca se versionan |
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
 | `docs/especificacion/` | Copias de referencia de la v0.5 y la v0.4 | Igual |
@@ -60,7 +64,7 @@ suficiencia-desercion/
 | `docs/decisiones/` | No existe todavía | Se creará al resolverse la primera decisión DP (RF-M6-05). Las decisiones técnicas de H2.0 están en `docs/arquitectura/decisiones_h2_0.md`, que no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
 | `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
-| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | No existen todavía | Se crean en H2.2 a H2.7 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | Solo `escenarios/` (H2.2), sin poblaciones ni partición | Los demás se crean en H2.3 a H2.7 |
 | Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
 | `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
 | `tests/{unit,integration,acceptance,architecture,fixtures}` | Solo `unit/` y `architecture/` | Las demás se crean con su primera prueba |

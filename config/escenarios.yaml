@@ -1,0 +1,24 @@
+# Ventanas, bloques y conjuntos del método (sección 4, M2; RF-M2-01 a RF-M2-03).
+# Archivo versionado y no sensible. Los bloques y los conjuntos son los que define
+# la especificación (DEF) y el programa rechaza cualquier cambio.
+version_escenarios: 1
+
+# false: configuración del proyecto. Los ejemplos de config/ejemplos/ dicen true.
+ficticio: false
+
+bloques:
+  A: Académico
+  F: Financiero
+  S: Socioeconómico
+  B: Conductual
+
+conjuntos: [A, A+F, A+S, A+B, A+F+S, A+F+B, A+S+B, A+F+S+B]
+
+# Momento en que se consolida la información de cada ventana.
+# PENDIENTE: depende de DP-01d. No escriba un valor hasta que la decisión esté
+# aprobada y registrada; mientras sea null, el programa no genera escenarios.
+fechas_indice:
+  T0: null
+  T1: null
+  T2: null
+  T3: null

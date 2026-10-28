@@ -7,6 +7,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
 
     suficiencia estado
     suficiencia config validar [--archivo RUTA]
+    suficiencia escenarios [--configuracion RUTA] [--variables RUTA] [--detalle]
     suficiencia ejecutar CU-03
 
 Códigos de salida: 0, correcto; 1, configuración inválida o error del motor;
@@ -29,8 +30,10 @@ import suficiencia
 from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
     EstadoProyecto,
+    ResultadoEscenarios,
     ResultadoValidacionConfiguracion,
     SolicitudCasoDeUso,
+    SolicitudGenerarEscenarios,
     SolicitudValidarConfiguracion,
 )
 from suficiencia.application.errores import CasoDeUsoNoDisponible, ErrorSuficiencia
@@ -96,6 +99,23 @@ def construir_analizador() -> argparse.ArgumentParser:
     acciones_config = config.add_subparsers(dest="accion", required=True, title="acciones")
     validar = acciones_config.add_parser("validar", help="Valida config/proyecto.yaml.")
     validar.add_argument("--archivo", type=Path, help="Otro archivo de configuración que validar.")
+    escenarios = comandos.add_parser(
+        "escenarios",
+        help="Genera los 32 escenarios y verifica que no haya fuga temporal (CU-04, H2.2).",
+    )
+    escenarios.add_argument(
+        "--configuracion",
+        type=Path,
+        help="Archivo de ventanas (por omisión, config/escenarios.yaml).",
+    )
+    escenarios.add_argument(
+        "--variables",
+        type=Path,
+        help="Archivo de variables (por omisión, config/diccionario/variables.yaml; DP-03).",
+    )
+    escenarios.add_argument(
+        "--detalle", action="store_true", help="Muestra las variables de cada escenario."
+    )
     ejecutar = comandos.add_parser("ejecutar", help="Ejecuta un caso de uso (CU-01 a CU-12).")
     ejecutar.add_argument("caso", type=_codigo_caso_de_uso, help="Código, por ejemplo CU-03.")
     return analizador
@@ -110,6 +130,8 @@ def _mostrar_estado(estado: EstadoProyecto, salida: TextIO) -> None:
                 "disponible" if caso.disponible else f"pendiente; se construye en {caso.hito}"
             )
             print(f"  {caso.codigo}  {caso.nombre}: {situacion}", file=salida)
+            if caso.avance:
+                print(f"         Ya disponible: {caso.avance}", file=salida)
 
 
 def _mostrar_validacion(resultado: ResultadoValidacionConfiguracion, salida: TextIO) -> None:
@@ -126,6 +148,41 @@ def _mostrar_validacion(resultado: ResultadoValidacionConfiguracion, salida: Tex
     print(f"  Tolerancia de métricas: {tolerancia}", file=salida)
 
 
+def _mostrar_escenarios(resultado: ResultadoEscenarios, detalle: bool, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print(
+            "EJEMPLO FICTICIO: las fechas índice o las variables no son decisiones ni datos "
+            "reales. No usar como resultado.",
+            file=salida,
+        )
+    print("\nVentanas:", file=salida)
+    for ventana in resultado.ventanas:
+        print(f"  {ventana.codigo}  fecha índice: {ventana.fecha_indice}", file=salida)
+    factibles = sum(e.factible for e in resultado.escenarios)
+    print(
+        f"\nEscenarios: {len(resultado.escenarios)} "
+        f"(factibles: {factibles}; no factibles: {len(resultado.escenarios) - factibles}), "
+        f"con {resultado.variables_evaluadas} variables evaluadas",
+        file=salida,
+    )
+    for escenario in resultado.escenarios:
+        if escenario.factible:
+            situacion = f"factible     {len(escenario.variables):>2} variables"
+        else:
+            situacion = (
+                f"NO factible  sin variables en {', '.join(escenario.bloques_sin_variables)}"
+            )
+        print(f"  {escenario.ventana}  {escenario.conjunto:<9} {situacion}", file=salida)
+        if detalle and escenario.variables:
+            print(f"        {', '.join(escenario.variables)}", file=salida)
+    if resultado.sin_fuga:
+        print(
+            "\nVerificación anti-fuga: correcta. Ninguna variable aparece en una ventana "
+            "anterior a su ventana mínima.",
+            file=salida,
+        )
+
+
 def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
     if argumentos.comando == "estado":
         _mostrar_estado(servicios.proyecto.estado(), sys.stdout)
@@ -136,6 +193,14 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         )
         _mostrar_validacion(resultado, sys.stdout if resultado.valida else sys.stderr)
         return SALIDA_CORRECTA if resultado.valida else SALIDA_ERROR
+    if argumentos.comando == "escenarios":
+        escenarios = servicios.escenarios.generar_escenarios(
+            SolicitudGenerarEscenarios(
+                configuracion=argumentos.configuracion, variables=argumentos.variables
+            )
+        )
+        _mostrar_escenarios(escenarios, argumentos.detalle, sys.stdout)
+        return SALIDA_CORRECTA
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
 

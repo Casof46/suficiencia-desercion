@@ -44,6 +44,7 @@ DEBEN_IGNORARSE = [
     "src/suficiencia/__pycache__/x.cpython-312.pyc",
     ".pytest_cache/v/cache/nodeids",
     ".mypy_cache/3.12/x.json",
+    ".hypothesis/examples/x",
     "~$plantilla.xlsx",
 ]
 
@@ -55,6 +56,9 @@ DEBEN_VERSIONARSE = [
     ".importlinter",
     ".streamlit/config.toml",
     "config/proyecto.yaml",
+    "config/escenarios.yaml",
+    "config/ejemplos/escenarios_ficticio.yaml",
+    "config/ejemplos/variables_ficticias.yaml",
     "data/README.md",
     "README.md",
     "src/suficiencia/__init__.py",
