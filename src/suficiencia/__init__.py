@@ -4,7 +4,7 @@ Hito H2.1: estructura de capas, puertos y errores del dominio, contratos y
 servicios de aplicación sin lógica científica, y la línea de comandos
 (``suficiencia.cli``). No implementa todavía ninguna lógica metodológica.
 
-Capas (sección 5 de la especificación v0.5), de arriba abajo:
+Capas (sección 5 de la especificación v0.6), de arriba abajo:
 
 - ``ui``: presentación (Streamlit). Solo puede usar ``application``.
 - ``application``: servicios de casos de uso y contratos de entrada y salida.

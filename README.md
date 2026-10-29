@@ -6,7 +6,7 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 
 | Elemento | Estado |
 | --- | --- |
-| Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**: el equipo eligió la aprobación formal, que espera la conformidad de la asesoría y la firma del acta (`docs/gestion/acta_cierre_fase_1_propuesta.md`). H2.0 se construyó sobre la v0.4 y H2.1 sobre la v0.5 |
+| Especificación | Fase 1, versión 0.6, que incorpora el cambio CP-08 (reporte de no etiquetables por cohorte y análisis de sensibilidad), los responsables de los 29 riesgos y las decisiones del equipo del 29 de octubre de 2026. **No aprobada formalmente**: el equipo eligió la aprobación formal, que espera la conformidad de la asesoría y la firma del acta (`docs/gestion/acta_cierre_fase_1_propuesta.md`). H2.0 se construyó sobre la v0.4, y H2.1 a H2.3 y H2.7 sobre la v0.5 |
 | Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) verificado y aceptado el 29 de octubre de 2026. H2.4 a H2.6 esperan a la asesoría |
 | Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Registro de trazabilidad de solo agregar en SQLite, con captura del entorno, registro de decisiones, verificación de integridad y exportación sin identificadores (H2.7). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
 | Decisiones metodológicas | DP-16 (SQLite) y DP-08h (se permite un piloto) decididas por el equipo (`docs/decisiones/`); las demás, abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 aceptadas por el equipo el 29 de octubre de 2026, pendientes de la conformidad de la asesoría |
@@ -96,7 +96,8 @@ Detalle de cada carpeta y de los límites entre capas: `docs/arquitectura/estruc
 
 | Documento | Contenido |
 | --- | --- |
-| `docs/especificacion/especificacion_fase_1_v0.5.md` | Copia de referencia de la especificación vigente |
+| `docs/especificacion/especificacion_fase_1_v0.6.md` | Copia de referencia de la especificación vigente |
+| `docs/especificacion/especificacion_fase_1_v0.5.md` | Copia de la v0.5, base de H2.1 a H2.3 y H2.7 |
 | `docs/especificacion/especificacion_fase_1_v0.4.md` | Copia de la v0.4, base de H2.0 |
 | `docs/diagramas/*.mmd` | Fuentes Mermaid de los cuatro diagramas |
 | `docs/gestion/acta_cierre_fase_1_propuesta.md` | Propuesta de acta de cierre de la Fase 1 (sin firmar) |

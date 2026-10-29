@@ -1,6 +1,6 @@
 # Estructura del repositorio y límites de los módulos
 
-La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 a H2.3 y H2.7 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
+La estructura sigue la sección 6 de la especificación (igual en la v0.5 y la v0.6), reducida a lo que H2.0 a H2.3 y H2.7 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
 
 ## 1. Árbol actual
 
@@ -19,7 +19,7 @@ suficiencia-desercion/
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
-│   ├── especificacion/         # copias de referencia de la v0.5 (vigente) y la v0.4
+│   ├── especificacion/         # copias de referencia de la v0.6 (vigente), la v0.5 y la v0.4
 │   ├── diagramas/              # fuentes Mermaid de los cuatro diagramas
 │   ├── arquitectura/           # decisiones_h2_0.md, decisiones_h2_1.md, este documento
 │   ├── desarrollo/             # entorno_reproducible.md, pruebas_h2_0.md, pruebas_h2_1.md
@@ -70,7 +70,7 @@ suficiencia-desercion/
 | `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03; el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
 | `data/raw`, `interim`, `processed` | `data/README.md` | Las subcarpetas se crean al usarse; nunca se versionan |
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
-| `docs/especificacion/` | Copias de referencia de la v0.5 y la v0.4 | Igual |
+| `docs/especificacion/` | Copias de referencia de la v0.6, la v0.5 y la v0.4 | Igual |
 | `docs/diagramas/` | Cuatro archivos `.mmd` | Igual |
 | `docs/decisiones/` | Ficha de DP-16, la primera decisión resuelta (RF-M6-05) | Las decisiones técnicas de cada hito están en `docs/arquitectura/`, y no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |

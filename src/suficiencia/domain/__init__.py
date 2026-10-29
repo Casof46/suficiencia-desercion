@@ -1,7 +1,7 @@
 """Capa de dominio metodológico.
 
 Contendrá ventanas, bloques, conjuntos, escenarios, objetivo, poblaciones,
-protocolo y regla de suficiencia (sección 5 de la especificación v0.5).
+protocolo y regla de suficiencia (sección 5 de la especificación v0.6).
 
 Restricciones: no importa ninguna otra capa del paquete ni bibliotecas de
 interfaz, aprendizaje automático o almacenamiento (contratos en ``.importlinter``).

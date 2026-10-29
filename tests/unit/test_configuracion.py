@@ -39,7 +39,7 @@ def test_la_configuracion_del_repositorio_se_lee(raiz: Path) -> None:
     config = cargar_configuracion(raiz / "config" / "proyecto.yaml")
     assert isinstance(config, ConfiguracionProyecto)
     assert config.raiz == raiz
-    assert config.version_especificacion == "0.5"
+    assert config.version_especificacion == "0.6"
     assert set(config.rutas) == {"datos", "espacio_trabajo", "reportes"}
     for ruta in config.rutas.values():
         assert ruta.is_relative_to(raiz)
