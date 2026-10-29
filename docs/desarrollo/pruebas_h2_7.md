@@ -43,6 +43,14 @@ Prueba manual (Windows):
 
 Resultado esperado de `scripts/verificar.py`: cinco `OK`; 325 casos pasan y 1 se omite fuera de un repositorio git; en un repositorio git pasan los 326.
 
+Resultado obtenido en Windows 11 con Python 3.13.0 (29 de octubre de 2026): cinco `OK` y 326 casos pasan. En la prueba manual también se intentó borrar el registro por fuera del programa:
+
+```powershell
+.venv\Scripts\python -c "import sqlite3; c=sqlite3.connect('workspace/registro.sqlite'); c.execute('DELETE FROM decisiones')"
+```
+
+SQLite lo rechazó con `sqlite3.IntegrityError: El registro solo admite agregar`, y `suficiencia registro verificar` confirmó después que la integridad seguía correcta.
+
 ## 4. Controles negativos realizados
 
 | Cambio introducido a propósito | Resultado |

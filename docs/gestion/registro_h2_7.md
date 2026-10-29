@@ -6,7 +6,7 @@
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5 (M6; RF-M6-01, 03, 05 y 06; RNF-05, 16 y 17; PI-03, 04, 05 y 12); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | H2.7 autorizado y DP-16 decidida (SQLite) el 29 de octubre de 2026 (acta), pendiente de confirmación de Javier |
-| Estado del hito | **Ejecutado y verificado en Linux; pendiente de verificación en Windows y de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `0689a32`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -36,7 +36,7 @@ Ninguna. sqlite3 viene incluido en Python.
 | --- | --- |
 | Linux, Python 3.12.3 (entorno de desarrollo) y 3.11.17 (instalación limpia desde el bloqueo) | Cinco `OK`; 6 contratos cumplidos; 325 pasan y 1 se omite (sin git) |
 | Linux, Python 3.11.17, con `git init` y `git add -A` | 326 pasan |
-| Windows | **Pendiente**: debe ejecutarlo el equipo |
+| Windows 11, Python 3.13.0, PC de Jorge (29 de octubre de 2026), entorno de H2.3 actualizado | Cinco `OK`; 6 contratos cumplidos; **326 pasan, 0 omitidas**. Prueba manual: `entorno` mostró Python, sistema, huella del bloqueo, commit `9203c9c` (con cambios sin guardar, porque H2.7 aún no estaba versionado), 12 núcleos y versiones de paquetes; DP-16 se registró como decisión n.º 1; un `DELETE` hecho por fuera del programa fue rechazado con "El registro solo admite agregar"; `registro verificar` confirmó la integridad; la exportación a Excel generó `reports/decisiones.xlsx` con 1 fila; la demostración registró una corrida exitosa y una fallida en `registro_demostracion.sqlite`. Versionado en git y en GitHub (commit `0689a32`); `workspace/` y `reports/` quedaron fuera |
 
 ## 4. Matriz de criterios de aceptación de H2.7
 
@@ -47,7 +47,7 @@ Ninguna. sqlite3 viene incluido en Python.
 | 3 | La suite completa pasa sin red | Cumplido | PI-05 |
 | 4 | PI-03 y PI-12 con corridas simuladas | Cumplido | Prueba de integración |
 | 5 | Sin reportes de resultados científicos | Cumplido | No existen |
-| 6 | Funciona en el sistema de trabajo | **Pendiente en Windows** | — |
+| 6 | Funciona en el sistema de trabajo | Cumplido | Linux con 3.11 y 3.12; Windows 11 con 3.13.0, pruebas y prueba manual |
 
 ## 5. Limitaciones
 

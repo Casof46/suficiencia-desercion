@@ -1,6 +1,6 @@
 # Acta de cierre de la Fase 1 — PROPUESTA
 
-> **Estado: propuesta sin firmar, con decisiones parciales del equipo.** Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. El 28 de octubre de 2026, Jorge comunicó en nombre del equipo las decisiones marcadas en los apartados 5.1 y 6; falta que Javier las confirme y la firma de ambos en el apartado 8. REC-01 a REC-03 y las decisiones DP-01 a DP-20 siguen sin aceptar ni resolver.
+> **Estado: propuesta sin firmar, con decisiones parciales del equipo.** Cada casilla se marca y cada espacio se completa solo cuando la persona indicada lo confirme expresamente. El 28 y el 29 de octubre de 2026, Jorge comunicó en nombre del equipo las decisiones marcadas en los apartados 5.1 y 6; falta que Javier las confirme y la firma de ambos en el apartado 8. El 29 de octubre de 2026 el equipo aceptó REC-01 a REC-03 y decidió DP-08h, pero falta la conformidad de la asesoría (apartado 5.2). DP-16 y DP-08h son las únicas decisiones DP tomadas; las demás siguen abiertas.
 
 ## 1. Identificación
 
@@ -64,13 +64,25 @@ De los 15 criterios cumplidos documentalmente:
 
 **5.1 Confirmaciones del equipo**
 
-- [ ] Leímos la v0.5 y confirmamos CA-01, CA-04, CA-06, CA-08, CA-09 y CA-20.
-- [ ] Revisamos la cadena de dependencias de los apartados 14.3 y 14.4 y confirmamos CA-05 y CA-07.
-- [ ] Abrimos la especificación en el visor y los cuatro diagramas se ven completos en las secciones 5, 7, 8.1 y 8.2 (CA-18).
+- [x] Leímos la v0.5 y confirmamos CA-01, CA-04, CA-06, CA-08, CA-09 y CA-20 (29 de octubre de 2026).
+- [x] Revisamos la cadena de dependencias de los apartados 14.3 y 14.4 y confirmamos CA-05 y CA-07 (29 de octubre de 2026).
+- [x] Abrimos la especificación en el visor y los cuatro diagramas se ven completos en las secciones 5, 7, 8.1 y 8.2 (CA-18) (29 de octubre de 2026).
 - [x] REC-04, priorización N1–N3: **aceptada** (28 de octubre de 2026). Detalle: sin modificaciones; los hitos siguen el orden del plan y la interfaz completa se construye después del motor.
 - [x] REC-05, dependencias y nombre del paquete: **aceptada** (28 de octubre de 2026). Nombre del paquete: `suficiencia`. Cada dependencia se añade en el hito que la usa.
 - [ ] Responsable asignado a cada uno de los 29 riesgos de la sección 11 (CA-21).
 - [x] Alcance de la Fase 2: se autorizan los hitos **H2.1 a H2.3** (28 de octubre de 2026) (CA-24). H2.4 en adelante esperan al apartado 5.2.
+
+Las tres confirmaciones del 29 de octubre de 2026 las comunicó Jorge en nombre del equipo; falta la confirmación de Javier. CA-21 (responsables de los riesgos) sigue pendiente.
+
+**Decisiones del equipo sobre REC-01 a REC-03 y el diseño comparativo** (29 de octubre de 2026; comunicadas por Jorge en nombre del equipo; pendientes de confirmación de Javier). No reemplazan la conformidad de la asesoría del apartado 5.2:
+
+| Punto | Decisión del equipo | Condición o cambio |
+| --- | --- | --- |
+| REC-01, validación cronológica | **Aceptada** | DP-05 deberá incluir un plan de contingencia, definido antes de ver resultados, por si las cohortes con seguimiento completo no alcanzan |
+| REC-02, protocolo en cuatro etapas | **Aceptada** | Sin cambios |
+| DP-08h, piloto con cohortes excluidas | **Se permite el piloto** | DP-05 deberá reservar las cohortes del piloto, que quedarán fuera del análisis confirmatorio. Ver `docs/decisiones/DP-08h.md` |
+| REC-03, exclusión de no etiquetables | **Aceptada con el cambio CP-08** | Reporte obligatorio de la proporción de no etiquetables por cohorte y motivo, y análisis de sensibilidad si supera un nivel que fije la asesoría. CP-08 todavía no está incorporado en la especificación (precisa RF-M1-10 y RF-M2-09) |
+| Diseño de la evaluación comparativa frente a R0 (CA-25) | **Conforme** | Sin cambios; sus valores siguen pendientes en DP-19 y DP-20 |
 
 **5.2 Confirmaciones de la asesoría**
 
@@ -111,6 +123,7 @@ Aceptación de los hitos siguientes por el equipo:
 | H2.1 — Arquitectura y contratos | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_1.md`; 150 pruebas en Windows; commit `10aefee` |
 | H2.2 — Ventanas, conjuntos, escenarios y anti-fuga | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_2.md`; 206 pruebas en Windows; commit `0abfc82` |
 | H2.3 — Datos sintéticos, diccionario, importación, auditoría y seudonimización | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_3.md`; 281 pruebas en Windows; commit `d8d8319` |
+| H2.7 — Trazabilidad y registro (DP-16: SQLite) | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_7.md`; 326 pruebas en Windows; commit `0689a32` |
 
 Decisiones y autorizaciones posteriores del equipo:
 
@@ -118,8 +131,11 @@ Decisiones y autorizaciones posteriores del equipo:
 | --- | --- | --- | --- |
 | 29 de octubre de 2026 | **DP-16 decidida: SQLite** para el registro de experimentos, decisiones y accesos (`workspace/registro.sqlite`) | Jorge, en nombre del equipo; pendiente de confirmación de Javier | `docs/decisiones/DP-16.md` |
 | 29 de octubre de 2026 | **Se autoriza H2.7** (trazabilidad y registro), que dependía de H2.3 y DP-16 | Jorge, en nombre del equipo; pendiente de confirmación de Javier | Este apartado |
+| 29 de octubre de 2026 | **Se aceptan REC-01 a REC-03** y el diseño comparativo, con las condiciones del apartado 5.1 | Jorge, en nombre del equipo; pendiente de confirmación de Javier y de la conformidad de la asesoría | Apartado 5.1 |
+| 29 de octubre de 2026 | **DP-08h decidida: se permite un piloto** con cohortes que luego se excluyen del análisis confirmatorio | Jorge, en nombre del equipo; pendiente de confirmación de Javier y de la conformidad de la asesoría | `docs/decisiones/DP-08h.md` |
+| 29 de octubre de 2026 | **Vía de cierre elegida: aprobación formal** de la Fase 1 (primera opción del apartado 5.3). Se marcará cuando los apartados 5.1 y 5.2 estén completos | Jorge, en nombre del equipo | Apartado 5.3 |
 
-H2.4 a H2.6 siguen esperando la revisión de la asesoría (apartado 5.2).
+H2.4 a H2.6 siguen esperando la conformidad de la asesoría (apartado 5.2), aunque el equipo ya aceptó REC-01 a REC-03.
 
 La decisión de cierre del apartado 5.3 sigue sin marcar: el equipo aceptó H2.0 y autorizó H2.1 a H2.3 sin esperar la aprobación formal de la Fase 1 ni la revisión de la asesoría. Esos hitos no dependen de ninguna decisión metodológica.
 
