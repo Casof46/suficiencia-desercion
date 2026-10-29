@@ -8,6 +8,7 @@ dependencias se reciben desde fuera (puerto ``FuenteConfiguracion``).
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -199,6 +200,10 @@ class _VariablesEnMemoria:
         return VariablesDeclaradas(variables=variables, ficticio=self.ficticio)
 
 
+def _no_usado(*_args: Any) -> Any:
+    raise AssertionError("generar_escenarios no debe usar este puerto")
+
+
 @pytest.mark.parametrize(
     ("catalogo_ficticio", "variables_ficticias"), [(False, False), (True, False), (False, True)]
 )
@@ -216,6 +221,12 @@ def test_generar_escenarios_usa_los_puertos_y_propaga_el_rotulo_ficticio(
         fuente_catalogo=lambda _archivo: _CatalogoEnMemoria(catalogo_ficticio),
         fuente_variables=variables,
         fuente_diccionario=lambda _archivo: _VariablesEnMemoria(variables_ficticias),
+        preparar_historial=_no_usado,
+        cargar_poblaciones=_no_usado,
+        guardar_division=_no_usado,
+        cargador_de_prueba=_no_usado,
+        registrar_acceso=_no_usado,
+        carpeta_trabajo=_no_usado,
     )
     resultado = servicio.generar_escenarios(SolicitudGenerarEscenarios())
     assert rutas == [(Path("raiz-ficticia") / "config" / "diccionario" / "variables.yaml", True)]

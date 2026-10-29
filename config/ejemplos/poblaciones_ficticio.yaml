@@ -1,0 +1,33 @@
+# EJEMPLO FICTICIO de configuración de poblaciones y partición, para probar el
+# programa con el historial sintético. NO es la configuración del proyecto: cada
+# valor es un supuesto inventado, no una decisión (DP-01d, DP-04, DP-05 y DP-17
+# siguen abiertas; DP-08h la decidió el equipo: se permite un piloto).
+#
+# La del proyecto irá en config/poblaciones.yaml. Todos los campos son
+# obligatorios; un valor null detiene el programa nombrando la decisión pendiente.
+version_poblaciones: 1
+nombre: "Poblaciones y partición ficticias de prueba (H2.5)"
+ficticio: true
+
+# DP-01d en el formato del historial: periodo ordinal al final del cual se
+# consolida la información de cada ventana (0 = la admisión).
+periodo_indice:
+  T0: 0
+  T1: 1
+  T2: 2
+  T3: 3
+
+diseno_principal: D1                     # DP-04: D1 | D2 | D3
+analisis_complementarios: [D2, D3]       # DP-17: lista, puede ser []
+# Los descriptivos de D1, D2 y D3 en desarrollo se calculan siempre (RF-M2-12).
+
+particion:                               # DP-05 (cohortes) y DP-08h (piloto)
+  cohortes_piloto: ["2014-1"]
+  cohortes_desarrollo: ["2014-2", "2015-1"]
+  cohortes_prueba: ["2015-2"]
+  # En el historial sintético, estas cohortes no completan el horizonte de 6
+  # periodos del objetivo ficticio.
+  cohortes_excluidas: ["2016-1", "2016-2", "2017-1", "2017-2"]
+  plan_contingencia: >-
+    EJEMPLO FICTICIO. Si las cohortes con seguimiento completo no alcanzan para
+    desarrollo y prueba, se registra una desviación antes de ver resultados.

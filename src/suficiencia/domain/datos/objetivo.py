@@ -259,6 +259,18 @@ def _periodos_regulares(definicion: DefinicionObjetivo, desde: int, cantidad: in
     return periodos
 
 
+def periodo_necesario(definicion: DefinicionObjetivo, desde: int = 0) -> int:
+    """Último periodo que hay que observar para etiquetar sin seguimiento incompleto."""
+    fin = _periodos_regulares(definicion, desde, definicion.horizonte_periodos)[-1]
+    if (
+        definicion.seguimiento is Seguimiento.FIN_HORIZONTE_Y_CONFIRMACION
+        and definicion.fechado is FechadoEvento.PRIMER_PERIODO_SIN_MATRICULA
+        and definicion.periodos_sin_matricula > 1
+    ):
+        return _periodos_regulares(definicion, fin, definicion.periodos_sin_matricula - 1)[-1]
+    return fin
+
+
 def _efecto(definicion: DefinicionObjetivo, categoria: Categoria) -> Efecto:
     return {
         Categoria.MATRICULA: Efecto.MATRICULA,
@@ -422,37 +434,27 @@ def _validar_codigos(historial: pd.DataFrame, columna: str, definicion: Definici
         )
 
 
-def construir_objetivo(
-    historial: pd.DataFrame,
-    columnas: ColumnasHistorial,
-    definicion: DefinicionObjetivo,
-    desde: int | None = None,
-) -> ResultadoObjetivo:
-    """Construye el estado de etiqueta de cada unidad (CU-03).
+@dataclass(frozen=True)
+class HistorialUnidad:
+    """Historial de una unidad de la población inicial, listo para etiquetar."""
 
-    Args:
-        historial: una fila por unidad y periodo, ya seudonimizada y auditada.
-        columnas: nombres de las columnas que usa el objetivo.
-        definicion: reglas parametrizadas de DP-01 y DP-18.
-        desde: periodo tras el cual empieza el horizonte. Obligatorio si el horizonte
-            es relativo a la fecha índice (se aplica por ventana, H2.5); con horizonte
-            desde el ingreso debe omitirse.
-    """
-    if definicion.horizonte_desde is InicioHorizonte.FECHA_INDICE:
-        if desde is None:
-            raise ConfiguracionInvalida(
-                "El horizonte relativo a la fecha índice se calcula para cada ventana.",
-                "Se aplica al construir las poblaciones por ventana (H2.5); para etiquetar "
-                "desde el ingreso, declare 'horizonte.desde: ingreso'.",
-            )
-        inicio = desde
-    else:
-        if desde is not None:
-            raise ConfiguracionInvalida(
-                "Con 'horizonte.desde: ingreso' el horizonte no depende de la ventana.",
-                "No indique un periodo de inicio.",
-            )
-        inicio = 0
+    clave: tuple[object, ...]
+    cohorte: str
+    estados: Mapping[int, str]
+    limite_observable: int
+
+
+@dataclass(frozen=True)
+class UnidadesPreparadas:
+    unidades: tuple[HistorialUnidad, ...]
+    fuera_de_poblacion: int
+    fuera_de_cohortes: int
+
+
+def preparar_unidades(
+    historial: pd.DataFrame, columnas: ColumnasHistorial, definicion: DefinicionObjetivo
+) -> UnidadesPreparadas:
+    """Agrupa el historial por unidad y aplica DP-01b, DP-01c y DP-01k."""
     _validar_columnas(historial, columnas)
     _validar_codigos(historial, columnas.estado, definicion)
 
@@ -472,7 +474,7 @@ def construir_objetivo(
     limites = tabla.groupby(columnas.cohorte)[columnas.periodo].max().to_dict()
     primer_regular = _periodos_regulares(definicion, 0, 1)[0]
 
-    filas: list[dict[str, object]] = []
+    unidades: list[HistorialUnidad] = []
     fuera_de_poblacion = 0
     for clave, grupo in tabla.groupby(list(columnas.unidad), sort=True):
         valores_clave = clave if isinstance(clave, tuple) else (clave,)
@@ -499,16 +501,26 @@ def construir_objetivo(
             ):
                 fuera_de_poblacion += 1
                 continue
-        cohorte = cohortes_unidad[0]
-        etiqueta = etiquetar_unidad(estados, int(limites[cohorte]), definicion, inicio)
-        fila: dict[str, object] = dict(zip(columnas.unidad, valores_clave, strict=True))
-        fila[columnas.cohorte] = cohorte
-        fila[COLUMNA_ESTADO] = etiqueta.estado.value
-        fila[COLUMNA_MOTIVO] = etiqueta.motivo.value if etiqueta.motivo else None
-        fila[COLUMNA_PERIODO_EVENTO] = etiqueta.periodo_evento
-        fila[COLUMNA_ULTIMO_PERIODO] = etiqueta.ultimo_periodo_observado
-        filas.append(fila)
+        cohorte = str(cohortes_unidad[0])
+        unidades.append(
+            HistorialUnidad(tuple(valores_clave), cohorte, estados, int(limites[cohorte]))
+        )
+    return UnidadesPreparadas(tuple(unidades), fuera_de_poblacion, fuera_de_cohortes)
 
+
+def fila_de_etiqueta(
+    unidad: HistorialUnidad, columnas: ColumnasHistorial, etiqueta: Etiqueta
+) -> dict[str, object]:
+    fila: dict[str, object] = dict(zip(columnas.unidad, unidad.clave, strict=True))
+    fila[columnas.cohorte] = unidad.cohorte
+    fila[COLUMNA_ESTADO] = etiqueta.estado.value
+    fila[COLUMNA_MOTIVO] = etiqueta.motivo.value if etiqueta.motivo else None
+    fila[COLUMNA_PERIODO_EVENTO] = etiqueta.periodo_evento
+    fila[COLUMNA_ULTIMO_PERIODO] = etiqueta.ultimo_periodo_observado
+    return fila
+
+
+def tabla_de_etiquetas(filas: list[dict[str, object]], columnas: ColumnasHistorial) -> pd.DataFrame:
     columnas_salida = [
         *columnas.unidad,
         columnas.cohorte,
@@ -517,10 +529,57 @@ def construir_objetivo(
         COLUMNA_PERIODO_EVENTO,
         COLUMNA_ULTIMO_PERIODO,
     ]
-    registros = pd.DataFrame(filas, columns=columnas_salida)
+    tabla = pd.DataFrame(filas, columns=columnas_salida)
     for columna in (COLUMNA_PERIODO_EVENTO, COLUMNA_ULTIMO_PERIODO):
-        registros[columna] = registros[columna].astype("Int64")
-    return ResultadoObjetivo(registros, fuera_de_poblacion, fuera_de_cohortes)
+        tabla[columna] = tabla[columna].astype("Int64")
+    return tabla
+
+
+def construir_objetivo(
+    historial: pd.DataFrame,
+    columnas: ColumnasHistorial,
+    definicion: DefinicionObjetivo,
+    desde: int | None = None,
+) -> ResultadoObjetivo:
+    """Construye el estado de etiqueta de cada unidad (CU-03).
+
+    Args:
+        historial: una fila por unidad y periodo, ya seudonimizada y auditada.
+        columnas: nombres de las columnas que usa el objetivo.
+        definicion: reglas parametrizadas de DP-01 y DP-18.
+        desde: periodo tras el cual empieza el horizonte. Obligatorio si el horizonte
+            es relativo a la fecha índice (se aplica por ventana, H2.5); con horizonte
+            desde el ingreso debe omitirse.
+    """
+    if definicion.horizonte_desde is InicioHorizonte.FECHA_INDICE:
+        if desde is None:
+            raise ConfiguracionInvalida(
+                "El horizonte relativo a la fecha índice se calcula para cada ventana.",
+                "Se aplica al construir las poblaciones por ventana; para etiquetar "
+                "desde el ingreso, declare 'horizonte.desde: ingreso'.",
+            )
+        inicio = desde
+    else:
+        if desde is not None:
+            raise ConfiguracionInvalida(
+                "Con 'horizonte.desde: ingreso' el horizonte no depende de la ventana.",
+                "No indique un periodo de inicio.",
+            )
+        inicio = 0
+    preparadas = preparar_unidades(historial, columnas, definicion)
+    filas = [
+        fila_de_etiqueta(
+            unidad,
+            columnas,
+            etiquetar_unidad(unidad.estados, unidad.limite_observable, definicion, inicio),
+        )
+        for unidad in preparadas.unidades
+    ]
+    return ResultadoObjetivo(
+        tabla_de_etiquetas(filas, columnas),
+        preparadas.fuera_de_poblacion,
+        preparadas.fuera_de_cohortes,
+    )
 
 
 def para_modelado(registros: pd.DataFrame) -> pd.DataFrame:

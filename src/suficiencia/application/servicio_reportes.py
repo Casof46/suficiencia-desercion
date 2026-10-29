@@ -33,6 +33,7 @@ from suficiencia.domain.proyecto import ConfiguracionProyecto
 from suficiencia.domain.puertos import CapturadorEntorno, FuenteConfiguracion, RepositorioRegistros
 from suficiencia.domain.trazabilidad.registros import (
     ModoExperimento,
+    RegistroAcceso,
     RegistroDecision,
     RegistroGuardado,
     TipoRegistro,
@@ -99,6 +100,14 @@ class ServicioReportes(ServicioCasosDeUso):
 
     def archivo_registro(self) -> Path:
         return self._configuracion().rutas["espacio_trabajo"] / ARCHIVO_REGISTRO
+
+    def carpeta_trabajo(self) -> Path:
+        """Carpeta de trabajo del proyecto (``workspace/``, no versionada)."""
+        return self._configuracion().rutas["espacio_trabajo"]
+
+    def registrar_acceso(self, registro: RegistroAcceso) -> RegistroResumen:
+        """Agrega un intento de acceso a la prueba al registro (RF-M6-06)."""
+        return _resumen(self._repositorio(self.archivo_registro()).agregar(registro))
 
     def entorno(self) -> EntornoResumen:
         entorno = self._capturador(self._raiz).capturar()

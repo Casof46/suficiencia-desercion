@@ -32,6 +32,8 @@ from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVa
 from suficiencia.persistence.exportacion import exportar_tabla
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
 from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
+from suficiencia.persistence.particion_archivos import cargador_de_prueba, guardar_division
+from suficiencia.persistence.poblaciones_yaml import cargar_configuracion_poblaciones
 from suficiencia.persistence.repositorio_sqlite import RepositorioSqlite
 from suficiencia.persistence.seudonimizacion import SeudonimizadorHmac
 
@@ -95,18 +97,24 @@ def crear_servicios(raiz: Path) -> Servicios:
         escribir_tabla=escribir_csv,
         cargar_definicion=cargar_definicion_objetivo,
     )
-    escenarios = ServicioEscenarios(
-        raiz=raiz,
-        fuente_catalogo=FuenteCatalogoYaml,
-        fuente_variables=_fuente_variables,
-        fuente_diccionario=_fuente_diccionario,
-    )
     reportes = ServicioReportes(
         raiz=raiz,
         fuente_configuracion=FuenteConfiguracionYaml,
         repositorio=RepositorioSqlite,
         capturador=CapturadorEntornoLocal,
         exportar_tabla=_exportar,
+    )
+    escenarios = ServicioEscenarios(
+        raiz=raiz,
+        fuente_catalogo=FuenteCatalogoYaml,
+        fuente_variables=_fuente_variables,
+        fuente_diccionario=_fuente_diccionario,
+        preparar_historial=datos.preparar_historial,
+        cargar_poblaciones=cargar_configuracion_poblaciones,
+        guardar_division=guardar_division,
+        cargador_de_prueba=cargador_de_prueba,
+        registrar_acceso=reportes.registrar_acceso,
+        carpeta_trabajo=reportes.carpeta_trabajo,
     )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,

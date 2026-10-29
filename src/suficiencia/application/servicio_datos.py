@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
@@ -63,6 +64,20 @@ from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import Seudonimizador
 
 CARPETA_DATOS = Path("data")
+
+
+@dataclass(frozen=True)
+class HistorialPreparado:
+    """Historial sintético seudonimizado y con auditoría apta, listo para etiquetar."""
+
+    tabla: pd.DataFrame
+    columnas: ColumnasHistorial
+    definicion: DefinicionObjetivo
+    sintetico: bool
+    huella_fuente: Huella
+    huella_dataset: Huella
+
+
 DEFINICION_OBJETIVO_DEL_PROYECTO = Path("config/objetivo/definicion.yaml")
 
 
@@ -250,15 +265,16 @@ class ServicioDatos(ServicioCasosDeUso):
             AuditoriaConErrores: si la auditoría no es apta (PU-17).
             ConfiguracionInvalida: si la definición no encaja con el diccionario.
         """
-        diccionario = self._cargar_diccionario(solicitud.diccionario)
-        definicion = self._cargar_definicion(self._ruta_definicion(solicitud.definicion))
-        columnas = _columnas_del_historial(diccionario, definicion)
         destino = self._validar_salida(solicitud.salida) if solicitud.salida else None
-        resultado, huella_fuente = self._importar(
-            solicitud.archivo, diccionario, solicitud.clave_efimera, solicitud.separador
+        historial = self.preparar_historial(
+            solicitud.archivo,
+            solicitud.diccionario,
+            solicitud.definicion,
+            solicitud.clave_efimera,
+            solicitud.separador,
         )
-        exigir_apto(resultado.informe)
-        objetivo = construir_objetivo(resultado.tabla, columnas, definicion)
+        definicion = historial.definicion
+        objetivo = construir_objetivo(historial.tabla, historial.columnas, definicion)
         huella_registros = (
             self._escribir_tabla(objetivo.registros, destino)
             if destino is not None
@@ -266,16 +282,45 @@ class ServicioDatos(ServicioCasosDeUso):
         )
         return ResultadoObjetivo(
             archivo=str(solicitud.archivo),
-            sintetico=resultado.informe.sintetico,
+            sintetico=historial.sintetico,
             definicion=definicion.nombre,
             definicion_ficticia=definicion.ficticio,
-            huella_fuente=huella_fuente.valor,
-            huella_dataset=self._huella_de_tabla(resultado.tabla).valor,
+            huella_fuente=historial.huella_fuente.valor,
+            huella_dataset=historial.huella_dataset.valor,
             unidades=len(objetivo.registros),
             fuera_de_poblacion=objetivo.fuera_de_poblacion,
             fuera_de_cohortes=objetivo.fuera_de_cohortes,
             huella_registros=huella_registros.valor,
             archivo_salida=str(destino) if destino is not None else None,
+        )
+
+    def preparar_historial(
+        self,
+        archivo: Path,
+        diccionario: Path,
+        definicion: Path | None,
+        clave_efimera: bool,
+        separador: str,
+    ) -> HistorialPreparado:
+        """Carga la definición, importa y audita el archivo y exige una auditoría apta.
+
+        Raises:
+            DecisionPendiente: si el archivo no es sintético (DP-02), falta la clave
+                (DP-14) o la definición del proyecto todavía no existe (DP-01).
+            AuditoriaConErrores: si la auditoría no es apta (PU-17).
+        """
+        dic = self._cargar_diccionario(diccionario)
+        definicion_objetivo = self._cargar_definicion(self._ruta_definicion(definicion))
+        columnas = _columnas_del_historial(dic, definicion_objetivo)
+        resultado, huella_fuente = self._importar(archivo, dic, clave_efimera, separador)
+        exigir_apto(resultado.informe)
+        return HistorialPreparado(
+            tabla=resultado.tabla,
+            columnas=columnas,
+            definicion=definicion_objetivo,
+            sintetico=resultado.informe.sintetico,
+            huella_fuente=huella_fuente,
+            huella_dataset=self._huella_de_tabla(resultado.tabla),
         )
 
     def demostracion_objetivo(self) -> ResultadoDemostracionObjetivo:

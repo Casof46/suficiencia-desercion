@@ -15,9 +15,11 @@ from suficiencia.domain.errores import (
     HuellaInvalida,
 )
 from suficiencia.domain.escenarios.construccion import FugaTemporal
+from suficiencia.domain.escenarios.particion import AccesoPruebaDenegado
 from suficiencia.domain.trazabilidad.filtro import IdentificadorEnExportacion
 
 __all__ = [
+    "AccesoPruebaDenegado",
     "AuditoriaConErrores",
     "CasoDeUsoNoDisponible",
     "ConfiguracionInvalida",

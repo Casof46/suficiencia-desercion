@@ -15,7 +15,7 @@ suficiencia-desercion/
 ├── config/
 │   ├── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
 │   ├── escenarios.yaml         # bloques, conjuntos y fechas índice (pendientes, DP-01d); H2.2
-│   └── ejemplos/               # catálogo, variables, diccionario y objetivo FICTICIOS para probar el programa; H2.2 a H2.4
+│   └── ejemplos/               # catálogo, variables, diccionario, objetivo, poblaciones y partición FICTICIOS; H2.2 a H2.5
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
@@ -37,7 +37,7 @@ suficiencia-desercion/
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
-│   │   └── escenarios/         # M2: modelo.py (bloques, ventanas, conjuntos, escenarios) y construccion.py (constructor y anti-fuga); H2.2
+│   │   └── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5)
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
 │   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
@@ -53,6 +53,8 @@ suficiencia-desercion/
 │   │   ├── lectores.py         # CSV y Excel como texto; escritura del dataset procesado; H2.3
 │   │   ├── seudonimizacion.py  # HMAC-SHA256 provisional (DP-14); H2.3
 │   │   ├── objetivo_yaml.py    # lector de la definición del objetivo (DP-01, DP-18); H2.4
+│   │   ├── poblaciones_yaml.py # lector de ventanas, diseños y partición (DP-01d, DP-04, DP-05, DP-17); H2.5
+│   │   ├── particion_archivos.py # índices de la partición en workspace/particiones/; H2.5
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
@@ -60,7 +62,7 @@ suficiencia-desercion/
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (solo pruebas); H2.3
-    ├── integration/            # registro SQLite, entorno, corridas y exportación (H2.7); objetivo (H2.4)
+    ├── integration/            # registro SQLite, entorno, corridas y exportación (H2.7); objetivo (H2.4); poblaciones, partición y sello (H2.5)
     ├── unit/                   # dominio, servicios, persistencia, configuración, red
     └── architecture/           # contratos de capas, línea de comandos, privacidad, alcance
 ```
@@ -77,7 +79,7 @@ suficiencia-desercion/
 | `docs/decisiones/` | Ficha de DP-16, la primera decisión resuelta (RF-M6-05) | Las decisiones técnicas de cada hito están en `docs/arquitectura/`, y no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
 | `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
-| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2), `datos/` (H2.3, con el objetivo desde H2.4) y `trazabilidad/` (H2.7); sin poblaciones, partición ni evaluación | Poblaciones y partición en H2.5; `evaluacion/` en H2.6 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2, con poblaciones y partición desde H2.5), `datos/` (H2.3, con el objetivo desde H2.4) y `trazabilidad/` (H2.7); sin evaluación | `evaluacion/` en H2.6 |
 | Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
 | `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
 | `tests/{unit,integration,acceptance,architecture,fixtures}` | Todas salvo `acceptance/` | Se crea con su primera prueba |

@@ -319,6 +319,9 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     """
     (tmp_path / "data").mkdir()
     generar_historial(15, semilla=2).to_csv(tmp_path / "data" / "bien.csv", index=False)
+    completo = generar_historial(200, semilla=2)
+    assert completo["cohorte"].nunique() == 8  # la partición de ejemplo usa las 8 cohortes
+    completo.to_csv(tmp_path / "data" / "completo.csv", index=False)
     con_problemas, _ = sembrar_problemas(generar_historial(15, semilla=2))
     con_problemas.to_csv(tmp_path / "data" / "mal.csv", index=False)
     _proyecto_con_config(tmp_path, raiz)
@@ -347,6 +350,13 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "main(['--raiz', raiz, 'objetivo', 'demostracion'])\n"
         "main(['--raiz', proyecto, 'objetivo', 'construir', proyecto + '/data/bien.csv',\n"
         "      '--diccionario', diccionario, '--definicion', objetivo, '--clave-efimera'])\n"
+        "ejemplos_dir = raiz + '/config/ejemplos/'\n"
+        "main(['--raiz', proyecto, 'poblaciones', 'construir', proyecto + '/data/completo.csv',\n"
+        "      '--diccionario', diccionario, '--definicion', objetivo,\n"
+        "      '--configuracion', ejemplos_dir + 'poblaciones_ficticio.yaml', '--clave-efimera'])\n"
+        "import pathlib\n"
+        "carpeta = next(pathlib.Path(proyecto, 'workspace', 'particiones').iterdir())\n"
+        "main(['--raiz', proyecto, 'poblaciones', 'leer-prueba', str(carpeta), '--motivo', 'm'])\n"
         "for archivo in ('bien.csv', 'mal.csv'):\n"
         "    main(['--raiz', proyecto, 'datos', 'importar', proyecto + '/data/' + archivo,\n"
         "          '--diccionario', diccionario, '--clave-efimera'])\n"
@@ -371,4 +381,5 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "Definición del objetivo válida" in salida
     assert "DEMOSTRACIÓN: historiales FICTICIOS" in salida
     assert "omitida hasta el sellado" in salida
+    assert "SELLADA: solo se informa el tamaño" in salida
     assert salida.rstrip().endswith("CARGADAS=")

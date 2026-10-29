@@ -335,3 +335,80 @@ class ResultadoDemostracionObjetivo(Contrato):
     definicion: str
     horizonte_periodos: int
     casos: tuple[CasoDemostracionObjetivo, ...]
+
+
+# H2.5: poblaciones, partición y sello ---------------------------------------------
+
+
+class SolicitudConstruirPoblaciones(Contrato):
+    """Pide construir poblaciones, partición y sello (CU-04 y CU-11 con datos sintéticos).
+
+    Sin ``configuracion`` se usa ``config/poblaciones.yaml``, que no existe mientras
+    DP-01d, DP-04, DP-05 y DP-17 sigan abiertas. Sin ``definicion``, la del objetivo
+    del proyecto (DP-01).
+    """
+
+    archivo: Path
+    diccionario: Path
+    definicion: Path | None = None
+    configuracion: Path | None = None
+    clave_efimera: bool = False
+    separador: str = Field(default=",", min_length=1, max_length=1)
+
+
+class SeguimientoCohorteResumen(Contrato):
+    cohorte: str
+    particion: str
+    unidades: int
+    ultimo_periodo_observable: int
+    periodo_necesario: int
+    completo: bool
+
+
+class DescripcionPoblacionResumen(Contrato):
+    diseno: str
+    ventana: str
+    tamano: int
+    eventos: int
+    prevalencia: float | None
+    eventos_detectables: int | None
+
+
+class NoEtiquetablesCohorteResumen(Contrato):
+    cohorte: str
+    unidades: int
+    no_etiquetables: int
+    por_motivo: dict[str, int]
+    proporcion: float
+    requiere_analisis_sensibilidad: bool
+
+
+class ResultadoPoblaciones(Contrato):
+    """Solo la partición de desarrollo se describe; de la prueba, solo el tamaño (PI-02)."""
+
+    archivo: str
+    sintetico: bool
+    definicion_ficticia: bool
+    configuracion_ficticia: bool
+    huella_dataset: str
+    diseno_principal: str
+    complementarios: tuple[str, ...]
+    periodos_indice: dict[str, int]
+    seguimiento: tuple[SeguimientoCohorteResumen, ...]
+    unidades_desarrollo: int
+    tamano_prueba: int
+    unidades_piloto: int
+    unidades_excluidas: int
+    descripciones_desarrollo: tuple[DescripcionPoblacionResumen, ...]
+    exclusiones_desarrollo: dict[str, dict[str, int]]
+    no_etiquetables_desarrollo: tuple[NoEtiquetablesCohorteResumen, ...]
+    nivel_sensibilidad: float
+    carpeta_particion: str
+    huellas: dict[str, str]
+
+
+class SolicitudLeerPrueba(Contrato):
+    """Intenta leer la prueba de una partición guardada (se rechaza y se registra)."""
+
+    particion: Path
+    motivo: str = Field(min_length=1)

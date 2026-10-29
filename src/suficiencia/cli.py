@@ -15,6 +15,9 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia objetivo construir ARCHIVO --diccionario RUTA [--definicion RUTA]
                                    [--clave-efimera] [--salida RUTA]
     suficiencia objetivo demostracion
+    suficiencia poblaciones construir ARCHIVO --diccionario RUTA [--definicion RUTA]
+                                      [--configuracion RUTA] [--clave-efimera]
+    suficiencia poblaciones leer-prueba CARPETA --motivo TEXTO
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver {experimentos,decisiones,accesos}
@@ -53,13 +56,16 @@ from suficiencia.application.contratos import (
     ResultadoImportacion,
     ResultadoIntegridad,
     ResultadoObjetivo,
+    ResultadoPoblaciones,
     ResultadoValidacionConfiguracion,
     SolicitudCasoDeUso,
     SolicitudConstruirObjetivo,
+    SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
     SolicitudImportarDataset,
+    SolicitudLeerPrueba,
     SolicitudRegistrarDecision,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
@@ -227,6 +233,44 @@ def construir_analizador() -> argparse.ArgumentParser:
         "demostracion",
         help="Muestra cómo se etiquetan historiales ficticios escritos a mano.",
     )
+    poblaciones = comandos.add_parser(
+        "poblaciones", help="Poblaciones D1 a D3, partición y sello con datos sintéticos (H2.5)."
+    )
+    acciones_poblaciones = poblaciones.add_subparsers(
+        dest="accion", required=True, title="acciones"
+    )
+    construir_p = acciones_poblaciones.add_parser(
+        "construir",
+        help="Etiqueta, construye las poblaciones, particiona y sella la prueba (CU-04, CU-11).",
+    )
+    construir_p.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
+    construir_p.add_argument(
+        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    )
+    construir_p.add_argument(
+        "--definicion",
+        type=Path,
+        help="Definición del objetivo (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    )
+    construir_p.add_argument(
+        "--configuracion",
+        type=Path,
+        help="Poblaciones y partición (por omisión, config/poblaciones.yaml; DP-04, DP-05).",
+    )
+    construir_p.add_argument(
+        "--clave-efimera",
+        action="store_true",
+        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
+    )
+    construir_p.add_argument(
+        "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
+    )
+    leer_prueba = acciones_poblaciones.add_parser(
+        "leer-prueba",
+        help="Intenta leer la prueba sellada: se rechaza y queda registrado (PI-02).",
+    )
+    leer_prueba.add_argument("particion", type=Path, help="Carpeta de la partición guardada.")
+    leer_prueba.add_argument("--motivo", required=True, help="Por qué se intenta leer.")
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
         "registro", help="Registro de trazabilidad: decisiones, corridas y accesos (H2.7)."
@@ -480,6 +524,91 @@ def _mostrar_demostracion_objetivo(
         )
 
 
+def _mostrar_poblaciones(resultado: ResultadoPoblaciones, salida: TextIO) -> None:
+    if resultado.sintetico:
+        print(
+            "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+            file=salida,
+        )
+    if resultado.definicion_ficticia or resultado.configuracion_ficticia:
+        print(
+            "CONFIGURACIÓN FICTICIA: el objetivo, las ventanas, los diseños y la partición son "
+            "ejemplos, no decisiones (DP-01, DP-04, DP-05, DP-17).",
+            file=salida,
+        )
+    print(f"\nArchivo: {resultado.archivo}", file=salida)
+    print(f"  Huella del dataset: {resultado.huella_dataset}", file=salida)
+    indices = ", ".join(f"{v}={p}" for v, p in resultado.periodos_indice.items())
+    print(f"  Periodos índice (DP-01d): {indices}", file=salida)
+    complementarios = ", ".join(resultado.complementarios) or "ninguno"
+    print(
+        f"  Diseño principal (DP-04): {resultado.diseno_principal}; "
+        f"complementarios (DP-17): {complementarios}",
+        file=salida,
+    )
+
+    print(
+        "\nSeguimiento por cohorte, todas las cohortes y sin el resultado (CU-11, parte A):",
+        file=salida,
+    )
+    for s in resultado.seguimiento:
+        estado = "completo" if s.completo else "INCOMPLETO"
+        print(
+            f"  {s.cohorte:<8} {s.particion:<10} {s.unidades:>4} unidades; observable hasta el "
+            f"periodo {s.ultimo_periodo_observable} de {s.periodo_necesario} necesarios: {estado}",
+            file=salida,
+        )
+
+    print("\nPartición cronológica (DP-05):", file=salida)
+    print(f"  Desarrollo: {resultado.unidades_desarrollo} unidades", file=salida)
+    print(
+        f"  Prueba: {resultado.tamano_prueba} unidades. SELLADA: solo se informa el tamaño "
+        "(RF-M2-07, RF-M2-09).",
+        file=salida,
+    )
+    print(f"  Piloto (DP-08h): {resultado.unidades_piloto} unidades", file=salida)
+    print(f"  Excluidas: {resultado.unidades_excluidas} unidades", file=salida)
+
+    print(
+        "\nPoblaciones por ventana, SOLO en desarrollo (CU-11, parte B; RF-M2-12):",
+        file=salida,
+    )
+    print("  Diseño Ventana  Tamaño  Eventos  Prevalencia  Eventos detectables", file=salida)
+    for d in resultado.descripciones_desarrollo:
+        prevalencia = f"{d.prevalencia:.3f}" if d.prevalencia is not None else "-"
+        detectables = str(d.eventos_detectables) if d.eventos_detectables is not None else ""
+        print(
+            f"  {d.diseno:<6} {d.ventana:<7} {d.tamano:>7} {d.eventos:>8}  {prevalencia:>11}"
+            f"  {detectables:>19}",
+            file=salida,
+        )
+    print("  Fuera de D1 por ventana y motivo (desarrollo):", file=salida)
+    for ventana, motivos in resultado.exclusiones_desarrollo.items():
+        detalle = ", ".join(f"{m}: {n}" for m, n in motivos.items()) or "ninguna"
+        print(f"    {ventana}: {detalle}", file=salida)
+    print(
+        f"  No etiquetables por cohorte de desarrollo (nivel de DP-18: "
+        f"{resultado.nivel_sensibilidad:g}; CP-08):",
+        file=salida,
+    )
+    for n in resultado.no_etiquetables_desarrollo:
+        por_motivo = ", ".join(f"{m}: {c}" for m, c in n.por_motivo.items()) or "ninguno"
+        aviso = "  -> EXIGE ANÁLISIS DE SENSIBILIDAD" if n.requiere_analisis_sensibilidad else ""
+        print(
+            f"    {n.cohorte}: {n.no_etiquetables} de {n.unidades} ({n.proporcion:.1%}); "
+            f"{por_motivo}{aviso}",
+            file=salida,
+        )
+    print(f"\nPartición guardada en {resultado.carpeta_particion}", file=salida)
+    for nombre, huella in resultado.huellas.items():
+        print(f"  Huella de {nombre}: {huella}", file=salida)
+    print(
+        "La prueba solo puede leerla la evaluación final (CU-08); cada intento queda en el "
+        "registro de accesos.",
+        file=salida,
+    )
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -575,6 +704,8 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return SALIDA_CORRECTA if importacion.informe.apto_para_m2 else SALIDA_ERROR
     if argumentos.comando == "objetivo":
         return _ejecutar_objetivo(argumentos, servicios)
+    if argumentos.comando == "poblaciones":
+        return _ejecutar_poblaciones(argumentos, servicios)
     if argumentos.comando == "entorno":
         _mostrar_entorno(servicios.reportes.entorno(), sys.stdout)
         return SALIDA_CORRECTA
@@ -606,6 +737,28 @@ def _ejecutar_objetivo(argumentos: argparse.Namespace, servicios: Servicios) -> 
         )
     else:
         _mostrar_demostracion_objetivo(servicios.datos.demostracion_objetivo(), sys.stdout)
+    return SALIDA_CORRECTA
+
+
+def _ejecutar_poblaciones(argumentos: argparse.Namespace, servicios: Servicios) -> int:
+    if argumentos.accion == "construir":
+        _mostrar_poblaciones(
+            servicios.escenarios.construir_poblaciones(
+                SolicitudConstruirPoblaciones(
+                    archivo=argumentos.archivo,
+                    diccionario=argumentos.diccionario,
+                    definicion=argumentos.definicion,
+                    configuracion=argumentos.configuracion,
+                    clave_efimera=argumentos.clave_efimera,
+                    separador=argumentos.separador,
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    servicios.escenarios.leer_prueba(
+        SolicitudLeerPrueba(particion=argumentos.particion, motivo=argumentos.motivo)
+    )
     return SALIDA_CORRECTA
 
 
