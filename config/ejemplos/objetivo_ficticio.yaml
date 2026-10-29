@@ -1,0 +1,66 @@
+# EJEMPLO FICTICIO de definición del objetivo, para probar el programa con el
+# historial sintético. NO es la definición de deserción del proyecto: cada valor
+# es un supuesto inventado, no una decisión (DP-01 y DP-18 siguen abiertas).
+#
+# La definición del proyecto irá en config/objetivo/definicion.yaml cuando DP-01 y
+# DP-18 estén aprobadas. Todos los campos son obligatorios y no tienen valor por
+# omisión; un valor null detiene el programa nombrando la decisión pendiente.
+# Los periodos son ordinales desde el ingreso (1 = primer periodo de la cohorte).
+version_objetivo: 1
+nombre: "Objetivo ficticio de prueba (H2.4)"
+ficticio: true
+
+evento:                       # DP-01a: qué constituye deserción
+  periodos_sin_matricula: 2   # periodos consecutivos sin matrícula
+
+unidad:                       # DP-01b: estudiante | estudiante_carrera
+  tipo: estudiante
+  columna_carrera: null       # solo con estudiante_carrera
+
+poblacion:                    # DP-01c
+  inicial: matriculados_primer_periodo   # admitidos | matriculados_primer_periodo
+  cohortes: todas                        # todas | [lista de cohortes]
+
+# DP-01d (fecha índice de cada ventana) está en config/escenarios.yaml.
+
+horizonte:                    # DP-01e
+  periodos: 6
+  desde: ingreso              # ingreso | fecha_indice (por ventana, H2.5)
+
+fechado_evento: primer_periodo_sin_matricula   # DP-01f: primer_periodo_sin_matricula | confirmacion
+
+pausas:                       # DP-01g: neutral | ausencia | no_observable
+  tratamiento: neutral
+  limite_periodos: 2          # desde el tercer periodo seguido, la pausa cuenta como ausencia
+
+retiro_en_periodo: ausencia   # DP-01h: evento | ausencia | matricula
+
+traslados:                    # DP-01i
+  interno: matricula          # matricula | evento | desenlace_excluido | no_observable
+  externo: no_observable      # evento | desenlace_excluido | no_observable
+
+reingreso: anula_evento       # DP-01j: anula_evento | no_anula
+
+periodos_extraordinarios:     # DP-01k
+  tratamiento: ignorar        # ignorar | contar
+  periodos: []
+
+desenlaces_excluidos: desenlace_excluido   # DP-01l: desenlace_excluido | evento | no_evento
+
+seguimiento:                  # DP-01m
+  exigir: fin_horizonte_y_confirmacion   # fin_horizonte | fin_horizonte_y_confirmacion
+  periodo_sin_registro: no_observable    # ausencia | no_observable
+
+# Categoría de cada código de estado_matricula del diccionario sintético. Las
+# categorías posibles son: matricula, ausencia, pausa, retiro_en_periodo,
+# traslado_interno, traslado_externo, desenlace_excluido y evento_formal.
+catalogo_estados:
+  matriculado: matricula
+  no_matriculado: ausencia
+  reserva: pausa
+  retiro_total: retiro_en_periodo
+  traslado: traslado_externo
+
+no_etiquetables:              # DP-18 (REC-03 con el cambio CP-08)
+  tratamiento: excluir_y_contar
+  nivel_analisis_sensibilidad: 0.2   # valor inventado: lo fija la asesoría

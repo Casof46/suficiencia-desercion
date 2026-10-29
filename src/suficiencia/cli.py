@@ -11,6 +11,10 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
                            [--detalle]
     suficiencia datos diccionario RUTA
     suficiencia datos importar ARCHIVO --diccionario RUTA [--clave-efimera] [--salida RUTA]
+    suficiencia objetivo validar [RUTA]
+    suficiencia objetivo construir ARCHIVO --diccionario RUTA [--definicion RUTA]
+                                   [--clave-efimera] [--salida RUTA]
+    suficiencia objetivo demostracion
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver {experimentos,decisiones,accesos}
@@ -42,12 +46,16 @@ from suficiencia.application.contratos import (
     EstadoProyecto,
     RegistroResumen,
     ResultadoConsultaRegistro,
+    ResultadoDefinicionObjetivo,
+    ResultadoDemostracionObjetivo,
     ResultadoDiccionario,
     ResultadoEscenarios,
     ResultadoImportacion,
     ResultadoIntegridad,
+    ResultadoObjetivo,
     ResultadoValidacionConfiguracion,
     SolicitudCasoDeUso,
+    SolicitudConstruirObjetivo,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
@@ -55,6 +63,7 @@ from suficiencia.application.contratos import (
     SolicitudRegistrarDecision,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
+    SolicitudValidarObjetivo,
 )
 from suficiencia.application.errores import CasoDeUsoNoDisponible, ErrorSuficiencia
 
@@ -176,6 +185,47 @@ def construir_analizador() -> argparse.ArgumentParser:
         type=_separador,
         default=",",
         help="Separador del CSV (por omisión, la coma).",
+    )
+    objetivo = comandos.add_parser(
+        "objetivo", help="Objetivo y estados de etiqueta con datos sintéticos (H2.4)."
+    )
+    acciones_objetivo = objetivo.add_subparsers(dest="accion", required=True, title="acciones")
+    validar_objetivo = acciones_objetivo.add_parser(
+        "validar", help="Valida una definición del objetivo (desglose de DP-01)."
+    )
+    validar_objetivo.add_argument(
+        "archivo",
+        type=Path,
+        nargs="?",
+        help="Definición YAML (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    )
+    construir = acciones_objetivo.add_parser(
+        "construir",
+        help="Importa y audita un archivo sintético y etiqueta cada estudiante (CU-03).",
+    )
+    construir.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
+    construir.add_argument(
+        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    )
+    construir.add_argument(
+        "--definicion",
+        type=Path,
+        help="Definición del objetivo (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    )
+    construir.add_argument(
+        "--clave-efimera",
+        action="store_true",
+        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
+    )
+    construir.add_argument(
+        "--salida", type=Path, help="Guarda los estados de etiqueta (CSV) dentro de data/."
+    )
+    construir.add_argument(
+        "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
+    )
+    acciones_objetivo.add_parser(
+        "demostracion",
+        help="Muestra cómo se etiquetan historiales ficticios escritos a mano.",
     )
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
@@ -341,6 +391,95 @@ def _mostrar_importacion(resultado: ResultadoImportacion, salida: TextIO) -> Non
         )
 
 
+def _mostrar_definicion_objetivo(resultado: ResultadoDefinicionObjetivo, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print(
+            "EJEMPLO FICTICIO: no es la definición de deserción del proyecto (DP-01, DP-18).",
+            file=salida,
+        )
+    print(f"Definición del objetivo válida: {resultado.nombre}", file=salida)
+    print(f"  Archivo: {resultado.archivo}", file=salida)
+    for parametro in resultado.parametros:
+        print(f"  {parametro.decision:<7} {parametro.parametro}: {parametro.valor}", file=salida)
+    print("  Catálogo de estados de matrícula:", file=salida)
+    for codigo, categoria in resultado.catalogo.items():
+        print(f"    {codigo} -> {categoria}", file=salida)
+    print(
+        "  DP-01d (fecha índice de cada ventana) se declara en config/escenarios.yaml.",
+        file=salida,
+    )
+
+
+def _mostrar_objetivo(resultado: ResultadoObjetivo, salida: TextIO) -> None:
+    if resultado.sintetico:
+        print(
+            "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+            file=salida,
+        )
+    if resultado.definicion_ficticia:
+        print(
+            "DEFINICIÓN FICTICIA: no es la definición de deserción del proyecto (DP-01).",
+            file=salida,
+        )
+    print(f"\nArchivo: {resultado.archivo}", file=salida)
+    print(f"  Huella SHA-256 del archivo: {resultado.huella_fuente}", file=salida)
+    print(f"  Auditoría: APTA. Huella del dataset: {resultado.huella_dataset}", file=salida)
+    print(f"  Definición del objetivo: {resultado.definicion}", file=salida)
+    print(f"\nUnidades etiquetadas: {resultado.unidades}", file=salida)
+    print(f"  Fuera de la población inicial (DP-01c): {resultado.fuera_de_poblacion}", file=salida)
+    print(f"  Fuera de las cohortes elegidas (DP-01c): {resultado.fuera_de_cohortes}", file=salida)
+    print(
+        "  Distribución de los estados de etiqueta: omitida hasta el sellado de la prueba "
+        "(RF-M1-03). Los no etiquetables por cohorte y motivo se reportan solo en "
+        "desarrollo (RF-M2-09, CP-08).",
+        file=salida,
+    )
+    print(f"  Huella de los estados de etiqueta: {resultado.huella_registros}", file=salida)
+    if resultado.archivo_salida:
+        print(f"Estados de etiqueta guardados en {resultado.archivo_salida}", file=salida)
+
+
+def _mostrar_demostracion_objetivo(
+    resultado: ResultadoDemostracionObjetivo, salida: TextIO
+) -> None:
+    print(
+        "DEMOSTRACIÓN: historiales FICTICIOS escritos a mano y definición ficticia. "
+        "No son datos ni decisiones.",
+        file=salida,
+    )
+    print(
+        f"Definición: {resultado.definicion} (horizonte de {resultado.horizonte_periodos} "
+        "periodos desde el ingreso)",
+        file=salida,
+    )
+    print(
+        "Historial: M matriculado, A no matriculado, P reserva, R retiro total, "
+        "T traslado, - sin registro.",
+        file=salida,
+    )
+    letras = {
+        "matriculado": "M",
+        "no_matriculado": "A",
+        "reserva": "P",
+        "retiro_total": "R",
+        "traslado": "T",
+        "-": "-",
+    }
+    for caso in resultado.casos:
+        historial = "".join(letras[codigo] for codigo in caso.historial)
+        estado = caso.estado
+        if caso.motivo:
+            estado += f" ({caso.motivo})"
+        if caso.periodo_evento is not None:
+            estado += f", evento en el periodo {caso.periodo_evento}"
+        print(f"\n  {caso.nombre}", file=salida)
+        print(
+            f"    {historial:<8}  observable hasta el periodo {caso.periodos_observables}"
+            f"  ->  {estado}",
+            file=salida,
+        )
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -434,6 +573,8 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         )
         _mostrar_importacion(importacion, sys.stdout)
         return SALIDA_CORRECTA if importacion.informe.apto_para_m2 else SALIDA_ERROR
+    if argumentos.comando == "objetivo":
+        return _ejecutar_objetivo(argumentos, servicios)
     if argumentos.comando == "entorno":
         _mostrar_entorno(servicios.reportes.entorno(), sys.stdout)
         return SALIDA_CORRECTA
@@ -441,6 +582,31 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_registro(argumentos, servicios)
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
+
+
+def _ejecutar_objetivo(argumentos: argparse.Namespace, servicios: Servicios) -> int:
+    if argumentos.accion == "validar":
+        _mostrar_definicion_objetivo(
+            servicios.datos.validar_objetivo(SolicitudValidarObjetivo(archivo=argumentos.archivo)),
+            sys.stdout,
+        )
+    elif argumentos.accion == "construir":
+        _mostrar_objetivo(
+            servicios.datos.construir_objetivo(
+                SolicitudConstruirObjetivo(
+                    archivo=argumentos.archivo,
+                    diccionario=argumentos.diccionario,
+                    definicion=argumentos.definicion,
+                    clave_efimera=argumentos.clave_efimera,
+                    salida=argumentos.salida,
+                    separador=argumentos.separador,
+                )
+            ),
+            sys.stdout,
+        )
+    else:
+        _mostrar_demostracion_objetivo(servicios.datos.demostracion_objetivo(), sys.stdout)
+    return SALIDA_CORRECTA
 
 
 def _ejecutar_registro(argumentos: argparse.Namespace, servicios: Servicios) -> int:

@@ -31,6 +31,7 @@ from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
 from suficiencia.persistence.exportacion import exportar_tabla
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
+from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
 from suficiencia.persistence.repositorio_sqlite import RepositorioSqlite
 from suficiencia.persistence.seudonimizacion import SeudonimizadorHmac
 
@@ -92,6 +93,7 @@ def crear_servicios(raiz: Path) -> Servicios:
         seudonimizador=_seudonimizador,
         huella_de_tabla=_huella_de_tabla,
         escribir_tabla=escribir_csv,
+        cargar_definicion=cargar_definicion_objetivo,
     )
     escenarios = ServicioEscenarios(
         raiz=raiz,

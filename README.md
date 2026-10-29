@@ -7,8 +7,8 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 | Elemento | Estado |
 | --- | --- |
 | Especificación | Fase 1, versión 0.6, que incorpora el cambio CP-08 (reporte de no etiquetables por cohorte y análisis de sensibilidad), los responsables de los 29 riesgos y las decisiones del equipo del 29 de octubre de 2026. **No aprobada formalmente**: el equipo eligió la aprobación formal, que espera la conformidad de la asesoría y la firma del acta (`docs/gestion/acta_cierre_fase_1_propuesta.md`). H2.0 se construyó sobre la v0.4, y H2.1 a H2.3 y H2.7 sobre la v0.5 |
-| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) verificado y aceptado el 29 de octubre de 2026. H2.4 a H2.6 esperan a la asesoría |
-| Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Registro de trazabilidad de solo agregar en SQLite, con captura del entorno, registro de decisiones, verificación de integridad y exportación sin identificadores (H2.7). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) verificado y aceptado el 29 de octubre de 2026. **H2.4** (objetivo y estados de etiqueta) ejecutado el 29 de octubre de 2026 por autorización del equipo, sin esperar la conformidad de la asesoría con REC-03; pendiente de verificación en Windows. H2.5 y H2.6 esperan |
+| Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Registro de trazabilidad de solo agregar en SQLite, con captura del entorno, registro de decisiones, verificación de integridad y exportación sin identificadores (H2.7). Objetivo y estados de etiqueta (positivo, negativo o no etiquetable con motivo) con reglas parametrizadas por DP-01, todas obligatorias y sin valores por omisión; solo con definiciones ficticias (H2.4). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
 | Decisiones metodológicas | DP-16 (SQLite) y DP-08h (se permite un piloto) decididas por el equipo (`docs/decisiones/`); las demás, abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 aceptadas por el equipo el 29 de octubre de 2026, pendientes de la conformidad de la asesoría |
 | Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
@@ -54,10 +54,13 @@ Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
 .venv\Scripts\python scripts\generar_sintetico.py --semilla 1 --salida data\sintetico\historial.xlsx
 .venv\Scripts\suficiencia datos diccionario config\ejemplos\diccionario_sintetico.yaml
 .venv\Scripts\suficiencia datos importar data\sintetico\historial.xlsx --diccionario config\ejemplos\diccionario_sintetico.yaml --clave-efimera
+.venv\Scripts\suficiencia objetivo validar config\ejemplos\objetivo_ficticio.yaml
+.venv\Scripts\suficiencia objetivo construir data\sintetico\historial.xlsx --diccionario config\ejemplos\diccionario_sintetico.yaml --definicion config\ejemplos\objetivo_ficticio.yaml --clave-efimera
+.venv\Scripts\suficiencia objetivo demostracion   # casos ficticios escritos a mano y su estado de etiqueta
 .venv\Scripts\suficiencia entorno           # entorno que se registra con cada corrida
 .venv\Scripts\suficiencia registro ver decisiones
 .venv\Scripts\suficiencia registro verificar  # comprueba que ningún registro fue modificado
-.venv\Scripts\suficiencia ejecutar CU-03    # responde que el caso de uso aún no está implementado
+.venv\Scripts\suficiencia ejecutar CU-05    # responde que el caso de uso aún no está implementado
 ```
 
 ## Control de versiones

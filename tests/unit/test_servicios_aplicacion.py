@@ -45,6 +45,7 @@ from suficiencia.domain.proyecto import ConfiguracionProyecto
 from suficiencia.domain.puertos import FuenteConfiguracion, FuenteVariables, Seudonimizador
 from suficiencia.persistence.diccionario_yaml import cargar_diccionario
 from suficiencia.persistence.lectores import leer_tabla
+from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
 
 # Sección 6 de la especificación: qué servicio atiende cada caso de uso.
 REPARTO_ESPERADO = {
@@ -282,6 +283,7 @@ def test_importar_rechaza_un_archivo_no_marcado_como_sintetico_sin_procesarlo(
         seudonimizador=seudonimizador,
         huella_de_tabla=lambda t: Huella.de_bytes(b""),
         escribir_tabla=lambda t, a: Huella.de_bytes(b""),
+        cargar_definicion=cargar_definicion_objetivo,
     )
     with pytest.raises(DecisionPendiente) as error:
         servicio.importar_dataset(

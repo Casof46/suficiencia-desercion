@@ -15,7 +15,7 @@ suficiencia-desercion/
 ├── config/
 │   ├── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
 │   ├── escenarios.yaml         # bloques, conjuntos y fechas índice (pendientes, DP-01d); H2.2
-│   └── ejemplos/               # catálogo, variables y diccionario FICTICIOS para probar el programa; H2.2 y H2.3
+│   └── ejemplos/               # catálogo, variables, diccionario y objetivo FICTICIOS para probar el programa; H2.2 a H2.4
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
@@ -35,13 +35,14 @@ suficiencia-desercion/
 │   │   ├── huella.py           # huella SHA-256 (RNF-16)
 │   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
-│   │   ├── datos/              # M1: diccionario.py y auditoria.py; H2.3
+│   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
 │   │   └── escenarios/         # M2: modelo.py (bloques, ventanas, conjuntos, escenarios) y construccion.py (constructor y anti-fuga); H2.2
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
 │   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
 │   │   ├── _base.py            # base de los servicios de casos de uso
+│   │   ├── demostracion_objetivo.py # historiales FICTICIOS para `objetivo demostracion`; H2.4
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
 │   ├── experimentation/        # vacía todavía
@@ -51,6 +52,7 @@ suficiencia-desercion/
 │   │   ├── diccionario_yaml.py # lector del diccionario de datos; H2.3
 │   │   ├── lectores.py         # CSV y Excel como texto; escritura del dataset procesado; H2.3
 │   │   ├── seudonimizacion.py  # HMAC-SHA256 provisional (DP-14); H2.3
+│   │   ├── objetivo_yaml.py    # lector de la definición del objetivo (DP-01, DP-18); H2.4
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
@@ -58,7 +60,7 @@ suficiencia-desercion/
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (solo pruebas); H2.3
-    ├── integration/            # registro SQLite, entorno, corridas y exportación; H2.7
+    ├── integration/            # registro SQLite, entorno, corridas y exportación (H2.7); objetivo (H2.4)
     ├── unit/                   # dominio, servicios, persistencia, configuración, red
     └── architecture/           # contratos de capas, línea de comandos, privacidad, alcance
 ```
@@ -67,7 +69,7 @@ suficiencia-desercion/
 
 | Especificación v0.5 | Repositorio (H2.1) | Motivo |
 | --- | --- | --- |
-| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03; el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
+| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03 y `objetivo/` de DP-01 y DP-18 (el ejemplo ficticio está en `ejemplos/`); el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
 | `data/raw`, `interim`, `processed` | `data/README.md` | Las subcarpetas se crean al usarse; nunca se versionan |
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
 | `docs/especificacion/` | Copias de referencia de la v0.6, la v0.5 y la v0.4 | Igual |
@@ -75,7 +77,7 @@ suficiencia-desercion/
 | `docs/decisiones/` | Ficha de DP-16, la primera decisión resuelta (RF-M6-05) | Las decisiones técnicas de cada hito están en `docs/arquitectura/`, y no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
 | `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
-| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2), `datos/` (H2.3) y `trazabilidad/` (H2.7); sin objetivo, poblaciones, partición ni evaluación | `evaluacion/` y el resto, en H2.4 a H2.6 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2), `datos/` (H2.3, con el objetivo desde H2.4) y `trazabilidad/` (H2.7); sin poblaciones, partición ni evaluación | Poblaciones y partición en H2.5; `evaluacion/` en H2.6 |
 | Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
 | `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
 | `tests/{unit,integration,acceptance,architecture,fixtures}` | Todas salvo `acceptance/` | Se crea con su primera prueba |

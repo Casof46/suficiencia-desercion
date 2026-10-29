@@ -262,3 +262,76 @@ class ResultadoExportacion(Contrato):
 class ResultadoDemostracion(Contrato):
     archivo: str
     registros: tuple[RegistroResumen, ...]
+
+
+# H2.4: objetivo y estados de etiqueta -------------------------------------------
+
+
+class SolicitudValidarObjetivo(Contrato):
+    """Pide validar una definición del objetivo (RF-M1-06).
+
+    Sin ``archivo`` se usa la del proyecto (``config/objetivo/definicion.yaml``), que
+    no existe mientras DP-01 siga abierta.
+    """
+
+    archivo: Path | None = None
+
+
+class ParametroObjetivo(Contrato):
+    decision: str
+    parametro: str
+    valor: str
+
+
+class ResultadoDefinicionObjetivo(Contrato):
+    archivo: str
+    nombre: str
+    ficticio: bool
+    parametros: tuple[ParametroObjetivo, ...]
+    catalogo: dict[str, str]
+
+
+class SolicitudConstruirObjetivo(Contrato):
+    """Pide construir el objetivo y los estados de etiqueta (CU-03 con datos sintéticos).
+
+    Importa, seudonimiza y audita el archivo como ``SolicitudImportarDataset`` y,
+    si la auditoría es apta, etiqueta cada unidad con ``definicion``.
+    """
+
+    archivo: Path
+    diccionario: Path
+    definicion: Path | None = None
+    clave_efimera: bool = False
+    salida: Path | None = None
+    separador: str = Field(default=",", min_length=1, max_length=1)
+
+
+class ResultadoObjetivo(Contrato):
+    """Resultado sin la distribución de los estados de etiqueta (RF-M1-03, RF-M2-09)."""
+
+    archivo: str
+    sintetico: bool
+    definicion: str
+    definicion_ficticia: bool
+    huella_fuente: str
+    huella_dataset: str
+    unidades: int
+    fuera_de_poblacion: int
+    fuera_de_cohortes: int
+    huella_registros: str
+    archivo_salida: str | None = None
+
+
+class CasoDemostracionObjetivo(Contrato):
+    nombre: str
+    historial: tuple[str, ...]
+    periodos_observables: int
+    estado: str
+    motivo: str | None
+    periodo_evento: int | None
+
+
+class ResultadoDemostracionObjetivo(Contrato):
+    definicion: str
+    horizonte_periodos: int
+    casos: tuple[CasoDemostracionObjetivo, ...]

@@ -342,6 +342,11 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "                   ['registro', 'ver', 'decisiones'], ['registro', 'verificar'],\n"
         "                   ['registro', 'demostracion']):\n"
         "    main(['--raiz', proyecto, *argumentos])\n"
+        "objetivo = raiz + '/config/ejemplos/objetivo_ficticio.yaml'\n"
+        "main(['--raiz', raiz, 'objetivo', 'validar', objetivo])\n"
+        "main(['--raiz', raiz, 'objetivo', 'demostracion'])\n"
+        "main(['--raiz', proyecto, 'objetivo', 'construir', proyecto + '/data/bien.csv',\n"
+        "      '--diccionario', diccionario, '--definicion', objetivo, '--clave-efimera'])\n"
         "for archivo in ('bien.csv', 'mal.csv'):\n"
         "    main(['--raiz', proyecto, 'datos', 'importar', proyecto + '/data/' + archivo,\n"
         "          '--diccionario', diccionario, '--clave-efimera'])\n"
@@ -363,4 +368,7 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "ERROR CRÍTICO" in salida
     assert "Integridad correcta" in salida
     assert "DEMOSTRACIÓN" in salida
+    assert "Definición del objetivo válida" in salida
+    assert "DEMOSTRACIÓN: historiales FICTICIOS" in salida
+    assert "omitida hasta el sellado" in salida
     assert salida.rstrip().endswith("CARGADAS=")
