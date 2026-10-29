@@ -11,6 +11,12 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
                            [--detalle]
     suficiencia datos diccionario RUTA
     suficiencia datos importar ARCHIVO --diccionario RUTA [--clave-efimera] [--salida RUTA]
+    suficiencia entorno
+    suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
+    suficiencia registro ver {experimentos,decisiones,accesos}
+    suficiencia registro verificar
+    suficiencia registro exportar {experimentos,decisiones,accesos} --salida RUTA
+    suficiencia registro demostracion
     suficiencia ejecutar CU-03
 
 Códigos de salida: 0, correcto; 1, configuración inválida o error del motor;
@@ -32,14 +38,21 @@ from typing import Any, NoReturn, TextIO
 import suficiencia
 from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
+    EntornoResumen,
     EstadoProyecto,
+    RegistroResumen,
+    ResultadoConsultaRegistro,
     ResultadoDiccionario,
     ResultadoEscenarios,
     ResultadoImportacion,
+    ResultadoIntegridad,
     ResultadoValidacionConfiguracion,
     SolicitudCasoDeUso,
+    SolicitudConsultarRegistro,
+    SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
     SolicitudImportarDataset,
+    SolicitudRegistrarDecision,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
 )
@@ -163,6 +176,36 @@ def construir_analizador() -> argparse.ArgumentParser:
         type=_separador,
         default=",",
         help="Separador del CSV (por omisión, la coma).",
+    )
+    comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
+    registro = comandos.add_parser(
+        "registro", help="Registro de trazabilidad: decisiones, corridas y accesos (H2.7)."
+    )
+    acciones_registro = registro.add_subparsers(dest="accion", required=True, title="acciones")
+    decision = acciones_registro.add_parser(
+        "decision", help="Registra una decisión metodológica DP-xx (RF-M6-05)."
+    )
+    decision.add_argument("--codigo", required=True, help="Por ejemplo, DP-16.")
+    decision.add_argument("--decision", required=True, help="Qué se decidió.")
+    decision.add_argument("--justificacion", required=True, help="Por qué.")
+    decision.add_argument("--responsable", required=True, help="Quién decide o comunica.")
+    decision.add_argument("--observaciones", help="Notas, por ejemplo confirmaciones pendientes.")
+    tipos = ("experimentos", "decisiones", "accesos")
+    ver = acciones_registro.add_parser("ver", help="Muestra los registros de un tipo.")
+    ver.add_argument("tipo", choices=tipos)
+    acciones_registro.add_parser(
+        "verificar", help="Comprueba que ningún registro fue modificado ni borrado."
+    )
+    exportar = acciones_registro.add_parser(
+        "exportar", help="Exporta un tipo de registro a CSV o Excel (RF-M6-03)."
+    )
+    exportar.add_argument("tipo", choices=tipos)
+    exportar.add_argument(
+        "--salida", type=Path, required=True, help="Archivo .csv o .xlsx dentro de reports/."
+    )
+    acciones_registro.add_parser(
+        "demostracion",
+        help="Registra una corrida simulada exitosa y otra fallida en un registro aparte.",
     )
     ejecutar = comandos.add_parser("ejecutar", help="Ejecuta un caso de uso (CU-01 a CU-12).")
     ejecutar.add_argument("caso", type=_codigo_caso_de_uso, help="Código, por ejemplo CU-03.")
@@ -298,6 +341,59 @@ def _mostrar_importacion(resultado: ResultadoImportacion, salida: TextIO) -> Non
         )
 
 
+def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
+    print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
+    print(f"  Python: {entorno.python}", file=salida)
+    print(f"  Sistema: {entorno.sistema}", file=salida)
+    print(
+        f"  Huella de requirements.lock: {entorno.huella_bloqueo or 'no encontrado'}", file=salida
+    )
+    commit = entorno.commit or "sin repositorio git"
+    if entorno.cambios_sin_commit:
+        commit += " (con cambios sin guardar en git)"
+    print(f"  Commit: {commit}", file=salida)
+    print(f"  Núcleos: {entorno.nucleos}", file=salida)
+    for variable, valor in entorno.hilos.items():
+        print(f"  {variable}: {valor}", file=salida)
+    paquetes = ", ".join(f"{p} {v}" for p, v in entorno.paquetes.items())
+    print(f"  Paquetes: {paquetes}", file=salida)
+
+
+def _resumen_registro(registro: RegistroResumen) -> str:
+    c = registro.contenido
+    if registro.tipo == "decisiones":
+        texto = f"{c['codigo']}: {c['decision']} (responsable: {c['responsable']})"
+        if c.get("observaciones"):
+            texto += f". {c['observaciones']}"
+        return texto
+    if registro.tipo == "experimentos":
+        texto = f"{c['identificador']} {c['modo']} {c['estado']}"
+        return texto + (f" - {c['error']}" if c.get("error") else "")
+    permitido = "permitido" if c["permitido"] else "RECHAZADO"
+    return f"{c['operacion']} ({permitido}): {c['motivo']}"
+
+
+def _mostrar_consulta(resultado: ResultadoConsultaRegistro, salida: TextIO) -> None:
+    print(f"Registro: {resultado.archivo}", file=salida)
+    print(f"{resultado.tipo.capitalize()}: {len(resultado.registros)}", file=salida)
+    for registro in resultado.registros:
+        print(
+            f"  n.º {registro.numero}  {registro.fecha}  {_resumen_registro(registro)}", file=salida
+        )
+
+
+def _mostrar_integridad(resultado: ResultadoIntegridad, salida: TextIO) -> None:
+    print(f"Registro: {resultado.archivo}", file=salida)
+    conteos = ", ".join(f"{t}: {n}" for t, n in resultado.registros_por_tipo.items())
+    print(f"  Registros: {conteos}", file=salida)
+    if resultado.correcto:
+        print("Integridad correcta: ningún registro fue modificado ni borrado.", file=salida)
+    else:
+        for problema in resultado.problemas:
+            print(f"  PROBLEMA: {problema}", file=salida)
+        print("Integridad ROTA: no use este registro como evidencia.", file=salida)
+
+
 def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
     if argumentos.comando == "estado":
         _mostrar_estado(servicios.proyecto.estado(), sys.stdout)
@@ -338,8 +434,52 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         )
         _mostrar_importacion(importacion, sys.stdout)
         return SALIDA_CORRECTA if importacion.informe.apto_para_m2 else SALIDA_ERROR
+    if argumentos.comando == "entorno":
+        _mostrar_entorno(servicios.reportes.entorno(), sys.stdout)
+        return SALIDA_CORRECTA
+    if argumentos.comando == "registro":
+        return _ejecutar_registro(argumentos, servicios)
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
+
+
+def _ejecutar_registro(argumentos: argparse.Namespace, servicios: Servicios) -> int:
+    reportes = servicios.reportes
+    if argumentos.accion == "decision":
+        registro = reportes.registrar_decision(
+            SolicitudRegistrarDecision(
+                codigo=argumentos.codigo,
+                decision=argumentos.decision,
+                justificacion=argumentos.justificacion,
+                responsable=argumentos.responsable,
+                observaciones=argumentos.observaciones,
+            )
+        )
+        print(f"Decisión registrada: n.º {registro.numero}, {_resumen_registro(registro)}")
+        print(f"  Huella: {registro.huella}")
+        return SALIDA_CORRECTA
+    if argumentos.accion == "ver":
+        _mostrar_consulta(
+            reportes.consultar(SolicitudConsultarRegistro(tipo=argumentos.tipo)), sys.stdout
+        )
+        return SALIDA_CORRECTA
+    if argumentos.accion == "verificar":
+        integridad = reportes.verificar()
+        _mostrar_integridad(integridad, sys.stdout)
+        return SALIDA_CORRECTA if integridad.correcto else SALIDA_ERROR
+    if argumentos.accion == "exportar":
+        exportacion = reportes.exportar(
+            SolicitudExportarRegistro(tipo=argumentos.tipo, salida=argumentos.salida)
+        )
+        print(f"Exportado: {exportacion.archivo} ({exportacion.filas} fila(s))")
+        print(f"  Huella: {exportacion.huella}")
+        return SALIDA_CORRECTA
+    demostracion = reportes.demostracion()
+    print("DEMOSTRACIÓN: corridas simuladas, sin modelo, en un registro aparte.")
+    print(f"Registro: {demostracion.archivo}")
+    for registro in demostracion.registros:
+        print(f"  n.º {registro.numero}  {_resumen_registro(registro)}")
+    return SALIDA_CORRECTA
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -112,16 +112,25 @@ Aceptación de los hitos siguientes por el equipo:
 | H2.2 — Ventanas, conjuntos, escenarios y anti-fuga | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_2.md`; 206 pruebas en Windows; commit `0abfc82` |
 | H2.3 — Datos sintéticos, diccionario, importación, auditoría y seudonimización | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_3.md`; 281 pruebas en Windows; commit `d8d8319` |
 
+Decisiones y autorizaciones posteriores del equipo:
+
+| Fecha | Decisión | Comunicado por | Registro |
+| --- | --- | --- | --- |
+| 29 de octubre de 2026 | **DP-16 decidida: SQLite** para el registro de experimentos, decisiones y accesos (`workspace/registro.sqlite`) | Jorge, en nombre del equipo; pendiente de confirmación de Javier | `docs/decisiones/DP-16.md` |
+| 29 de octubre de 2026 | **Se autoriza H2.7** (trazabilidad y registro), que dependía de H2.3 y DP-16 | Jorge, en nombre del equipo; pendiente de confirmación de Javier | Este apartado |
+
+H2.4 a H2.6 siguen esperando la revisión de la asesoría (apartado 5.2).
+
 La decisión de cierre del apartado 5.3 sigue sin marcar: el equipo aceptó H2.0 y autorizó H2.1 a H2.3 sin esperar la aprobación formal de la Fase 1 ni la revisión de la asesoría. Esos hitos no dependen de ninguna decisión metodológica.
 
 ## 7. Actividades expresamente excluidas de esta autorización
 
-- Hitos H2.4 a H2.8. (H2.1 a H2.3 quedaron autorizados en el apartado 5.1.)
+- Hitos H2.4 a H2.6 y H2.8. (H2.1 a H2.3 quedaron autorizados en el apartado 5.1, y H2.7 el 29 de octubre de 2026.)
 - Cualquier carga, copia o procesamiento de datos institucionales reales.
 - La definición de deserción, los umbrales o márgenes de suficiencia, los cortes cronológicos, los procedimientos de multiplicidad, la referencia R0, el margen de no inferioridad frente a ella y cualquier otro valor metodológico.
 - Entrenamiento de modelos, selección de modelos, evaluación final, evaluación comparativa frente a R0 e interpretabilidad (SHAP y LIME).
 - La interfaz Streamlit, salvo su archivo de configuración con la telemetría desactivada.
-- SQLite u otra base de datos, mientras DP-16 siga pendiente.
+- Otra base de datos distinta de SQLite (DP-16 se decidió por SQLite, solo para el registro local en `workspace/`).
 - Servicios cloud, servidores institucionales, autenticación, credenciales o servicios de pago.
 - El envío de datos institucionales a servicios externos o asistentes de IA.
 

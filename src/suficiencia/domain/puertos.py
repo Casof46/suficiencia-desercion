@@ -15,11 +15,14 @@ Solo se definen los puertos cuya forma no depende de decisiones abiertas:
   ofrece otra implementación de ``FuenteVariables`` a partir del diccionario.
 - :class:`Seudonimizador`: H2.3, implementado provisionalmente por
   ``persistence.seudonimizacion.SeudonimizadorHmac`` hasta que se decida DP-14.
+- :class:`RepositorioRegistros` (el ``RepositorioExperimentos`` de la
+  especificación, ampliado a decisiones y accesos) y :class:`CapturadorEntorno`:
+  H2.7, implementados por ``persistence.repositorio_sqlite`` (DP-16: SQLite) y
+  ``persistence.entorno``.
 
 Los demás puertos que nombra la especificación se definen en el hito que los usa,
 para no fijar firmas antes de tiempo:
 
-- ``RepositorioExperimentos``: H2.7, según DP-16 (SQLite o archivos).
 - ``EntrenadorModelos`` y ``Explicador``: fases posteriores a la Fase 2.
 """
 
@@ -32,6 +35,14 @@ import pandas as pd
 from suficiencia.domain.escenarios.modelo import CatalogoDeclarado, VariablesDeclaradas
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
+from suficiencia.domain.trazabilidad.registros import (
+    Entorno,
+    RegistroAcceso,
+    RegistroDecision,
+    RegistroExperimento,
+    RegistroGuardado,
+    TipoRegistro,
+)
 
 
 class FuenteConfiguracion(Protocol):
@@ -94,3 +105,23 @@ class Seudonimizador(Protocol):
     def seudonimizar(self, tabla: pd.DataFrame, identificadores: tuple[str, ...]) -> pd.DataFrame:
         """Devuelve una tabla nueva sin los identificadores y con la columna ``seudonimo``."""
         ...
+
+
+class RepositorioRegistros(Protocol):
+    """Registro de solo agregar para experimentos, decisiones y accesos (M6)."""
+
+    def agregar(
+        self, registro: RegistroExperimento | RegistroDecision | RegistroAcceso
+    ) -> RegistroGuardado:
+        """Agrega el registro al final de su cadena y lo devuelve tal como quedó guardado."""
+        ...
+
+    def listar(self, tipo: TipoRegistro) -> list[RegistroGuardado]:
+        """Devuelve los registros de un tipo, en el orden en que se agregaron."""
+        ...
+
+
+class CapturadorEntorno(Protocol):
+    """Describe el entorno de ejecución (RNF-17)."""
+
+    def capturar(self) -> Entorno: ...

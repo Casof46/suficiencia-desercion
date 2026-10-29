@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import os
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -199,6 +200,99 @@ def test_escenarios_desde_el_diccionario(
     assert "con 8 variables evaluadas" in salida
 
 
+def _proyecto_con_config(tmp_path: Path, raiz: Path) -> Path:
+    (tmp_path / "config").mkdir(exist_ok=True)
+    (tmp_path / "config" / "proyecto.yaml").write_bytes(
+        (raiz / "config" / "proyecto.yaml").read_bytes()
+    )
+    return tmp_path
+
+
+def test_entorno(raiz: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    codigo, salida, _ = _correr(["entorno"], raiz, capsys)
+    assert codigo == SALIDA_CORRECTA
+    assert "Huella de requirements.lock:" in salida
+    assert "OMP_NUM_THREADS" in salida
+
+
+def test_registro_decision_ver_verificar_y_exportar(
+    raiz: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    proyecto = _proyecto_con_config(tmp_path, raiz)
+    codigo, salida, _ = _correr(
+        [
+            "registro",
+            "decision",
+            "--codigo",
+            "DP-16",
+            "--decision",
+            "SQLite para el registro",
+            "--justificacion",
+            "prueba",
+            "--responsable",
+            "pruebas",
+        ],
+        proyecto,
+        capsys,
+    )
+    assert codigo == SALIDA_CORRECTA
+    assert "Decisión registrada: n.º 1, DP-16" in salida
+    codigo, salida, _ = _correr(["registro", "ver", "decisiones"], proyecto, capsys)
+    assert codigo == SALIDA_CORRECTA
+    assert "Decisiones: 1" in salida
+    codigo, salida, _ = _correr(["registro", "verificar"], proyecto, capsys)
+    assert codigo == SALIDA_CORRECTA
+    assert "Integridad correcta" in salida
+    codigo, salida, _ = _correr(
+        ["registro", "exportar", "decisiones", "--salida", "reports/d.xlsx"], proyecto, capsys
+    )
+    assert codigo == SALIDA_CORRECTA
+    assert (proyecto / "reports" / "d.xlsx").is_file()
+
+
+def test_registro_verificar_detecta_una_modificacion(
+    raiz: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    proyecto = _proyecto_con_config(tmp_path, raiz)
+    for numero in (1, 2):
+        _correr(
+            [
+                "registro",
+                "decision",
+                "--codigo",
+                f"DP-0{numero}",
+                "--decision",
+                "d",
+                "--justificacion",
+                "j",
+                "--responsable",
+                "r",
+            ],
+            proyecto,
+            capsys,
+        )
+    conexion = sqlite3.connect(proyecto / "workspace" / "registro.sqlite")
+    try:
+        conexion.execute("DROP TRIGGER decisiones_sin_borrar")
+        conexion.execute("DELETE FROM decisiones WHERE numero = 1")
+        conexion.commit()
+    finally:
+        conexion.close()
+    codigo, salida, _ = _correr(["registro", "verificar"], proyecto, capsys)
+    assert codigo == SALIDA_ERROR
+    assert "Integridad ROTA" in salida
+
+
+def test_registro_demostracion(
+    raiz: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    proyecto = _proyecto_con_config(tmp_path, raiz)
+    codigo, salida, _ = _correr(["registro", "demostracion"], proyecto, capsys)
+    assert codigo == SALIDA_CORRECTA
+    assert "exploratorio exitosa" in salida
+    assert "exploratorio fallida - RuntimeError: falla simulada a propósito" in salida
+
+
 @pytest.mark.parametrize("argumentos", [[], ["ejecutar", "XX"], ["desconocido"]])
 def test_un_uso_incorrecto_termina_con_codigo_2(
     raiz: Path, capsys: pytest.CaptureFixture[str], argumentos: list[str]
@@ -227,6 +321,7 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     generar_historial(15, semilla=2).to_csv(tmp_path / "data" / "bien.csv", index=False)
     con_problemas, _ = sembrar_problemas(generar_historial(15, semilla=2))
     con_problemas.to_csv(tmp_path / "data" / "mal.csv", index=False)
+    _proyecto_con_config(tmp_path, raiz)
     diccionario = str(raiz / "config" / "ejemplos" / "diccionario_sintetico.yaml")
     codigo = (
         "import sys\n"
@@ -241,6 +336,12 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         f"diccionario = {diccionario!r}\n"
         f"proyecto = {str(tmp_path)!r}\n"
         "main(['datos', 'diccionario', diccionario])\n"
+        "main(['--raiz', raiz, 'entorno'])\n"
+        "for argumentos in (['registro', 'decision', '--codigo', 'DP-16', '--decision',\n"
+        "                    'Decisión de prueba', '--justificacion', 'j', '--responsable', 'r'],\n"
+        "                   ['registro', 'ver', 'decisiones'], ['registro', 'verificar'],\n"
+        "                   ['registro', 'demostracion']):\n"
+        "    main(['--raiz', proyecto, *argumentos])\n"
         "for archivo in ('bien.csv', 'mal.csv'):\n"
         "    main(['--raiz', proyecto, 'datos', 'importar', proyecto + '/data/' + archivo,\n"
         "          '--diccionario', diccionario, '--clave-efimera'])\n"
@@ -260,4 +361,6 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "Verificación anti-fuga: correcta" in salida
     assert "Resultado: APTO" in salida
     assert "ERROR CRÍTICO" in salida
+    assert "Integridad correcta" in salida
+    assert "DEMOSTRACIÓN" in salida
     assert salida.rstrip().endswith("CARGADAS=")

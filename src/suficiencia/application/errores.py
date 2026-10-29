@@ -15,6 +15,7 @@ from suficiencia.domain.errores import (
     HuellaInvalida,
 )
 from suficiencia.domain.escenarios.construccion import FugaTemporal
+from suficiencia.domain.trazabilidad.filtro import IdentificadorEnExportacion
 
 __all__ = [
     "AuditoriaConErrores",
@@ -24,4 +25,5 @@ __all__ = [
     "ErrorSuficiencia",
     "FugaTemporal",
     "HuellaInvalida",
+    "IdentificadorEnExportacion",
 ]

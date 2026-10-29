@@ -82,8 +82,8 @@ def test_no_se_incorporan_bibliotecas_de_hitos_posteriores(raiz: Path) -> None:
     assert presentes == set(), f"Bibliotecas de hitos posteriores: {sorted(presentes)}"
 
 
-def test_ningun_modulo_usa_sqlite_mientras_dp16_este_pendiente(raiz: Path) -> None:
-    """DP-16 (SQLite o archivos para el registro) sigue abierta."""
+def test_solo_el_repositorio_de_registros_usa_sqlite(raiz: Path) -> None:
+    """DP-16 se decidió por SQLite (29-10-2026) solo para el registro de trazabilidad."""
     usos = []
     for archivo in (raiz / "src").rglob("*.py"):
         arbol = ast.parse(archivo.read_text(encoding="utf-8"))
@@ -94,8 +94,8 @@ def test_ningun_modulo_usa_sqlite_mientras_dp16_este_pendiente(raiz: Path) -> No
             elif isinstance(nodo, ast.ImportFrom) and nodo.module:
                 modulos = [nodo.module]
             if any(m.split(".")[0] == "sqlite3" for m in modulos):
-                usos.append(str(archivo.relative_to(raiz)))
-    assert usos == []
+                usos.append(archivo.relative_to(raiz).as_posix())
+    assert sorted(set(usos)) == ["src/suficiencia/persistence/repositorio_sqlite.py"]
 
 
 def test_version_minima_de_python(raiz: Path) -> None:

@@ -11,6 +11,7 @@ obligaría a suponer valores (decisión D-21 de H2.1).
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -192,3 +193,72 @@ class ResultadoImportacion(Contrato):
         default=None, description="Huella del dataset procesado; solo si la auditoría es apta."
     )
     archivo_salida: str | None = None
+
+
+# H2.7: trazabilidad --------------------------------------------------------------
+
+PATRON_TIPO_REGISTRO = r"^(experimentos|decisiones|accesos)$"
+
+
+class EntornoResumen(Contrato):
+    python: str
+    sistema: str
+    huella_bloqueo: str | None
+    commit: str | None
+    cambios_sin_commit: bool | None
+    nucleos: int | None
+    hilos: dict[str, str]
+    paquetes: dict[str, str]
+
+
+class SolicitudRegistrarDecision(Contrato):
+    """Registra una decisión metodológica DP-xx (RF-M6-05)."""
+
+    codigo: str = Field(pattern=r"^DP-\d{2}[a-m]?$")
+    decision: str = Field(min_length=1)
+    justificacion: str = Field(min_length=1)
+    responsable: str = Field(min_length=1)
+    observaciones: str | None = None
+
+
+class RegistroResumen(Contrato):
+    tipo: str
+    numero: int
+    fecha: str
+    huella: str
+    contenido: dict[str, Any]
+
+
+class SolicitudConsultarRegistro(Contrato):
+    tipo: str = Field(pattern=PATRON_TIPO_REGISTRO)
+
+
+class ResultadoConsultaRegistro(Contrato):
+    archivo: str
+    tipo: str
+    registros: tuple[RegistroResumen, ...]
+
+
+class ResultadoIntegridad(Contrato):
+    archivo: str
+    correcto: bool
+    registros_por_tipo: dict[str, int]
+    problemas: tuple[str, ...]
+
+
+class SolicitudExportarRegistro(Contrato):
+    """Exporta un tipo de registro a CSV o Excel dentro de la carpeta de reportes."""
+
+    tipo: str = Field(pattern=PATRON_TIPO_REGISTRO)
+    salida: Path
+
+
+class ResultadoExportacion(Contrato):
+    archivo: str
+    filas: int
+    huella: str
+
+
+class ResultadoDemostracion(Contrato):
+    archivo: str
+    registros: tuple[RegistroResumen, ...]

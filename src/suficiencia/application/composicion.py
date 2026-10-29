@@ -27,8 +27,11 @@ from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
 from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario, cargar_diccionario
+from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
+from suficiencia.persistence.exportacion import exportar_tabla
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
+from suficiencia.persistence.repositorio_sqlite import RepositorioSqlite
 from suficiencia.persistence.seudonimizacion import SeudonimizadorHmac
 
 
@@ -39,6 +42,7 @@ class Servicios:
     proyecto: ServicioProyecto
     datos: ServicioDatos
     escenarios: ServicioEscenarios
+    reportes: ServicioReportes
     casos_de_uso: tuple[ServicioCasosDeUso, ...]
 
     def servicio_de(self, codigo: str) -> ServicioCasosDeUso:
@@ -75,6 +79,10 @@ def _huella_de_tabla(tabla: pd.DataFrame) -> Huella:
     return Huella.de_bytes(contenido_canonico(tabla))
 
 
+def _exportar(tabla: pd.DataFrame, archivo: Path) -> Huella:
+    return exportar_tabla(tabla, archivo)
+
+
 def crear_servicios(raiz: Path) -> Servicios:
     """Construye los servicios para el proyecto ubicado en ``raiz``."""
     datos = ServicioDatos(
@@ -91,6 +99,13 @@ def crear_servicios(raiz: Path) -> Servicios:
         fuente_variables=_fuente_variables,
         fuente_diccionario=_fuente_diccionario,
     )
+    reportes = ServicioReportes(
+        raiz=raiz,
+        fuente_configuracion=FuenteConfiguracionYaml,
+        repositorio=RepositorioSqlite,
+        capturador=CapturadorEntornoLocal,
+        exportar_tabla=_exportar,
+    )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,
         escenarios,
@@ -98,7 +113,7 @@ def crear_servicios(raiz: Path) -> Servicios:
         ServicioExperimentos(),
         ServicioEvaluacionFinal(),
         ServicioInterpretabilidad(),
-        ServicioReportes(),
+        reportes,
     )
     proyecto = ServicioProyecto(
         raiz=raiz,
@@ -107,5 +122,9 @@ def crear_servicios(raiz: Path) -> Servicios:
         fuente_configuracion=FuenteConfiguracionYaml,
     )
     return Servicios(
-        proyecto=proyecto, datos=datos, escenarios=escenarios, casos_de_uso=casos_de_uso
+        proyecto=proyecto,
+        datos=datos,
+        escenarios=escenarios,
+        reportes=reportes,
+        casos_de_uso=casos_de_uso,
     )

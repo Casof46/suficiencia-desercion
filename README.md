@@ -7,9 +7,9 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 | Elemento | Estado |
 | --- | --- |
 | Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**; propuesta de acta en `docs/gestion/acta_cierre_fase_1_propuesta.md`. H2.0 se construyó sobre la v0.4 y H2.1 sobre la v0.5 |
-| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. Los hitos autorizados (H2.1 a H2.3) están completos |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) ejecutado, pendiente de verificación en Windows. H2.4 a H2.6 esperan a la asesoría |
 | Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
-| Decisiones metodológicas | DP-01 a DP-20 abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 sin aceptar |
+| Decisiones metodológicas | DP-16 decidida (SQLite; `docs/decisiones/`); las otras 19 abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 sin aceptar |
 | Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
 > **Datos institucionales.** No coloque datos reales en este repositorio, no los suba a repositorios públicos ni privados y no los envíe a servicios externos o asistentes de IA sin autorización expresa. Las condiciones previas están en la sección H.1 del documento "Fase 1 — Auditoría final y acta de cierre". La seudonimización no equivale a anonimización.
@@ -54,6 +54,9 @@ Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
 .venv\Scripts\python scripts\generar_sintetico.py --semilla 1 --salida data\sintetico\historial.xlsx
 .venv\Scripts\suficiencia datos diccionario config\ejemplos\diccionario_sintetico.yaml
 .venv\Scripts\suficiencia datos importar data\sintetico\historial.xlsx --diccionario config\ejemplos\diccionario_sintetico.yaml --clave-efimera
+.venv\Scripts\suficiencia entorno           # entorno que se registra con cada corrida
+.venv\Scripts\suficiencia registro ver decisiones
+.venv\Scripts\suficiencia registro verificar  # comprueba que ningún registro fue modificado
 .venv\Scripts\suficiencia ejecutar CU-03    # responde que el caso de uso aún no está implementado
 ```
 

@@ -47,6 +47,9 @@ DEBEN_IGNORARSE = [
     ".hypothesis/examples/x",
     "data/sintetico/historial.xlsx",
     "data/interim/procesado.csv",
+    "workspace/registro.sqlite",
+    "workspace/registro_demostracion.sqlite",
+    "reports/decisiones.xlsx",
     "~$plantilla.xlsx",
 ]
 
@@ -64,6 +67,8 @@ DEBEN_VERSIONARSE = [
     "config/ejemplos/diccionario_sintetico.yaml",
     "tests/fixtures/generador_sintetico.py",
     "scripts/generar_sintetico.py",
+    "docs/decisiones/DP-16.md",
+    "src/suficiencia/persistence/repositorio_sqlite.py",
     "data/README.md",
     "README.md",
     "src/suficiencia/__init__.py",

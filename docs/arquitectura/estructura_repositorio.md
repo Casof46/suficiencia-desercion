@@ -1,6 +1,6 @@
 # Estructura del repositorio y límites de los módulos
 
-La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 a H2.3 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
+La estructura sigue la sección 6 de la especificación v0.5, reducida a lo que H2.0 a H2.3 y H2.7 necesitan. Las carpetas de hitos posteriores no se crean vacías: se añaden cuando un hito autorizado las use.
 
 ## 1. Árbol actual
 
@@ -36,6 +36,7 @@ suficiencia-desercion/
 │   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py; H2.3
+│   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
 │   │   └── escenarios/         # M2: modelo.py (bloques, ventanas, conjuntos, escenarios) y construccion.py (constructor y anti-fuga); H2.2
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
@@ -49,11 +50,15 @@ suficiencia-desercion/
 │   │   ├── escenarios_yaml.py  # lector de config/escenarios.yaml y de variables; H2.2
 │   │   ├── diccionario_yaml.py # lector del diccionario de datos; H2.3
 │   │   ├── lectores.py         # CSV y Excel como texto; escritura del dataset procesado; H2.3
-│   │   └── seudonimizacion.py  # HMAC-SHA256 provisional (DP-14); H2.3
+│   │   ├── seudonimizacion.py  # HMAC-SHA256 provisional (DP-14); H2.3
+│   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7
+│   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
+│   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
 │   └── ui/                     # vacía todavía
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (solo pruebas); H2.3
+    ├── integration/            # registro SQLite, entorno, corridas y exportación; H2.7
     ├── unit/                   # dominio, servicios, persistencia, configuración, red
     └── architecture/           # contratos de capas, línea de comandos, privacidad, alcance
 ```
@@ -67,13 +72,13 @@ suficiencia-desercion/
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
 | `docs/especificacion/` | Copias de referencia de la v0.5 y la v0.4 | Igual |
 | `docs/diagramas/` | Cuatro archivos `.mmd` | Igual |
-| `docs/decisiones/` | No existe todavía | Se creará al resolverse la primera decisión DP (RF-M6-05). Las decisiones técnicas de H2.0 están en `docs/arquitectura/decisiones_h2_0.md`, que no son decisiones metodológicas |
+| `docs/decisiones/` | Ficha de DP-16, la primera decisión resuelta (RF-M6-05) | Las decisiones técnicas de cada hito están en `docs/arquitectura/`, y no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
 | `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
-| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2) y `datos/` (H2.3), sin objetivo, poblaciones ni partición | Los demás se crean en H2.4 a H2.7 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2), `datos/` (H2.3) y `trazabilidad/` (H2.7); sin objetivo, poblaciones, partición ni evaluación | `evaluacion/` y el resto, en H2.4 a H2.6 |
 | Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
 | `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
-| `tests/{unit,integration,acceptance,architecture,fixtures}` | `unit/`, `architecture/` y `fixtures/` | Las demás se crean con su primera prueba |
+| `tests/{unit,integration,acceptance,architecture,fixtures}` | Todas salvo `acceptance/` | Se crea con su primera prueba |
 | `scripts/` | `scripts/verificar.py` | Windows no incluye `make` |
 | `notebooks/` | No existe | Sin uso en H2.0 |
 
