@@ -2,7 +2,8 @@
 
 Nació en H2.0 (criterios 3 y 10). Cuando un hito autorizado incorpora una
 biblioteca de la lista, la quita de ``POSTERGADAS`` y registra el cambio en
-docs/arquitectura/. H2.1 incorporó pydantic (decisión D-20).
+docs/arquitectura/. H2.1 incorporó pydantic (decisión D-20) y H2.3, pandas, NumPy y
+openpyxl (decisión D-41).
 """
 
 from __future__ import annotations
@@ -21,10 +22,7 @@ POSTERGADAS = {
     "lightgbm",
     "shap",
     "lime",
-    "pandas",
-    "numpy",
     "pyarrow",
-    "openpyxl",
     "joblib",
     "imbalanced-learn",
     "optuna",

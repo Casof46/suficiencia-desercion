@@ -19,6 +19,9 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "PyYAML>=6.0",     # lectura de config/*.yaml (RNF-10); H2.0
     "pydantic>=2.7",   # contratos de entrada y salida de los servicios (RNF-14); H2.1
+    "pandas>=2.2",     # tablas de datos en dominio y persistencia (sección 5.1); H2.3
+    "numpy>=1.26",     # cálculo numérico; dependencia de pandas usada directamente; H2.3
+    "openpyxl>=3.1",   # lectura y escritura de archivos .xlsx (RF-M1-01); H2.3
 ]
 
 [project.scripts]
@@ -33,6 +36,7 @@ dev = [
     "mypy>=1.10",           # verificación de tipos (RNF-11)
     "import-linter>=2.0",   # contratos de dependencias entre capas (RNF-01, PA-01)
     "types-PyYAML>=6.0",    # tipos de PyYAML para mypy
+    "pandas-stubs>=2.2",    # tipos de pandas para mypy; H2.3
     "hatchling>=1.25",      # backend de construcción, fijado en el lock para instalar sin red
     "editables>=0.5",       # requerido por hatchling para la instalación editable (-e .)
 ]
@@ -43,6 +47,8 @@ packages = ["src/suficiencia"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
+# tests/ en la ruta de importación para usar tests/fixtures (generador sintético, H2.3).
+pythonpath = ["tests"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
 xfail_strict = true
 markers = [
@@ -62,4 +68,4 @@ python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
-mypy_path = "src"
+mypy_path = ["src", "tests"]

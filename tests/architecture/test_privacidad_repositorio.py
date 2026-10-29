@@ -45,6 +45,8 @@ DEBEN_IGNORARSE = [
     ".pytest_cache/v/cache/nodeids",
     ".mypy_cache/3.12/x.json",
     ".hypothesis/examples/x",
+    "data/sintetico/historial.xlsx",
+    "data/interim/procesado.csv",
     "~$plantilla.xlsx",
 ]
 
@@ -59,6 +61,9 @@ DEBEN_VERSIONARSE = [
     "config/escenarios.yaml",
     "config/ejemplos/escenarios_ficticio.yaml",
     "config/ejemplos/variables_ficticias.yaml",
+    "config/ejemplos/diccionario_sintetico.yaml",
+    "tests/fixtures/generador_sintetico.py",
+    "scripts/generar_sintetico.py",
     "data/README.md",
     "README.md",
     "src/suficiencia/__init__.py",

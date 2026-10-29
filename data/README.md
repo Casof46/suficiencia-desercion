@@ -11,3 +11,10 @@ Subcarpetas previstas por la especificación (sección 6), que se crearán cuand
 - `raw/`: archivos fuente, de solo lectura.
 - `interim/`: datos seudonimizados.
 - `processed/`: datasets listos para M2.
+
+Desde H2.3 también se usan:
+
+- `sintetico/`: archivos **sintéticos** generados con `scripts/generar_sintetico.py`. No contienen datos de ninguna persona.
+- `interim/`: datasets sintéticos ya seudonimizados y auditados con `suficiencia datos importar --salida`.
+
+El comando `suficiencia datos importar` rechaza cualquier archivo que no esté marcado como sintético en todas sus filas.

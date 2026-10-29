@@ -11,8 +11,10 @@ Solo se definen los puertos cuya forma no depende de decisiones abiertas:
 - :class:`AlmacenArtefactos`: interfaz fijada en H2.1; su implementación llega
   con la trazabilidad (H2.7).
 - :class:`FuenteCatalogoVentanas` y :class:`FuenteVariables`: H2.2, implementados
-  por ``persistence.escenarios_yaml``. En H2.3 el diccionario de variables será
-  otra implementación de ``FuenteVariables``.
+  por ``persistence.escenarios_yaml``. Desde H2.3, ``persistence.diccionario_yaml``
+  ofrece otra implementación de ``FuenteVariables`` a partir del diccionario.
+- :class:`Seudonimizador`: H2.3, implementado provisionalmente por
+  ``persistence.seudonimizacion.SeudonimizadorHmac`` hasta que se decida DP-14.
 
 Los demás puertos que nombra la especificación se definen en el hito que los usa,
 para no fijar firmas antes de tiempo:
@@ -24,6 +26,8 @@ para no fijar firmas antes de tiempo:
 from __future__ import annotations
 
 from typing import Protocol
+
+import pandas as pd
 
 from suficiencia.domain.escenarios.modelo import CatalogoDeclarado, VariablesDeclaradas
 from suficiencia.domain.huella import Huella
@@ -81,4 +85,12 @@ class FuenteVariables(Protocol):
         DecisionPendiente: si las variables reales todavía no están definidas (DP-03).
         ConfiguracionInvalida: si la definición no es válida.
         """
+        ...
+
+
+class Seudonimizador(Protocol):
+    """Reemplaza las columnas identificadoras por un seudónimo (RF-M1-04)."""
+
+    def seudonimizar(self, tabla: pd.DataFrame, identificadores: tuple[str, ...]) -> pd.DataFrame:
+        """Devuelve una tabla nueva sin los identificadores y con la columna ``seudonimo``."""
         ...

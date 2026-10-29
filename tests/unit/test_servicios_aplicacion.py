@@ -9,15 +9,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 
+from fixtures.generador_sintetico import generar_historial, sembrar_problemas
 from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import (
     CasoDeUso,
     SolicitudCasoDeUso,
     SolicitudGenerarEscenarios,
+    SolicitudImportarDataset,
     SolicitudValidarConfiguracion,
+    SolicitudValidarDiccionario,
 )
 from suficiencia.application.errores import (
     CasoDeUsoNoDisponible,
@@ -27,6 +31,8 @@ from suficiencia.application.errores import (
 from suficiencia.application.servicio_datos import ServicioDatos
 from suficiencia.application.servicio_escenarios import ServicioEscenarios
 from suficiencia.application.servicio_proyecto import ServicioProyecto
+from suficiencia.domain.errores import ConfiguracionInvalida as ErrorDeConfiguracion
+from suficiencia.domain.errores import DecisionPendiente
 from suficiencia.domain.escenarios.modelo import (
     Bloque,
     CatalogoDeclarado,
@@ -34,8 +40,11 @@ from suficiencia.domain.escenarios.modelo import (
     Variable,
     VariablesDeclaradas,
 )
+from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
-from suficiencia.domain.puertos import FuenteConfiguracion, FuenteVariables
+from suficiencia.domain.puertos import FuenteConfiguracion, FuenteVariables, Seudonimizador
+from suficiencia.persistence.diccionario_yaml import cargar_diccionario
+from suficiencia.persistence.lectores import leer_tabla
 
 # Sección 6 de la especificación: qué servicio atiende cada caso de uso.
 REPARTO_ESPERADO = {
@@ -73,9 +82,9 @@ def test_ejecutar_un_caso_de_uso_devuelve_un_error_controlado(raiz: Path, codigo
     assert error.value.caso == codigo
 
 
-def test_un_servicio_rechaza_un_caso_de_uso_que_no_atiende() -> None:
+def test_un_servicio_rechaza_un_caso_de_uso_que_no_atiende(raiz: Path) -> None:
     with pytest.raises(ErrorSuficiencia, match="no atiende"):
-        ServicioDatos().ejecutar(SolicitudCasoDeUso(codigo="CU-05"))
+        crear_servicios(raiz).datos.ejecutar(SolicitudCasoDeUso(codigo="CU-05"))
 
 
 def test_un_caso_de_uso_inexistente_se_rechaza(raiz: Path) -> None:
@@ -205,6 +214,7 @@ def test_generar_escenarios_usa_los_puertos_y_propaga_el_rotulo_ficticio(
         raiz=Path("raiz-ficticia"),
         fuente_catalogo=lambda _archivo: _CatalogoEnMemoria(catalogo_ficticio),
         fuente_variables=variables,
+        fuente_diccionario=lambda _archivo: _VariablesEnMemoria(variables_ficticias),
     )
     resultado = servicio.generar_escenarios(SolicitudGenerarEscenarios())
     assert rutas == [(Path("raiz-ficticia") / "config" / "diccionario" / "variables.yaml", True)]
@@ -214,3 +224,115 @@ def test_generar_escenarios_usa_los_puertos_y_propaga_el_rotulo_ficticio(
     no_factibles = {e.codigo for e in resultado.escenarios if not e.factible}
     assert "T0|A+B" in no_factibles
     assert "T1|A+B" not in no_factibles
+
+
+# H2.3: datos -------------------------------------------------------------------
+
+DICCIONARIO_EJEMPLO = Path("config") / "ejemplos" / "diccionario_sintetico.yaml"
+
+
+def _proyecto_temporal(tmp_path: Path, raiz: Path, tabla: pd.DataFrame) -> tuple[Path, Path]:
+    """Copia mínima de un proyecto: diccionario de ejemplo y un archivo de datos."""
+    diccionario = tmp_path / "diccionario.yaml"
+    diccionario.write_bytes((raiz / DICCIONARIO_EJEMPLO).read_bytes())
+    archivo = tmp_path / "data" / "fuente.csv"
+    archivo.parent.mkdir()
+    tabla.to_csv(archivo, index=False)
+    return diccionario, archivo
+
+
+def test_importar_un_archivo_sintetico_lo_seudonimiza_y_audita(tmp_path: Path, raiz: Path) -> None:
+    diccionario, archivo = _proyecto_temporal(tmp_path, raiz, generar_historial(40, semilla=3))
+    servicio = crear_servicios(tmp_path).datos
+    resultado = servicio.importar_dataset(
+        SolicitudImportarDataset(
+            archivo=archivo,
+            diccionario=diccionario,
+            clave_efimera=True,
+            salida=Path("data") / "interim" / "procesado.csv",
+        )
+    )
+    assert resultado.sintetico
+    assert resultado.informe.apto_para_m2
+    assert resultado.columnas_seudonimizadas == ("codigo_estudiante",)
+    salida = Path(resultado.archivo_salida or "")
+    assert salida.is_file()
+    procesado = pd.read_csv(salida, dtype=str)
+    assert "codigo_estudiante" not in procesado.columns
+    assert "seudonimo" in procesado.columns
+    assert resultado.huella_procesado == Huella.de_bytes(salida.read_bytes()).valor
+
+
+def test_importar_rechaza_un_archivo_no_marcado_como_sintetico_sin_procesarlo(
+    tmp_path: Path, raiz: Path
+) -> None:
+    tabla = generar_historial(10, semilla=3)
+    tabla.loc[2, "origen_datos"] = "INSTITUCION"
+    diccionario, archivo = _proyecto_temporal(tmp_path, raiz, tabla)
+    llamadas: list[bool] = []
+
+    def seudonimizador(efimera: bool) -> Seudonimizador:
+        llamadas.append(efimera)
+        raise AssertionError("no debe llegar a seudonimizar")
+
+    servicio = ServicioDatos(
+        raiz=tmp_path,
+        cargar_diccionario=cargar_diccionario,
+        leer_tabla=lambda a, s: (leer_tabla(a, s).tabla, leer_tabla(a, s).huella_fuente),
+        seudonimizador=seudonimizador,
+        huella_de_tabla=lambda t: Huella.de_bytes(b""),
+        escribir_tabla=lambda t, a: Huella.de_bytes(b""),
+    )
+    with pytest.raises(DecisionPendiente) as error:
+        servicio.importar_dataset(
+            SolicitudImportarDataset(archivo=archivo, diccionario=diccionario, clave_efimera=True)
+        )
+    assert error.value.decision == "DP-02"
+    assert llamadas == []
+
+
+def test_importar_no_guarda_nada_fuera_de_data_ni_si_la_auditoria_falla(
+    tmp_path: Path, raiz: Path
+) -> None:
+    con_problemas, _ = sembrar_problemas(generar_historial(20, semilla=3))
+    diccionario, archivo = _proyecto_temporal(tmp_path, raiz, con_problemas)
+    servicio = crear_servicios(tmp_path).datos
+    with pytest.raises(ErrorDeConfiguracion, match="fuera de la carpeta data/"):
+        servicio.importar_dataset(
+            SolicitudImportarDataset(
+                archivo=archivo,
+                diccionario=diccionario,
+                clave_efimera=True,
+                salida=Path("reports") / "x.csv",
+            )
+        )
+    resultado = servicio.importar_dataset(
+        SolicitudImportarDataset(
+            archivo=archivo,
+            diccionario=diccionario,
+            clave_efimera=True,
+            salida=Path("data") / "x.csv",
+        )
+    )
+    assert not resultado.informe.apto_para_m2
+    assert resultado.huella_procesado is None
+    assert resultado.archivo_salida is None
+    assert not (tmp_path / "data" / "x.csv").exists()
+
+
+def test_validar_diccionario_resume_roles_y_rasgos(raiz: Path) -> None:
+    resultado = crear_servicios(raiz).datos.validar_diccionario(
+        SolicitudValidarDiccionario(archivo=raiz / DICCIONARIO_EJEMPLO)
+    )
+    assert resultado.ficticio
+    assert resultado.variables_por_rol["rasgo"] == 8
+    assert resultado.variables_por_rol["identificador"] == 1
+    assert len(resultado.rasgos) == 8
+
+
+def test_cu01_y_cu02_muestran_su_avance(raiz: Path) -> None:
+    estado = crear_servicios(raiz).proyecto.estado()
+    casos = {c.codigo: c for s in estado.servicios for c in s.casos_de_uso}
+    assert "suficiencia datos importar" in (casos["CU-01"].avance or "")
+    assert "suficiencia datos diccionario" in (casos["CU-02"].avance or "")
+    assert not casos["CU-01"].disponible

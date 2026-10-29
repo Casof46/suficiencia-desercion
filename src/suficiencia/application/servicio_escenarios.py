@@ -17,6 +17,7 @@ from suficiencia.application.contratos import (
     SolicitudGenerarEscenarios,
     VentanaResumen,
 )
+from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.escenarios.construccion import construir_escenarios, verificar_sin_fuga
 from suficiencia.domain.puertos import FuenteCatalogoVentanas, FuenteVariables
 
@@ -46,10 +47,12 @@ class ServicioEscenarios(ServicioCasosDeUso):
         raiz: Path,
         fuente_catalogo: Callable[[Path], FuenteCatalogoVentanas],
         fuente_variables: Callable[[Path, bool], FuenteVariables],
+        fuente_diccionario: Callable[[Path], FuenteVariables],
     ) -> None:
         self._raiz = raiz
         self._fuente_catalogo = fuente_catalogo
         self._fuente_variables = fuente_variables
+        self._fuente_diccionario = fuente_diccionario
 
     def generar_escenarios(self, solicitud: SolicitudGenerarEscenarios) -> ResultadoEscenarios:
         """Construye los 32 escenarios y comprueba que ninguno tenga fuga temporal.
@@ -62,10 +65,18 @@ class ServicioEscenarios(ServicioCasosDeUso):
         catalogo = self._fuente_catalogo(
             solicitud.configuracion or self._raiz / ARCHIVO_ESCENARIOS
         ).cargar()
-        por_omision = solicitud.variables is None
-        variables = self._fuente_variables(
-            solicitud.variables or self._raiz / ARCHIVO_VARIABLES, por_omision
-        ).cargar()
+        if solicitud.variables is not None and solicitud.diccionario is not None:
+            raise ConfiguracionInvalida(
+                "Se indicaron a la vez un archivo de variables y un diccionario.",
+                "Use solo uno de los dos.",
+            )
+        if solicitud.diccionario is not None:
+            variables = self._fuente_diccionario(solicitud.diccionario).cargar()
+        else:
+            por_omision = solicitud.variables is None
+            variables = self._fuente_variables(
+                solicitud.variables or self._raiz / ARCHIVO_VARIABLES, por_omision
+            ).cargar()
 
         escenarios = construir_escenarios(catalogo.catalogo, variables.variables)
         verificar_sin_fuga(escenarios, variables.variables)

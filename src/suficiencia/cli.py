@@ -7,7 +7,10 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
 
     suficiencia estado
     suficiencia config validar [--archivo RUTA]
-    suficiencia escenarios [--configuracion RUTA] [--variables RUTA] [--detalle]
+    suficiencia escenarios [--configuracion RUTA] [--variables RUTA | --diccionario RUTA]
+                           [--detalle]
+    suficiencia datos diccionario RUTA
+    suficiencia datos importar ARCHIVO --diccionario RUTA [--clave-efimera] [--salida RUTA]
     suficiencia ejecutar CU-03
 
 Códigos de salida: 0, correcto; 1, configuración inválida o error del motor;
@@ -30,11 +33,15 @@ import suficiencia
 from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
     EstadoProyecto,
+    ResultadoDiccionario,
     ResultadoEscenarios,
+    ResultadoImportacion,
     ResultadoValidacionConfiguracion,
     SolicitudCasoDeUso,
     SolicitudGenerarEscenarios,
+    SolicitudImportarDataset,
     SolicitudValidarConfiguracion,
+    SolicitudValidarDiccionario,
 )
 from suficiencia.application.errores import CasoDeUsoNoDisponible, ErrorSuficiencia
 
@@ -71,6 +78,12 @@ def _codigo_caso_de_uso(texto: str) -> str:
             f"'{texto}' no es un código de caso de uso; use el formato CU-01."
         )
     return codigo
+
+
+def _separador(texto: str) -> str:
+    if len(texto) != 1:
+        raise argparse.ArgumentTypeError("el separador debe ser un solo carácter, por ejemplo ';'.")
+    return texto
 
 
 def construir_analizador() -> argparse.ArgumentParser:
@@ -114,7 +127,42 @@ def construir_analizador() -> argparse.ArgumentParser:
         help="Archivo de variables (por omisión, config/diccionario/variables.yaml; DP-03).",
     )
     escenarios.add_argument(
+        "--diccionario",
+        type=Path,
+        help="Toma las variables de los rasgos de un diccionario de datos (H2.3).",
+    )
+    escenarios.add_argument(
         "--detalle", action="store_true", help="Muestra las variables de cada escenario."
+    )
+    datos = comandos.add_parser(
+        "datos", help="Diccionario, importación y auditoría de datos sintéticos (H2.3)."
+    )
+    acciones_datos = datos.add_subparsers(dest="accion", required=True, title="acciones")
+    diccionario = acciones_datos.add_parser(
+        "diccionario", help="Valida un diccionario de datos (CU-02)."
+    )
+    diccionario.add_argument("archivo", type=Path, help="Archivo YAML del diccionario.")
+    importar = acciones_datos.add_parser(
+        "importar",
+        help="Importa, seudonimiza y audita un archivo CSV o Excel sintético (CU-01).",
+    )
+    importar.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
+    importar.add_argument(
+        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    )
+    importar.add_argument(
+        "--clave-efimera",
+        action="store_true",
+        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
+    )
+    importar.add_argument(
+        "--salida", type=Path, help="Guarda el dataset procesado (CSV) dentro de data/."
+    )
+    importar.add_argument(
+        "--separador",
+        type=_separador,
+        default=",",
+        help="Separador del CSV (por omisión, la coma).",
     )
     ejecutar = comandos.add_parser("ejecutar", help="Ejecuta un caso de uso (CU-01 a CU-12).")
     ejecutar.add_argument("caso", type=_codigo_caso_de_uso, help="Código, por ejemplo CU-03.")
@@ -183,6 +231,73 @@ def _mostrar_escenarios(resultado: ResultadoEscenarios, detalle: bool, salida: T
         )
 
 
+def _mostrar_diccionario(resultado: ResultadoDiccionario, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print("EJEMPLO FICTICIO: no es el diccionario del proyecto (DP-03).", file=salida)
+    print(f"Diccionario válido: {resultado.nombre}", file=salida)
+    roles = ", ".join(f"{rol}: {n}" for rol, n in sorted(resultado.variables_por_rol.items()))
+    print(f"  Variables por rol: {roles}", file=salida)
+    print(f"  Clave de cada fila: {', '.join(resultado.clave)}", file=salida)
+    print(f"  Rasgos ({len(resultado.rasgos)}), con bloque y ventana mínima:", file=salida)
+    for rasgo in resultado.rasgos:
+        print(
+            f"    {rasgo.bloque}  {rasgo.ventana_minima}  {rasgo.nombre}",
+            file=salida,
+        )
+
+
+def _mostrar_importacion(resultado: ResultadoImportacion, salida: TextIO) -> None:
+    informe = resultado.informe
+    if resultado.sintetico:
+        print(
+            "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+            file=salida,
+        )
+    print(f"\nArchivo: {resultado.archivo}", file=salida)
+    print(f"  Huella SHA-256 del archivo: {resultado.huella_fuente}", file=salida)
+    print(
+        f"  Seudonimizado: {', '.join(resultado.columnas_seudonimizadas) or 'ninguna columna'}"
+        " (reemplazado por 'seudonimo'; seudonimizar no es anonimizar)",
+        file=salida,
+    )
+    print(f"  Filas: {informe.n_filas}; columnas: {informe.n_columnas}", file=salida)
+    print("\nAuditoría por columna:", file=salida)
+    for c in informe.columnas:
+        detalle = f"vacíos {c.nulos}, tipo inválido {c.tipo_invalido}, "
+        detalle += f"fuera de dominio {c.fuera_de_dominio}"
+        if c.cardinalidad is None:
+            detalle += "; distribución omitida (columna del objetivo)"
+        else:
+            detalle += f"; valores distintos {c.cardinalidad}"
+        if c.minimo is not None:
+            detalle += f"; rango {c.minimo:g} a {c.maximo:g}"
+        if c.filas_con_problemas:
+            detalle += f"; filas {', '.join(str(f) for f in c.filas_con_problemas)}"
+        print(f"  {c.nombre} ({c.rol}, {c.tipo}): {detalle}", file=salida)
+    print(
+        f"\nFilas que repiten la clave: {informe.duplicados_clave}; "
+        f"copias exactas: {informe.filas_duplicadas}",
+        file=salida,
+    )
+    for alerta in informe.alertas:
+        print(f"  Alerta: {alerta}", file=salida)
+    for error in informe.errores_criticos:
+        print(f"  ERROR CRÍTICO: {error}", file=salida)
+    if informe.apto_para_m2:
+        print(
+            f"\nResultado: APTO para M2. Huella del dataset: {resultado.huella_procesado}",
+            file=salida,
+        )
+        if resultado.archivo_salida:
+            print(f"Dataset procesado guardado en {resultado.archivo_salida}", file=salida)
+    else:
+        print(
+            "\nResultado: NO APTO. Los errores críticos impiden pasar a M2 (RF-M1-08); "
+            "no se guardó ningún dataset.",
+            file=salida,
+        )
+
+
 def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
     if argumentos.comando == "estado":
         _mostrar_estado(servicios.proyecto.estado(), sys.stdout)
@@ -196,11 +311,33 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
     if argumentos.comando == "escenarios":
         escenarios = servicios.escenarios.generar_escenarios(
             SolicitudGenerarEscenarios(
-                configuracion=argumentos.configuracion, variables=argumentos.variables
+                configuracion=argumentos.configuracion,
+                variables=argumentos.variables,
+                diccionario=argumentos.diccionario,
             )
         )
         _mostrar_escenarios(escenarios, argumentos.detalle, sys.stdout)
         return SALIDA_CORRECTA
+    if argumentos.comando == "datos" and argumentos.accion == "diccionario":
+        _mostrar_diccionario(
+            servicios.datos.validar_diccionario(
+                SolicitudValidarDiccionario(archivo=argumentos.archivo)
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    if argumentos.comando == "datos":
+        importacion = servicios.datos.importar_dataset(
+            SolicitudImportarDataset(
+                archivo=argumentos.archivo,
+                diccionario=argumentos.diccionario,
+                clave_efimera=argumentos.clave_efimera,
+                salida=argumentos.salida,
+                separador=argumentos.separador,
+            )
+        )
+        _mostrar_importacion(importacion, sys.stdout)
+        return SALIDA_CORRECTA if importacion.informe.apto_para_m2 else SALIDA_ERROR
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
 

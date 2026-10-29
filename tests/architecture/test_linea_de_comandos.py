@@ -13,8 +13,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
+from fixtures.generador_sintetico import generar_historial, sembrar_problemas
 from suficiencia.cli import (
     SALIDA_CORRECTA,
     SALIDA_ERROR,
@@ -122,6 +124,81 @@ def test_escenarios_con_la_configuracion_del_proyecto_se_detiene_por_dp01d(
     assert "DP-01d" in error
 
 
+DICCIONARIO = "config/ejemplos/diccionario_sintetico.yaml"
+
+
+def test_datos_diccionario(
+    raiz: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(raiz)
+    codigo, salida, _ = _correr(["datos", "diccionario", DICCIONARIO], raiz, capsys)
+    assert codigo == SALIDA_CORRECTA
+    assert salida.startswith("EJEMPLO FICTICIO")
+    assert "Rasgos (8)" in salida
+
+
+def _proyecto(tmp_path: Path, tabla: pd.DataFrame) -> Path:
+    (tmp_path / "data").mkdir(exist_ok=True)
+    archivo = tmp_path / "data" / "fuente.csv"
+    tabla.to_csv(archivo, index=False)
+    return archivo
+
+
+def test_datos_importar_un_archivo_sintetico(
+    raiz: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    tabla = generar_historial(30, semilla=5)
+    archivo = _proyecto(tmp_path, tabla)
+    argumentos = ["datos", "importar", str(archivo), "--diccionario", str(raiz / DICCIONARIO)]
+    codigo, salida, _ = _correr(
+        [*argumentos, "--clave-efimera", "--salida", "data/interim/p.csv"], tmp_path, capsys
+    )
+    assert codigo == SALIDA_CORRECTA
+    assert salida.startswith("DATOS SINTÉTICOS")
+    assert "Resultado: APTO para M2" in salida
+    assert "distribución omitida (columna del objetivo)" in salida
+    assert (tmp_path / "data" / "interim" / "p.csv").is_file()
+    for codigo_estudiante in tabla["codigo_estudiante"]:
+        assert codigo_estudiante not in salida
+
+
+def test_datos_importar_con_errores_o_sin_clave_termina_con_codigo_1(
+    raiz: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("SUFICIENCIA_CLAVE_SEUDONIMO", raising=False)
+    con_problemas, _ = sembrar_problemas(generar_historial(30, semilla=5))
+    archivo = _proyecto(tmp_path, con_problemas)
+    argumentos = ["datos", "importar", str(archivo), "--diccionario", str(raiz / DICCIONARIO)]
+    codigo, salida, _ = _correr([*argumentos, "--clave-efimera"], tmp_path, capsys)
+    assert codigo == SALIDA_ERROR
+    assert "Resultado: NO APTO" in salida
+    codigo, _, error = _correr(argumentos, tmp_path, capsys)
+    assert codigo == SALIDA_ERROR
+    assert "DP-14" in error
+
+
+def test_escenarios_desde_el_diccionario(
+    raiz: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(raiz)
+    codigo, salida, _ = _correr(
+        [
+            "escenarios",
+            "--configuracion",
+            "config/ejemplos/escenarios_ficticio.yaml",
+            "--diccionario",
+            DICCIONARIO,
+        ],
+        raiz,
+        capsys,
+    )
+    assert codigo == SALIDA_CORRECTA
+    assert "con 8 variables evaluadas" in salida
+
+
 @pytest.mark.parametrize("argumentos", [[], ["ejecutar", "XX"], ["desconocido"]])
 def test_un_uso_incorrecto_termina_con_codigo_2(
     raiz: Path, capsys: pytest.CaptureFixture[str], argumentos: list[str]
@@ -140,12 +217,17 @@ def test_el_comando_suficiencia_esta_instalado() -> None:
 
 
 def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas(
-    raiz: Path,
+    raiz: Path, tmp_path: Path
 ) -> None:
     """Simula la salida redirigida en Windows, donde Python usa la codificación cp1252.
 
     Se ejecuta en un proceso aparte para partir de módulos sin cargar.
     """
+    (tmp_path / "data").mkdir()
+    generar_historial(15, semilla=2).to_csv(tmp_path / "data" / "bien.csv", index=False)
+    con_problemas, _ = sembrar_problemas(generar_historial(15, semilla=2))
+    con_problemas.to_csv(tmp_path / "data" / "mal.csv", index=False)
+    diccionario = str(raiz / "config" / "ejemplos" / "diccionario_sintetico.yaml")
     codigo = (
         "import sys\n"
         "from suficiencia.cli import main\n"
@@ -156,6 +238,12 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "                   ['ejecutar', 'CU-04'], ['ejecutar', 'CU-13'], ['escenarios'],\n"
         "                   ['escenarios', *ejemplos, '--detalle']):\n"
         "    main(['--raiz', raiz, *argumentos])\n"
+        f"diccionario = {diccionario!r}\n"
+        f"proyecto = {str(tmp_path)!r}\n"
+        "main(['datos', 'diccionario', diccionario])\n"
+        "for archivo in ('bien.csv', 'mal.csv'):\n"
+        "    main(['--raiz', proyecto, 'datos', 'importar', proyecto + '/data/' + archivo,\n"
+        "          '--diccionario', diccionario, '--clave-efimera'])\n"
         f"cargadas = [m for m in {BIBLIOTECAS_PROHIBIDAS!r} if m in sys.modules]\n"
         "print('CARGADAS=' + ','.join(cargadas))\n"
     )
@@ -170,4 +258,6 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     salida = proceso.stdout.decode("cp1252")
     assert "CU-12" in salida
     assert "Verificación anti-fuga: correcta" in salida
+    assert "Resultado: APTO" in salida
+    assert "ERROR CRÍTICO" in salida
     assert salida.rstrip().endswith("CARGADAS=")

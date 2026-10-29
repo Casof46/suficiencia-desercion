@@ -6,7 +6,7 @@
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5 (M2; RF-M2-01 a RF-M2-04; PU-01, 02, 03, 18 y 19); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | H2.1 a H2.3 autorizados el 28 de octubre de 2026 (acta, apartado 5.1), pendiente de confirmación de Javier |
-| Estado del hito | **Ejecutado y verificado en Linux; pendiente de verificación en Windows y de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git (commit `0abfc82`); aceptado por el equipo** el 28 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -37,7 +37,7 @@
 | --- | --- |
 | Linux, Python 3.11.17, 3.12.3 y 3.13.16, instalación limpia desde el bloqueo | Cinco `OK`; 6 contratos cumplidos; 205 pasan y 1 se omite (sin git) |
 | Linux, Python 3.12.3, con `git init` y `git add -A` | 206 pasan; `.hypothesis/` no queda para versionar |
-| Windows | **Pendiente**: debe ejecutarlo el equipo |
+| Windows, Python 3.13.0, PC de Jorge (28 de octubre de 2026), entorno de H2.1 actualizado | Cinco `OK`; 6 contratos cumplidos; **206 pasan, 0 omitidas**. `suficiencia escenarios` se detuvo por DP-01d con la configuración del proyecto; con los ejemplos mostró "EJEMPLO FICTICIO", 32 escenarios (28 factibles, 4 no factibles) y la verificación anti-fuga correcta |
 
 ## 4. Matriz de criterios de aceptación de H2.2
 
@@ -48,7 +48,7 @@
 | 3 | Una configuración inválida se rechaza con mensaje en español | Cumplido | 14 casos de configuración inválida |
 | 4 | Factibilidad por bloque | Cumplido | PU-19 |
 | 5 | Sin fechas índice reales ni asignación real de variables | Cumplido | `config/escenarios.yaml` con `null`; ejemplos rotulados como ficticios |
-| 6 | Funciona en el sistema de trabajo | **Pendiente en Windows** | — |
+| 6 | Funciona en el sistema de trabajo | Cumplido | Linux con 3.11, 3.12 y 3.13; Windows con 3.13.0 |
 
 ## 5. Limitaciones
 

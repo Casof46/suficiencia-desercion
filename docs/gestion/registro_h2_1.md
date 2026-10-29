@@ -6,7 +6,7 @@
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5; plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | El equipo autorizó H2.1 a H2.3 el 28 de octubre de 2026 (acta, apartado 5.1), con REC-04 y REC-05 aceptadas. La Fase 1 sigue sin aprobación formal (apartado 5.3) |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; pendiente de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git (commit `10aefee`); aceptado por el equipo** el 28 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 

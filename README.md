@@ -7,8 +7,8 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 | Elemento | Estado |
 | --- | --- |
 | Especificación | Fase 1, versión 0.5, que añade la evaluación comparativa frente a una referencia convencional. **No aprobada formalmente**; propuesta de acta en `docs/gestion/acta_cierre_fase_1_propuesta.md`. H2.0 se construyó sobre la v0.4 y H2.1 sobre la v0.5 |
-| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) verificado en Linux y Windows, pendiente de aceptación. **H2.2** (escenarios y anti-fuga) ejecutado, pendiente de verificación en Windows. H2.3 autorizado, no iniciado |
-| Funcionalidad | Matriz de 32 escenarios con factibilidad y verificador de fuga temporal (H2.2). Con la configuración del proyecto se detiene por DP-01d y DP-03; con los ejemplos ficticios de `config/ejemplos/` muestra la matriz rotulada como ejemplo |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) ejecutado, pendiente de verificación en Windows |
+| Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
 | Decisiones metodológicas | DP-01 a DP-20 abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 sin aceptar |
 | Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
@@ -51,6 +51,9 @@ Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
 .venv\Scripts\suficiencia config validar    # valida config/proyecto.yaml
 .venv\Scripts\suficiencia escenarios        # se detiene: faltan las fechas índice (DP-01d)
 .venv\Scripts\suficiencia escenarios --configuracion config\ejemplos\escenarios_ficticio.yaml --variables config\ejemplos\variables_ficticias.yaml
+.venv\Scripts\python scripts\generar_sintetico.py --semilla 1 --salida data\sintetico\historial.xlsx
+.venv\Scripts\suficiencia datos diccionario config\ejemplos\diccionario_sintetico.yaml
+.venv\Scripts\suficiencia datos importar data\sintetico\historial.xlsx --diccionario config\ejemplos\diccionario_sintetico.yaml --clave-efimera
 .venv\Scripts\suficiencia ejecutar CU-03    # responde que el caso de uso aún no está implementado
 ```
 

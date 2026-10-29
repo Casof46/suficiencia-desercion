@@ -88,6 +88,9 @@ class SolicitudGenerarEscenarios(Contrato):
 
     configuracion: Path | None = None
     variables: Path | None = None
+    diccionario: Path | None = Field(
+        default=None, description="Toma los rasgos de un diccionario de datos (H2.3)."
+    )
 
 
 class VentanaResumen(Contrato):
@@ -112,3 +115,80 @@ class ResultadoEscenarios(Contrato):
     escenarios: tuple[EscenarioResumen, ...]
     variables_evaluadas: int
     sin_fuga: bool
+
+
+# H2.3: datos -------------------------------------------------------------------
+
+
+class SolicitudValidarDiccionario(Contrato):
+    """Pide validar un diccionario de datos (CU-02, parte de validación; H2.3)."""
+
+    archivo: Path
+
+
+class RasgoResumen(Contrato):
+    nombre: str
+    bloque: str
+    ventana_minima: str
+
+
+class ResultadoDiccionario(Contrato):
+    nombre: str
+    ficticio: bool
+    variables_por_rol: dict[str, int]
+    rasgos: tuple[RasgoResumen, ...]
+    clave: tuple[str, ...]
+
+
+class SolicitudImportarDataset(Contrato):
+    """Pide importar, seudonimizar y auditar un archivo (CU-01 con datos sintéticos; H2.3).
+
+    ``clave_efimera`` usa una clave de seudonimización aleatoria que no se guarda:
+    sirve para datos sintéticos. Sin ella, la clave se toma de la variable de
+    entorno ``SUFICIENCIA_CLAVE_SEUDONIMO`` (el método definitivo depende de DP-14).
+    ``salida``, si se indica, debe estar dentro de la carpeta ``data/``.
+    """
+
+    archivo: Path
+    diccionario: Path
+    clave_efimera: bool = False
+    salida: Path | None = None
+    separador: str = Field(default=",", min_length=1, max_length=1)
+
+
+class ColumnaAuditada(Contrato):
+    nombre: str
+    rol: str
+    tipo: str
+    nulos: int
+    tipo_invalido: int
+    fuera_de_dominio: int
+    cardinalidad: int | None
+    minimo: float | None
+    maximo: float | None
+    filas_con_problemas: tuple[int, ...]
+
+
+class InformeAuditoriaResumen(Contrato):
+    """Informe de auditoría sin la distribución de la clase (RF-M1-03)."""
+
+    n_filas: int
+    n_columnas: int
+    columnas: tuple[ColumnaAuditada, ...]
+    duplicados_clave: int
+    filas_duplicadas: int
+    errores_criticos: tuple[str, ...]
+    alertas: tuple[str, ...]
+    apto_para_m2: bool
+
+
+class ResultadoImportacion(Contrato):
+    archivo: str
+    sintetico: bool
+    huella_fuente: str
+    columnas_seudonimizadas: tuple[str, ...]
+    informe: InformeAuditoriaResumen
+    huella_procesado: str | None = Field(
+        default=None, description="Huella del dataset procesado; solo si la auditoría es apta."
+    )
+    archivo_salida: str | None = None
