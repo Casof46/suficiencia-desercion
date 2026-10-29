@@ -110,6 +110,7 @@ Aceptación de los hitos siguientes por el equipo:
 | --- | --- | --- | --- | --- |
 | H2.1 — Arquitectura y contratos | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_1.md`; 150 pruebas en Windows; commit `10aefee` |
 | H2.2 — Ventanas, conjuntos, escenarios y anti-fuga | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_2.md`; 206 pruebas en Windows; commit `0abfc82` |
+| H2.3 — Datos sintéticos, diccionario, importación, auditoría y seudonimización | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_3.md`; 281 pruebas en Windows; commit `d8d8319` |
 
 La decisión de cierre del apartado 5.3 sigue sin marcar: el equipo aceptó H2.0 y autorizó H2.1 a H2.3 sin esperar la aprobación formal de la Fase 1 ni la revisión de la asesoría. Esos hitos no dependen de ninguna decisión metodológica.
 

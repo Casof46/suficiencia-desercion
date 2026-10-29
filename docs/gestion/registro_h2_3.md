@@ -6,7 +6,7 @@
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5 (M1; RF-M1-01 a 05, 07 y 08; PU-08 y PU-14 a 17); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | H2.1 a H2.3 autorizados el 28 de octubre de 2026 (acta, apartado 5.1), pendiente de confirmación de Javier |
-| Estado del hito | **Ejecutado y verificado en Linux; pendiente de verificación en Windows y de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `d8d8319`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -43,7 +43,7 @@
 | Linux, Python 3.11.17, 3.12.3 y 3.13.16, instalación limpia desde el bloqueo | Cinco `OK`; 6 contratos cumplidos; 280 pasan y 1 se omite (sin git) |
 | Linux, Python 3.12.3, con `git init` y `git add -A` | 281 pasan |
 | Descarga para Windows de 64 bits con Python 3.13 | Las ruedas de pandas, NumPy, openpyxl y sus dependencias existen y sus hashes coinciden con el bloqueo |
-| Windows | **Pendiente**: debe ejecutarlo el equipo |
+| Windows, Python 3.13.0, PC de Jorge (29 de octubre de 2026), entorno de H2.2 actualizado | Instalación de pandas, NumPy, openpyxl y sus dependencias desde el bloqueo; cinco `OK`; 6 contratos cumplidos; **281 pasan, 0 omitidas**. Prueba manual: se generaron un Excel sintético (300 estudiantes, 1767 filas) y un CSV con problemas sembrados; el diccionario se validó; el Excel se importó como APTO, con la distribución del objetivo omitida y el dataset guardado en `data/interim/`; el CSV resultó NO APTO con exactamente los 4 errores críticos sembrados (filas 2, 3 y 4 y la clave repetida) |
 
 ## 4. Matriz de criterios de aceptación de H2.3
 
@@ -55,7 +55,7 @@
 | 4 | Duplicados y valores fuera de dominio detectados | Cumplido | PU-14 y PU-15 |
 | 5 | La auditoría no expone la distribución de la clase | Cumplido | PU-15 y control negativo |
 | 6 | Sin importación real ni método definitivo de protección | Cumplido | D-45 y D-46 |
-| 7 | Funciona en el sistema de trabajo | **Pendiente en Windows** | — |
+| 7 | Funciona en el sistema de trabajo | Cumplido | Linux con 3.11, 3.12 y 3.13; Windows con 3.13.0, pruebas y prueba manual |
 
 ## 5. Limitaciones
 
