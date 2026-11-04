@@ -108,6 +108,13 @@ def test_pa03_streamlit_no_recopila_estadisticas_de_uso(raiz: Path) -> None:
     assert configuracion.get("browser", {}).get("gatherUsageStats") is False
 
 
+def test_el_visor_solo_escucha_en_este_equipo(raiz: Path) -> None:
+    """H2.D: el visor de demostración no se publica en la red local (RNF-06)."""
+    with (raiz / ".streamlit" / "config.toml").open("rb") as archivo:
+        configuracion = tomllib.load(archivo)
+    assert configuracion.get("server", {}).get("address") == "localhost"
+
+
 def _git(*argumentos: str, carpeta: Path) -> subprocess.CompletedProcess[str]:
     assert GIT is not None
     return subprocess.run(

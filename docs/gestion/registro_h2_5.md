@@ -7,7 +7,7 @@
 | Base | Especificación Fase 1 v0.6 (M2; RF-M2-05 a 09 y 12; CU-04 y CU-11; PU-10, 11, 13 y 17; PI-02 y PI-07); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | El equipo pidió seguir con H2.5 el 29 de octubre de 2026, sin esperar la conformidad de la asesoría con REC-01. El equipo ya había aceptado REC-01 con un plan de contingencia obligatorio en DP-05, y DP-08h con el piloto permitido. Comunicado por Jorge; pendiente de confirmación de Javier |
 | Riesgo aceptado | Si la asesoría pide cambios en REC-01 o en DP-08h, este hito se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux; pendiente de verificación en Windows y de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `69e9efe`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -35,7 +35,7 @@ Ninguna.
 | --- | --- |
 | Linux, Python 3.12.3 (entorno de desarrollo) | Cinco `OK`; 6 contratos cumplidos; 469 pasan y 1 se omite (sin git) |
 | Linux, Python 3.11, instalación limpia desde el bloqueo, con `git init` y `git add -A` | Cinco `OK`; 470 pasan |
-| Windows | **Pendiente**: debe ejecutarlo el equipo |
+| Windows 11, Python 3.13.0, PC de Jorge (29 de octubre de 2026) | Cinco `OK`; 6 contratos cumplidos; **470 pasan, 0 omitidas**. Prueba manual: `poblaciones construir` sin configuración se detuvo por DP-04; con el ejemplo mostró el seguimiento de las 8 cohortes, la partición (desarrollo 72, prueba 42 SELLADA, piloto 38, excluidas 148), las poblaciones D1, D2 y D3 solo de desarrollo y guardó la partición en `workspace/particiones/`; `poblaciones leer-prueba` sobre esa partición fue rechazada y `registro ver accesos` mostró el intento n.º 1 como RECHAZADO. Versionado en git y en GitHub (commit `69e9efe`) |
 
 ## 4. Matriz de criterios de aceptación de H2.5
 
@@ -46,7 +46,7 @@ Ninguna.
 | 3 | Ningún conteo que dependa del resultado se calcula sobre la prueba | Cumplido | PU-13; control negativo |
 | 4 | Toda cohorte de prueba es posterior a las de desarrollo | Cumplido | PI-07 (parte de la partición); control negativo |
 | 5 | Sin diseño principal ni cohortes reales | Cumplido | Solo el ejemplo ficticio; DP-04 detiene el programa |
-| 6 | Funciona en el sistema de trabajo | **Pendiente en Windows** | — |
+| 6 | Funciona en el sistema de trabajo | Cumplido | Linux con 3.11 y 3.12; Windows 11 con 3.13.0, pruebas y prueba manual |
 
 ## 5. Limitaciones
 

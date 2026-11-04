@@ -3,7 +3,8 @@
 Nació en H2.0 (criterios 3 y 10). Cuando un hito autorizado incorpora una
 biblioteca de la lista, la quita de ``POSTERGADAS`` y registra el cambio en
 docs/arquitectura/. H2.1 incorporó pydantic (decisión D-20) y H2.3, pandas, NumPy y
-openpyxl (decisión D-41).
+openpyxl (decisión D-41). H2.D incorporó Streamlit, y con él pyarrow como
+dependencia transitiva, para el visor de demostración (decisión D-91).
 """
 
 from __future__ import annotations
@@ -15,14 +16,12 @@ from pathlib import Path
 
 # Bibliotecas que ningún hito construido usa todavía (decisión D-04 de H2.0).
 POSTERGADAS = {
-    "streamlit",
     "plotly",
     "scikit-learn",
     "xgboost",
     "lightgbm",
     "shap",
     "lime",
-    "pyarrow",
     "joblib",
     "imbalanced-learn",
     "optuna",

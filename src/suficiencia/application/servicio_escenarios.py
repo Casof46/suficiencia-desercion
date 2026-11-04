@@ -54,6 +54,7 @@ ARCHIVO_VARIABLES = Path("config") / "diccionario" / "variables.yaml"
 ARCHIVO_POBLACIONES = Path("config") / "poblaciones.yaml"
 CARPETA_PARTICIONES = "particiones"
 OPERACION_CONSULTA = "consulta_desde_la_linea_de_comandos"
+OPERACION_VISOR = "consulta_desde_el_visor"
 
 
 def _particion_de(cohorte: str, configuracion: ConfiguracionPoblaciones) -> str:
@@ -291,7 +292,7 @@ class ServicioEscenarios(ServicioCasosDeUso):
     def leer_prueba(self, solicitud: SolicitudLeerPrueba) -> None:
         """Intenta leer la prueba de una partición guardada.
 
-        Ninguna operación de la línea de comandos es la evaluación final, así que el
+        Ni la línea de comandos ni el visor son la evaluación final, así que el
         sello siempre la rechaza; el intento queda en el registro de accesos (PI-02).
 
         Raises:
@@ -301,4 +302,5 @@ class ServicioEscenarios(ServicioCasosDeUso):
         if not carpeta.is_absolute():
             carpeta = self._raiz / carpeta
         sello = SelloPrueba(self._cargador_de_prueba(carpeta), self._registrar_acceso)
-        sello.leer(OPERACION_CONSULTA, solicitud.motivo)
+        operacion = OPERACION_VISOR if solicitud.origen == "visor" else OPERACION_CONSULTA
+        sello.leer(operacion, solicitud.motivo)

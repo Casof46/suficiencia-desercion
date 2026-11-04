@@ -11,7 +11,7 @@ obligaría a suponer valores (decisión D-21 de H2.1).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -408,7 +408,13 @@ class ResultadoPoblaciones(Contrato):
 
 
 class SolicitudLeerPrueba(Contrato):
-    """Intenta leer la prueba de una partición guardada (se rechaza y se registra)."""
+    """Intenta leer la prueba de una partición guardada (se rechaza y se registra).
+
+    ``origen`` solo cambia el nombre de la operación que queda en el registro de
+    accesos, para distinguir los intentos del visor (H2.D) de los de la línea de
+    comandos.
+    """
 
     particion: Path
     motivo: str = Field(min_length=1)
+    origen: Literal["linea_de_comandos", "visor"] = "linea_de_comandos"

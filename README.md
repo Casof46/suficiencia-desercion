@@ -7,8 +7,8 @@ Aplicación web experimental local para ejecutar, evaluar y documentar un **mét
 | Elemento | Estado |
 | --- | --- |
 | Especificación | Fase 1, versión 0.6, que incorpora el cambio CP-08 (reporte de no etiquetables por cohorte y análisis de sensibilidad), los responsables de los 29 riesgos y las decisiones del equipo del 29 de octubre de 2026. **No aprobada formalmente**: el equipo eligió la aprobación formal, que espera la conformidad de la asesoría y la firma del acta (`docs/gestion/acta_cierre_fase_1_propuesta.md`). H2.0 se construyó sobre la v0.4, y H2.1 a H2.3 y H2.7 sobre la v0.5 |
-| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) verificado y aceptado el 29 de octubre de 2026. **H2.4** (objetivo y estados de etiqueta) construido por autorización del equipo sin esperar la conformidad de la asesoría con REC-03; verificado en Linux y Windows y aceptado el 29 de octubre de 2026. **H2.5** (poblaciones, partición y sello) construido con el mismo criterio el 29 de octubre de 2026; pendiente de verificación en Windows. H2.6 espera |
-| Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Registro de trazabilidad de solo agregar en SQLite, con captura del entorno, registro de decisiones, verificación de integridad y exportación sin identificadores (H2.7). Objetivo y estados de etiqueta (positivo, negativo o no etiquetable con motivo) con reglas parametrizadas por DP-01, todas obligatorias y sin valores por omisión; solo con definiciones ficticias (H2.4). Poblaciones D1, D2 y D3 por ventana, partición cronológica por cohortes con piloto, sello de la prueba con registro de accesos y descriptivos solo de desarrollo (H2.5). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
+| Hitos | H2.0 (repositorio y entorno) aceptado por el equipo el 28 de octubre de 2026. **H2.1** (arquitectura y contratos) y **H2.2** (escenarios y anti-fuga) verificados en Linux y Windows y aceptados el 28 de octubre de 2026. **H2.3** (datos sintéticos, diccionario, importación, auditoría y seudonimización) verificado y aceptado el 29 de octubre de 2026. **H2.7** (trazabilidad y registro, DP-16: SQLite) verificado y aceptado el 29 de octubre de 2026. **H2.4** (objetivo y estados de etiqueta) construido por autorización del equipo sin esperar la conformidad de la asesoría con REC-03; verificado en Linux y Windows y aceptado el 29 de octubre de 2026. **H2.5** (poblaciones, partición y sello) construido con el mismo criterio; verificado en Linux y Windows y aceptado el 29 de octubre de 2026. **H2.D** (visor de demostración local, fuera del plan, a pedido del profesor) verificado en Linux; pendiente de verificación en Windows. H2.6 espera |
+| Funcionalidad | Matriz de 32 escenarios con verificador de fuga temporal (H2.2). Generación de datos **sintéticos**, validación del diccionario, importación de CSV y Excel con seudonimización y auditoría de calidad (H2.3). Registro de trazabilidad de solo agregar en SQLite, con captura del entorno, registro de decisiones, verificación de integridad y exportación sin identificadores (H2.7). Objetivo y estados de etiqueta (positivo, negativo o no etiquetable con motivo) con reglas parametrizadas por DP-01, todas obligatorias y sin valores por omisión; solo con definiciones ficticias (H2.4). Poblaciones D1, D2 y D3 por ventana, partición cronológica por cohortes con piloto, sello de la prueba con registro de accesos y descriptivos solo de desarrollo (H2.5). Visor web local de solo lectura con Streamlit (H2.D). Los datos reales no se pueden importar (DP-02, DP-14). Sin configuración real, todo se prueba con los ejemplos ficticios de `config/ejemplos/` |
 | Decisiones metodológicas | DP-16 (SQLite) y DP-08h (se permite un piloto) decididas por el equipo (`docs/decisiones/`); las demás, abiertas. REC-04 y REC-05 aceptadas; REC-01 a REC-03 aceptadas por el equipo el 29 de octubre de 2026, pendientes de la conformidad de la asesoría |
 | Nombre del paquete | `suficiencia` (REC-05 aceptada) |
 
@@ -63,6 +63,17 @@ Desde la carpeta del repositorio (en Linux o macOS, `.venv/bin/suficiencia`):
 .venv\Scripts\suficiencia registro verificar  # comprueba que ningún registro fue modificado
 .venv\Scripts\suficiencia ejecutar CU-05    # responde que el caso de uso aún no está implementado
 ```
+
+## Visor de demostración (H2.D)
+
+Un visor web de solo lectura que muestra en el navegador lo que el motor ya hace, siempre con datos sintéticos y configuraciones ficticias. Solo funciona en este equipo (`localhost`). Desde la carpeta del repositorio:
+
+```powershell
+.venv\Scripts\python scripts\generar_sintetico.py --semilla 1 --salida data\sintetico\historial.xlsx   # si aún no existe
+.venv\Scripts\python -m streamlit run src\suficiencia\ui\visor.py
+```
+
+Abra `http://localhost:8501` en el navegador. Para detenerlo, `Ctrl+C` en la terminal. Decisiones en `docs/arquitectura/decisiones_h2_d.md`.
 
 ## Control de versiones
 

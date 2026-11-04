@@ -58,7 +58,7 @@ suficiencia-desercion/
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
-│   └── ui/                     # vacía todavía
+│   └── ui/                     # visor de demostración (H2.D)
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (solo pruebas); H2.3

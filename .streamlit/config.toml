@@ -1,5 +1,22 @@
 # Configuración de Streamlit del proyecto (RNF-06, prueba PA-03).
-# Streamlit aún no se instala (H2.0); este archivo deja fijada desde el inicio
-# la desactivación de la recopilación de estadísticas de uso.
+# Desde H2.0 fija la desactivación de la recopilación de estadísticas de uso.
+# H2.D añade el visor de demostración: solo escucha en este equipo (localhost) y
+# no abre el navegador ni pide correo en la terminal (headless).
 [browser]
 gatherUsageStats = false
+serverAddress = "localhost"
+
+[server]
+address = "localhost"
+headless = true
+
+[theme]
+base = "light"
+primaryColor = "#2B5D8A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EEF2F5"
+textColor = "#1B2430"
+
+[client]
+# Sin el botón "Deploy": el visor no se publica (H2.D).
+toolbarMode = "minimal"
