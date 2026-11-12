@@ -128,3 +128,50 @@ def leer_modelo(archivo: Path, huella_esperada: str) -> object:
             "No evalúe un modelo modificado; vuelva a seleccionar y congelar.",
         )
     return joblib.load(archivo)
+
+
+def guardar_predicciones_prueba(
+    carpeta: Path, tablas: Mapping[str, pd.DataFrame]
+) -> dict[str, dict[str, str]]:
+    """Guarda las predicciones de prueba de cada configuración evaluada (F3.5).
+
+    Las usa la evaluación comparativa (CU-12), que así no vuelve a abrir la prueba
+    (PI-15). Cada tabla lleva seudónimo, cohorte, etiqueta y probabilidad. Devuelve,
+    por configuración, el archivo (relativo a ``carpeta``) y su huella.
+
+    Raises:
+        ConfiguracionInvalida: si la carpeta ya existe.
+    """
+    if carpeta.exists():
+        raise ConfiguracionInvalida(
+            f"La carpeta de la evaluación final ya existe: {carpeta.name}.",
+            "No se sobrescribe; repita la evaluación final más tarde.",
+        )
+    carpeta.mkdir(parents=True)
+    resultado = {}
+    for numero, (identificador, tabla) in enumerate(tablas.items(), start=1):
+        archivo = carpeta / f"configuracion_{numero}.csv"
+        tabla.to_csv(archivo, index=False, encoding="utf-8", lineterminator="\n")
+        resultado[identificador] = {
+            "archivo": archivo.name,
+            "huella": Huella.de_bytes(archivo.read_bytes()).valor,
+        }
+    return resultado
+
+
+def leer_csv_verificado(archivo: Path, huella_esperada: str) -> pd.DataFrame:
+    """Lee un CSV guardado por el programa después de comprobar su huella (F3.5).
+
+    Raises:
+        ConfiguracionInvalida: si no existe o cambió desde que se registró.
+    """
+    if not archivo.exists():
+        raise ConfiguracionInvalida(
+            f"No se encuentra {archivo}.", "El archivo se movió o se borró."
+        )
+    if Huella.de_bytes(archivo.read_bytes()).valor != huella_esperada:
+        raise ConfiguracionInvalida(
+            f"{archivo} cambió después de registrarse: su huella no coincide.",
+            "No use archivos modificados.",
+        )
+    return pd.read_csv(archivo, dtype={"cohorte": str})

@@ -753,10 +753,20 @@ class SeleccionEscenarioResumen(Contrato):
     )
 
 
+class ReferenteResumen(Contrato):
+    """R0 o un control (R0-fam, R-ven), construido con su propia regla (DP-19; F3.5)."""
+
+    codigo: str
+    tipo: str
+    rol: str
+    seleccion: SeleccionEscenarioResumen
+
+
 class ResultadoSeleccion(Contrato):
     configuracion_experimentos: str
     configuraciones_ficticias: bool
     escenarios: tuple[SeleccionEscenarioResumen, ...]
+    referentes: tuple[ReferenteResumen, ...]
     identificador_registro: str
 
 
@@ -797,15 +807,6 @@ class ResultadoEvaluacionFinal(Contrato):
     accesos_a_la_prueba: int
 
 
-class ResultadoDemostracionFinal(Contrato):
-    """Selección, congelamiento y evaluación final en un proyecto temporal (EJEMPLO FICTICIO)."""
-
-    archivo_protocolo: str
-    seleccion: ResultadoSeleccion
-    evaluacion: ResultadoEvaluacionFinal
-    pasos: tuple[PasoDemostracion, ...]
-
-
 class SolicitudDemostracionFinal(Contrato):
     """Recorre selección, congelamiento y evaluación final en un proyecto temporal (F3.4).
 
@@ -822,3 +823,68 @@ class SolicitudDemostracionFinal(Contrato):
     protocolo: Path
     seleccion_escenarios: tuple[str, ...] = Field(min_length=1)
     separador: str = Field(default=",", min_length=1, max_length=1)
+
+
+# --- F3.5: evaluación comparativa frente a R0 (CU-12) --------------------------------
+
+
+class SolicitudComparar(Contrato):
+    """Compara la configuración seleccionada con R0 y los controles (CU-12, F3.5).
+
+    Usa las predicciones de una evaluación final registrada; no vuelve a abrir la prueba.
+    Sin ``experimentos`` ni ``poblaciones``, los archivos del proyecto (DP-19, DP-20).
+    """
+
+    evaluacion: str = Field(min_length=1)
+    experimentos: Path | None = None
+    poblaciones: Path | None = None
+
+
+class NoInferioridadResumen(Contrato):
+    metrica: str
+    diferencia: float
+    limite_unilateral: float
+    limite_inferior: float
+    limite_superior: float
+    margen: float
+    estado: str
+
+
+class ControlResumen(Contrato):
+    codigo: str
+    escenario: str
+    algoritmo: str
+    filas: int
+    diferencias: dict[str, EstimacionResumen]
+
+
+class ResultadoComparacion(Contrato):
+    evaluacion: str
+    version_protocolo: int
+    ficticio: bool
+    estado: str
+    motivos_no_validez: tuple[str, ...]
+    seleccionada: str | None
+    escenario_seleccionado: str | None
+    referencia: str | None
+    escenario_referencia: str | None
+    poblacion_comparada: int
+    eventos_comparados: int
+    no_inferioridad: tuple[NoInferioridadResumen, ...]
+    anticipacion_ventanas: int | None
+    anticipacion_ciclos: int | None
+    bloques_evitados: tuple[str, ...]
+    variables_evitadas: tuple[str, ...]
+    controles: tuple[ControlResumen, ...]
+    identificador_registro: str
+    accesos_a_la_prueba: int
+
+
+class ResultadoDemostracionFinal(Contrato):
+    """Selección, congelamiento y evaluación final en un proyecto temporal (EJEMPLO FICTICIO)."""
+
+    archivo_protocolo: str
+    seleccion: ResultadoSeleccion
+    evaluacion: ResultadoEvaluacionFinal
+    comparacion: ResultadoComparacion
+    pasos: tuple[PasoDemostracion, ...]

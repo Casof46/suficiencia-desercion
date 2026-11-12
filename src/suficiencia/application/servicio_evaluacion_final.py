@@ -5,14 +5,16 @@ y 3): protocolo aprobado vigente y configuraciones idénticas a las congeladas
 (RF-M4-05, RF-M4-09, RF-M4-12; PI-09). Desde F3.4: la evaluación final misma, que
 abre la prueba una sola vez para todas las configuraciones congeladas (PI-15),
 calcula sus métricas y aplica la regla de suficiencia en modo confirmatorio. Una
-repetición sobre la misma partición exige justificación (RF-M4-09). La comparación
-con R0 (CU-12) llega en F3.5.
+repetición sobre la misma partición exige justificación (RF-M4-09). Desde F3.5: la
+evaluación comparativa frente a R0 y los controles (CU-12), con las predicciones de
+la evaluación final y sin volver a abrir la prueba.
 """
 
 from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -21,18 +23,25 @@ import pandas as pd
 
 from suficiencia.application._base import DefinicionCasoDeUso, ServicioCasosDeUso
 from suficiencia.application.contratos import (
+    ControlResumen,
     EstimacionResumen,
     MetricasPruebaResumen,
+    NoInferioridadResumen,
+    ResultadoComparacion,
     ResultadoDemostracionFinal,
     ResultadoEvaluacionFinal,
     ResultadoVerificacionEvaluacionFinal,
+    SolicitudComparar,
     SolicitudDemostracionFinal,
     SolicitudEvaluacionFinal,
     SolicitudVerificarEvaluacionFinal,
 )
 from suficiencia.application.registro_corridas import RegistradorCorridas
 from suficiencia.application.servicio_datos import HistorialPreparado
-from suficiencia.application.servicio_experimentos import configuraciones_congeladas
+from suficiencia.application.servicio_experimentos import (
+    configuraciones_congeladas,
+    ruta_en_registro,
+)
 from suficiencia.application.servicio_protocolo import historial_protocolo
 from suficiencia.domain.errores import ConfiguracionInvalida, ErrorSuficiencia
 from suficiencia.domain.escenarios.construccion import construir_escenarios
@@ -43,15 +52,29 @@ from suficiencia.domain.escenarios.poblaciones import (
     ConfiguracionPoblaciones,
     construir_poblaciones,
 )
+from suficiencia.domain.evaluacion.comparacion import (
+    Anticipacion,
+    EstadoNoInferioridad,
+    Reduccion,
+    Validez,
+    anticipacion,
+    clasificar_comparacion,
+    clasificar_no_inferioridad,
+    reduccion_informacion,
+)
 from suficiencia.domain.evaluacion.congelamiento import (
+    ConfiguracionCongelable,
     configuracion_desde_datos,
     preparar_evaluacion_final,
 )
 from suficiencia.domain.evaluacion.metricas import (
+    MAYOR_ES_MEJOR,
     MatrizConfusion,
+    diferencia_pareada,
     estimar,
     prevalencia,
     remuestras,
+    replicas_diferencia,
 )
 from suficiencia.domain.evaluacion.protocolo import evaluar_suficiencia, exigir_vigente
 from suficiencia.domain.evaluacion.suficiencia import (
@@ -75,6 +98,7 @@ from suficiencia.domain.trazabilidad.registros import (
 ARCHIVO_EXPERIMENTOS = Path("config") / "experimentos.yaml"
 ARCHIVO_POBLACIONES = Path("config") / "poblaciones.yaml"
 ARCHIVO_ESCENARIOS = Path("config") / "escenarios.yaml"
+CARPETA_EVALUACION = "evaluacion_final"
 
 
 class EvaluacionFinalRepetida(ErrorSuficiencia):
@@ -106,7 +130,9 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         DefinicionCasoDeUso(
             "CU-12",
             "Ejecutar la evaluación comparativa frente a la referencia",
-            "una fase posterior a la Fase 2",
+            "aprobación de un protocolo real con DP-19 y DP-20 (CU-05)",
+            avance="R0, controles, no inferioridad, anticipación, reducción de información "
+            "y estados C1 a C8; demostración con protocolo ficticio (F3.5)",
         ),
     )
 
@@ -128,6 +154,11 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         predecir: Callable[[object, pd.DataFrame], np.ndarray],
         capturador: CapturadorEntorno,
         demostrar: Callable[[SolicitudDemostracionFinal], ResultadoDemostracionFinal],
+        carpeta_trabajo: Callable[[], Path],
+        guardar_predicciones: Callable[
+            [Path, Mapping[str, pd.DataFrame]], dict[str, dict[str, str]]
+        ],
+        leer_csv: Callable[[Path, str], pd.DataFrame],
     ) -> None:
         self._raiz = raiz
         self._repositorio = repositorio
@@ -144,6 +175,9 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         self._predecir = predecir
         self._capturador = capturador
         self._demostrar = demostrar
+        self._carpeta_trabajo = carpeta_trabajo
+        self._guardar_predicciones = guardar_predicciones
+        self._leer_csv = leer_csv
 
     def demostracion(self, solicitud: SolicitudDemostracionFinal) -> ResultadoDemostracionFinal:
         """Selección, congelamiento y evaluación final en un proyecto temporal (F3.4).
@@ -152,6 +186,279 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         ``demostracion_final``.
         """
         return self._demostrar(solicitud)
+
+    def comparar(self, solicitud: SolicitudComparar) -> ResultadoComparacion:
+        """Evaluación comparativa frente a R0 y los controles (CU-12; RF-M4-18 a 21).
+
+        Usa las predicciones de prueba guardadas por la evaluación final indicada: no
+        abre la prueba (PI-15). Compara la configuración del escenario suficiente con R0
+        sobre los estudiantes de prueba en riesgo en t_ref (CMP-1), aplica la regla de no
+        inferioridad (DP-20), calcula anticipación y reducción de información, describe
+        las diferencias con R0-fam y R-ven (CMP-2) y clasifica el resultado (C1 a C8).
+
+        Raises:
+            SinProtocoloVigente: si el protocolo de la evaluación ya no es el vigente.
+            ConfiguracionInvalida: si la evaluación no existe o un archivo cambió.
+        """
+        repositorio = self._repositorio(self._archivo_registro())
+        evaluacion = next(
+            (
+                g.contenido
+                for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+                if g.contenido["identificador"] == solicitud.evaluacion
+                and g.contenido["configuracion"].get("tipo") == "evaluacion_final"
+                and g.contenido["estado"] == "exitosa"
+            ),
+            None,
+        )
+        if evaluacion is None:
+            raise ConfiguracionInvalida(
+                f"No hay una evaluación final exitosa con el identificador {solicitud.evaluacion}.",
+                "Indique el identificador que mostró `suficiencia evaluacion final`.",
+            )
+        version = int(evaluacion["version_protocolo"])
+        exigir_vigente(historial_protocolo(repositorio), str(version), "La evaluación comparativa")
+        accesos_antes = len(repositorio.listar(TipoRegistro.ACCESO))
+        experimentos = self._cargar_experimentos(
+            self._ruta(solicitud.experimentos, ARCHIVO_EXPERIMENTOS)
+        )
+        poblaciones = self._cargar_poblaciones(
+            self._ruta(solicitud.poblaciones, ARCHIVO_POBLACIONES)
+        )
+        congeladas = {
+            g.contenido["configuracion"]["identificador"]: configuracion_desde_datos(
+                g.contenido["configuracion"]
+            )
+            for g in repositorio.listar(TipoRegistro.CONGELAMIENTO)
+        }
+        configuraciones = [congeladas[i] for i in evaluacion["configuracion"]["configuraciones"]]
+        guardadas = evaluacion["resultados"]["predicciones"]
+        carpeta = self._raiz / guardadas["carpeta"]
+        tablas = {
+            i: self._leer_csv(carpeta / datos["archivo"], datos["huella"]).set_index("unidad")
+            for i, datos in guardadas["archivos"].items()
+        }
+        regla = evaluacion["resultados"]["regla"]
+        r0 = next((c for c in configuraciones if c.rol.value == "referencia_r0"), None)
+        seleccionada = next(
+            (
+                c
+                for c in configuraciones
+                if c.rol.value == "seleccionada" and c.escenario == regla["escenario"]
+            ),
+            None,
+        )
+        ficticio = any(c.ficticio for c in configuraciones) or bool(
+            evaluacion["configuracion"].get("ficticio")
+        )
+        validez = Validez(True, True, True, True, r0 is not None)
+        no_inferioridad: list[NoInferioridadResumen] = []
+        controles: list[ControlResumen] = []
+        anticipa: Anticipacion | None = None
+        reduccion: Reduccion | None = None
+        comparados = eventos = 0
+        if r0 is not None and seleccionada is not None:
+            t_r0, t_sel = tablas[r0.identificador], tablas[seleccionada.identificador]
+            comunes = t_r0.index.intersection(t_sel.index)
+            y = t_r0.loc[comunes, "objetivo"].to_numpy(dtype="int64")
+            validez = Validez(
+                mismo_evento=True,  # una sola definición del objetivo (DP-01)
+                mismo_horizonte=bool(
+                    (t_sel.loc[comunes, "objetivo"].to_numpy(dtype="int64") == y).all()
+                ),
+                misma_poblacion=set(t_r0.index) <= set(t_sel.index),
+                mismas_cohortes=set(t_r0["cohorte"]) == set(t_sel["cohorte"]),
+                referencia_evaluable=0 < int(y.sum()) < len(y),
+            )
+            comparados, eventos = len(y), int(y.sum())
+            if not validez.motivos():
+                no_inferioridad = self._no_inferioridad(
+                    experimentos, y, t_r0.loc[comunes], t_sel.loc[comunes]
+                )
+                controles = self._controles(experimentos, configuraciones, seleccionada, tablas)
+            ventana_sel = seleccionada.escenario.split("|", 1)[0]
+            ventana_r0 = r0.escenario.split("|", 1)[0]
+            anticipa = anticipacion(ventana_sel, ventana_r0, poblaciones.indices.periodos)
+            reduccion = reduccion_informacion(
+                seleccionada.escenario.split("|", 1)[1].split("+"),
+                r0.escenario.split("|", 1)[1].split("+"),
+                seleccionada.variables,
+                r0.variables,
+            )
+        estado = clasificar_comparacion(
+            validez,
+            regla["estado"],
+            seleccionada is not None and r0 is not None and seleccionada.escenario == r0.escenario,
+            [EstadoNoInferioridad(n.estado) for n in no_inferioridad] or None,
+            anticipa is not None and anticipa.ventanas > 0,
+        )
+        resultado = {
+            "estado": estado.value,
+            "motivos_no_validez": list(validez.motivos()),
+            "no_inferioridad": [n.model_dump() for n in no_inferioridad],
+            "controles": [c.model_dump() for c in controles],
+            "anticipacion": None
+            if anticipa is None
+            else {"ventanas": anticipa.ventanas, "ciclos": anticipa.ciclos},
+            "reduccion": None
+            if reduccion is None
+            else {
+                "bloques_evitados": list(reduccion.bloques_evitados),
+                "variables_evitadas": list(reduccion.variables_evitadas),
+            },
+        }
+        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
+            lambda: resultado,
+            modo=ModoExperimento.CONFIRMATORIO,
+            configuracion={
+                "tipo": "evaluacion_comparativa",
+                "evaluacion_final": solicitud.evaluacion,
+                "referencia": {
+                    "ventana": experimentos.referencia.ventana,
+                    "conjunto": experimentos.referencia.conjunto.value,
+                    "metrica": experimentos.referencia.metrica.value,
+                },
+                "comparacion": {
+                    "metricas": [m.value for m in experimentos.comparacion.metricas],
+                    "margenes": dict(experimentos.comparacion.margenes),
+                    "nivel": experimentos.comparacion.nivel,
+                },
+                "ficticio": ficticio,
+            },
+            semillas={"bootstrap": experimentos.semilla},
+            huella_datos=evaluacion["huella_datos"],
+            version_protocolo=str(version),
+        )
+        accesos = len(repositorio.listar(TipoRegistro.ACCESO))
+        if accesos != accesos_antes:  # pragma: no cover - protección (PI-15)
+            raise ConfiguracionInvalida(
+                "La evaluación comparativa registró un acceso a la prueba.",
+                "Es un defecto del programa; informe el caso.",
+            )
+        return ResultadoComparacion(
+            evaluacion=solicitud.evaluacion,
+            version_protocolo=version,
+            ficticio=ficticio,
+            estado=estado.value,
+            motivos_no_validez=validez.motivos(),
+            seleccionada=seleccionada.identificador if seleccionada else None,
+            escenario_seleccionado=seleccionada.escenario if seleccionada else None,
+            referencia=r0.identificador if r0 else None,
+            escenario_referencia=r0.escenario if r0 else None,
+            poblacion_comparada=comparados,
+            eventos_comparados=eventos,
+            no_inferioridad=tuple(no_inferioridad),
+            anticipacion_ventanas=anticipa.ventanas if anticipa else None,
+            anticipacion_ciclos=anticipa.ciclos if anticipa else None,
+            bloques_evitados=reduccion.bloques_evitados if reduccion else (),
+            variables_evitadas=reduccion.variables_evitadas if reduccion else (),
+            controles=tuple(controles),
+            identificador_registro=guardado.contenido["identificador"],
+            accesos_a_la_prueba=sum(
+                1
+                for g in repositorio.listar(TipoRegistro.ACCESO)
+                if g.contenido["operacion"] == OPERACION_EVALUACION_FINAL
+                and g.contenido["permitido"]
+            ),
+        )
+
+    def _no_inferioridad(
+        self,
+        experimentos: ConfiguracionExperimentos,
+        y: np.ndarray,
+        r0: pd.DataFrame,
+        seleccionada: pd.DataFrame,
+    ) -> list[NoInferioridadResumen]:
+        """Δ pareada de cada métrica de DP-20 sobre la población de CMP-1 (RF-M4-18, 19)."""
+        intervalos = experimentos.metricas
+        indices = remuestras(
+            y,
+            r0["cohorte"].astype(str).tolist(),
+            intervalos.estratificacion,
+            intervalos.replicas,
+            experimentos.semilla,
+        )
+        resumen = []
+        for metrica in experimentos.comparacion.metricas:
+            diferencia, replicas = replicas_diferencia(
+                intervalos.funcion(metrica),
+                MAYOR_ES_MEJOR[metrica],
+                y,
+                seleccionada["probabilidad"].to_numpy(dtype="float64"),
+                r0["probabilidad"].to_numpy(dtype="float64"),
+                indices,
+            )
+            clasificada = clasificar_no_inferioridad(
+                _numero_requerido(diferencia),
+                replicas,
+                experimentos.comparacion.margenes[metrica.value],
+                experimentos.comparacion.nivel,
+            )
+            resumen.append(
+                NoInferioridadResumen(
+                    metrica=metrica.value,
+                    diferencia=clasificada.diferencia,
+                    limite_unilateral=clasificada.limite_unilateral,
+                    limite_inferior=clasificada.bilateral[0],
+                    limite_superior=clasificada.bilateral[1],
+                    margen=clasificada.margen,
+                    estado=clasificada.estado.value,
+                )
+            )
+        return resumen
+
+    def _controles(
+        self,
+        experimentos: ConfiguracionExperimentos,
+        configuraciones: list[ConfiguracionCongelable],
+        seleccionada: ConfiguracionCongelable,
+        tablas: Mapping[str, pd.DataFrame],
+    ) -> list[ControlResumen]:
+        """Diferencias descriptivas frente a R0-fam y R-ven (CMP-2), en su población común."""
+        ventana = seleccionada.escenario.split("|", 1)[0]
+        buscados = {f"R0-fam-{seleccionada.algoritmo}", f"R-ven-{ventana}"}
+        intervalos = experimentos.metricas
+        resumen = []
+        for control in configuraciones:
+            if control.identificador not in buscados:
+                continue
+            t_c, t_s = tablas[control.identificador], tablas[seleccionada.identificador]
+            comunes = t_c.index.intersection(t_s.index)
+            y = t_c.loc[comunes, "objetivo"].to_numpy(dtype="int64")
+            indices = remuestras(
+                y,
+                t_c.loc[comunes, "cohorte"].astype(str).tolist(),
+                intervalos.estratificacion,
+                intervalos.replicas,
+                experimentos.semilla,
+            )
+            diferencias = {}
+            for metrica in experimentos.comparacion.metricas:
+                estimacion = diferencia_pareada(
+                    intervalos.funcion(metrica),
+                    MAYOR_ES_MEJOR[metrica],
+                    y,
+                    t_s.loc[comunes, "probabilidad"].to_numpy(dtype="float64"),
+                    t_c.loc[comunes, "probabilidad"].to_numpy(dtype="float64"),
+                    indices,
+                    experimentos.comparacion.nivel,
+                )
+                diferencias[metrica.value] = EstimacionResumen(
+                    puntual=_numero(estimacion.puntual),
+                    limite_inferior=_numero(estimacion.limite_inferior),
+                    limite_superior=_numero(estimacion.limite_superior),
+                    replicas_validas=estimacion.replicas_validas,
+                )
+            resumen.append(
+                ControlResumen(
+                    codigo=control.identificador,
+                    escenario=control.escenario,
+                    algoritmo=control.algoritmo,
+                    filas=len(y),
+                    diferencias=diferencias,
+                )
+            )
+        return resumen
 
     def _ruta(self, archivo: Path | None, por_omision: Path) -> Path:
         if archivo is None:
@@ -271,6 +578,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         definicion = experimentos.metricas
         filas = []
         resultados_regla = []
+        tablas: dict[str, pd.DataFrame] = {}
         for configuracion in configuraciones:
             escenario = escenarios[configuracion.escenario]
             ventana = escenario.ventana.codigo
@@ -290,6 +598,14 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                 )
             y = matriz.objetivo.to_numpy(dtype="int64")
             p = self._predecir(modelos[configuracion.identificador], matriz.predictores)
+            tablas[configuracion.identificador] = pd.DataFrame(
+                {
+                    "unidad": matriz.predictores.index.astype(str),
+                    "cohorte": matriz.cohorte.astype(str).to_numpy(),
+                    "objetivo": y,
+                    "probabilidad": p,
+                }
+            )
             indices = remuestras(
                 y,
                 matriz.cohorte.astype(str).tolist(),
@@ -357,15 +673,26 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
             + "".join(f"; {c.condicion.metrica} {c.motivo}" for c in e.condiciones)
             for e in resultado.evaluaciones
         )
-        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
-            lambda: {
+        marca = datetime.now(UTC).strftime("%Y-%m-%dT%H-%M-%S-%f")
+        carpeta_predicciones = self._carpeta_trabajo() / CARPETA_EVALUACION / marca
+
+        def registrar() -> dict[str, Any]:
+            archivos = self._guardar_predicciones(carpeta_predicciones, tablas)
+            return {
                 "configuraciones": [f.model_dump() for f in filas],
                 "regla": {
                     "estado": resultado.estado.value,
                     "escenario": resultado.escenario,
                     "detalle": list(detalle),
                 },
-            },
+                "predicciones": {
+                    "carpeta": ruta_en_registro(carpeta_predicciones, self._raiz),
+                    "archivos": archivos,
+                },
+            }
+
+        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
+            registrar,
             modo=ModoExperimento.CONFIRMATORIO,
             configuracion={
                 "tipo": "evaluacion_final",
@@ -425,3 +752,12 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
 
 def _numero(valor: float) -> float | None:
     return None if valor != valor else float(valor)  # NaN no se guarda en el registro
+
+
+def _numero_requerido(valor: float) -> float:
+    if valor != valor:
+        raise ConfiguracionInvalida(
+            "Una diferencia de la comparación no está definida.",
+            "Revise que la población comparada tenga positivos y negativos.",
+        )
+    return float(valor)

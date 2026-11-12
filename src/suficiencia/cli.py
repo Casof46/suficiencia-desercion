@@ -27,6 +27,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia experimentos seleccionar ARCHIVO (mismas opciones que preparar) [--escenario ...]
     suficiencia evaluacion final ARCHIVO (mismas opciones que preparar) --particion CARPETA
                                  --configuracion ID [...] --version N [--justificacion T]
+    suficiencia evaluacion comparar --evaluacion ID [--experimentos R] [--poblaciones R]
     suficiencia evaluacion demostracion ARCHIVO --diccionario R --definicion R --poblaciones R
                                         --escenarios R --experimentos R --protocolo R
                                         --escenario T1|A+F [...]
@@ -69,6 +70,7 @@ from suficiencia.application.contratos import (
     EstadoProyecto,
     EstimacionResumen,
     RegistroResumen,
+    ResultadoComparacion,
     ResultadoConsultaProtocolo,
     ResultadoConsultaRegistro,
     ResultadoDefinicionObjetivo,
@@ -90,6 +92,7 @@ from suficiencia.application.contratos import (
     ResultadoValidacionConfiguracion,
     SolicitudAprobarProtocolo,
     SolicitudCasoDeUso,
+    SolicitudComparar,
     SolicitudConstruirObjetivo,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
@@ -435,6 +438,23 @@ def construir_analizador() -> argparse.ArgumentParser:
     final_p.add_argument("--version", type=int, required=True, help="Versión del protocolo.")
     final_p.add_argument(
         "--justificacion", help="Obligatoria para repetir la evaluación final (RF-M4-09)."
+    )
+    comparar_p = acciones_evaluacion.add_parser(
+        "comparar",
+        help="Compara la seleccionada con R0 y los controles sin abrir la prueba (CU-12).",
+    )
+    comparar_p.add_argument(
+        "--evaluacion", required=True, help="Identificador de la evaluación final registrada."
+    )
+    comparar_p.add_argument(
+        "--experimentos",
+        type=Path,
+        help="Configuración con DP-19 y DP-20 (por omisión, config/experimentos.yaml).",
+    )
+    comparar_p.add_argument(
+        "--poblaciones",
+        type=Path,
+        help="Periodos índice de las ventanas (por omisión, config/poblaciones.yaml).",
     )
     demostracion_final_p = acciones_evaluacion.add_parser(
         "demostracion",
@@ -1055,6 +1075,62 @@ def _mostrar_evaluacion_final(resultado: ResultadoEvaluacionFinal, salida: TextI
     )
 
 
+def _mostrar_comparacion(resultado: ResultadoComparacion, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print(
+            "PROTOCOLO O CONFIGURACIONES FICTICIOS: el estado no es una conclusión sobre el "
+            "método.",
+            file=salida,
+        )
+    print(
+        f"\nEvaluación comparativa de {resultado.evaluacion} (protocolo "
+        f"v{resultado.version_protocolo}), sin nuevo acceso a la prueba:",
+        file=salida,
+    )
+    print(
+        f"  Seleccionada: {resultado.seleccionada or 'ninguna'}; referencia: "
+        f"{resultado.referencia or 'ninguna'} ({resultado.escenario_referencia or '-'})",
+        file=salida,
+    )
+    if resultado.poblacion_comparada:
+        print(
+            f"  Población comparada (CMP-1): {resultado.poblacion_comparada} estudiantes, "
+            f"{resultado.eventos_comparados} eventos",
+            file=salida,
+        )
+    for n in resultado.no_inferioridad:
+        print(
+            f"  {n.metrica:<15} diferencia {n.diferencia:+.3f}; límite unilateral "
+            f"{n.limite_unilateral:+.3f}; bilateral [{n.limite_inferior:+.3f}; "
+            f"{n.limite_superior:+.3f}]; margen {n.margen:g} -> {n.estado}",
+            file=salida,
+        )
+    if resultado.anticipacion_ventanas is not None:
+        print(
+            f"  Anticipación: {resultado.anticipacion_ventanas} ventanas, "
+            f"{resultado.anticipacion_ciclos} ciclos",
+            file=salida,
+        )
+        evitados = ", ".join(resultado.bloques_evitados) or "ninguno"
+        print(
+            f"  Bloques evitados: {evitados}; variables evitadas: "
+            f"{len(resultado.variables_evitadas)}",
+            file=salida,
+        )
+    for c in resultado.controles:
+        diferencias = "; ".join(f"{m} {_formato_estimacion(e)}" for m, e in c.diferencias.items())
+        print(f"  {c.codigo} (descriptivo, CMP-2): {diferencias}", file=salida)
+    motivos = (
+        f" ({'; '.join(resultado.motivos_no_validez)})" if resultado.motivos_no_validez else ""
+    )
+    print(f"\nEstado: {resultado.estado}{motivos}", file=salida)
+    print(
+        f"Accesos permitidos a la prueba: {resultado.accesos_a_la_prueba}. Registrada como "
+        f"{resultado.identificador_registro}. No se declara superioridad.",
+        file=salida,
+    )
+
+
 def _mostrar_demostracion_final(resultado: ResultadoDemostracionFinal, salida: TextIO) -> None:
     print(
         "DEMOSTRACIÓN con datos SINTÉTICOS y protocolo FICTICIO, en un proyecto temporal que "
@@ -1068,6 +1144,7 @@ def _mostrar_demostracion_final(resultado: ResultadoDemostracionFinal, salida: T
         print(f"   {paso.resultado}", file=salida)
     print("", file=salida)
     _mostrar_evaluacion_final(resultado.evaluacion, salida)
+    _mostrar_comparacion(resultado.comparacion, salida)
 
 
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
@@ -1202,6 +1279,18 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
                     configuraciones=tuple(argumentos.configuracion),
                     version_protocolo=argumentos.version,
                     justificacion_repeticion=argumentos.justificacion,
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion" and argumentos.accion == "comparar":
+        _mostrar_comparacion(
+            servicios.evaluacion_final.comparar(
+                SolicitudComparar(
+                    evaluacion=argumentos.evaluacion,
+                    experimentos=argumentos.experimentos,
+                    poblaciones=argumentos.poblaciones,
                 )
             ),
             sys.stdout,

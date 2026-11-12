@@ -19,6 +19,7 @@ como datos obligatorios sin valor por omisión:
 - **Métricas e intervalos** (DP-08a, DP-08i, DP-08e; F3.3): ver
   ``evaluacion.metricas``.
 - **Selección del modelo y umbral** (DP-10, DP-06; F3.4): ver ``evaluacion.seleccion``.
+- **Referencia R0 y comparación** (DP-19, DP-20; F3.5): ver ``evaluacion.comparacion``.
 
 Un valor ``null`` detiene el programa nombrando la decisión pendiente.
 """
@@ -36,6 +37,13 @@ from suficiencia.domain.errores import ConfiguracionInvalida, DecisionPendiente
 from suficiencia.domain.escenarios.matrices import (
     DefinicionMatrices,
     definicion_matrices_desde_datos,
+)
+from suficiencia.domain.escenarios.modelo import CODIGOS_VENTANA
+from suficiencia.domain.evaluacion.comparacion import (
+    DefinicionComparacion,
+    DefinicionReferencia,
+    definicion_comparacion_desde_datos,
+    definicion_referencia_desde_datos,
 )
 from suficiencia.domain.evaluacion.metricas import (
     DefinicionMetricas,
@@ -463,6 +471,8 @@ class ConfiguracionExperimentos:
     metricas: DefinicionMetricas
     seleccion: DefinicionSeleccion
     umbral: DefinicionUmbral
+    referencia: DefinicionReferencia
+    comparacion: DefinicionComparacion
 
 
 _CLAVES = {
@@ -481,6 +491,8 @@ _CLAVES = {
     "intervalos",
     "seleccion",
     "umbral",
+    "referencia",
+    "comparacion",
 }
 VERSION_SOPORTADA = 1
 
@@ -541,6 +553,11 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
     )
     if seleccion.metrica.value == "recall_q" and metricas.q is None:
         raise DecisionPendiente("DP-08i", "q, que la métrica de selección recall_q necesita")
+    referencia = definicion_referencia_desde_datos(datos["referencia"], CODIGOS_VENTANA)
+    comparacion = definicion_comparacion_desde_datos(datos["comparacion"])
+    sin_q = [m.value for m in (referencia.metrica, *comparacion.metricas) if m.value == "recall_q"]
+    if sin_q and metricas.q is None:
+        raise DecisionPendiente("DP-08i", "q, que la referencia o la comparación necesitan")
     return ConfiguracionExperimentos(
         nombre=datos["nombre"].strip(),
         ficticio=datos["ficticio"],
@@ -555,6 +572,8 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
         metricas=metricas,
         seleccion=seleccion,
         umbral=definicion_umbral_desde_datos(datos["umbral"], metricas.q),
+        referencia=referencia,
+        comparacion=comparacion,
     )
 
 

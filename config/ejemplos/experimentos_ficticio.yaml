@@ -1,11 +1,12 @@
 # EJEMPLO FICTICIO de configuración de los experimentos de desarrollo (F3.1), para
 # probar el programa con el historial sintético. NO es la configuración del
 # proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-06,
-# DP-07, DP-08a, DP-08e, DP-08i, DP-09, DP-10 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
+# DP-07, DP-08a, DP-08e, DP-08i, DP-09, DP-10, DP-12, DP-19 y DP-20 siguen
+# abiertas). La del proyecto irá en config/experimentos.yaml.
 # Todos los campos son obligatorios; un valor null detiene el programa nombrando
 # la decisión pendiente.
 version_experimentos: 1
-nombre: "Experimentos ficticios de prueba (F3.1 a F3.4)"
+nombre: "Experimentos ficticios de prueba (F3.1 a F3.5)"
 ficticio: true
 
 # DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
@@ -123,3 +124,21 @@ seleccion:
 # seleccionado: fijo (con 'valor') | cuantil_q (usa q) | recall_minimo (con 'valor')
 umbral:
   regla: cuantil_q
+
+# DP-19: referencia convencional R0 (F3.5). Ventana de referencia t_ref (DP-19a),
+# su conjunto más completo (DP-19b) y la familia con mejor métrica en validación,
+# sin compuerta ni umbrales; empates por 'seleccion.orden_familias' (DP-19c). Los
+# controles R0-fam y R-ven se construyen siempre (DP-19d). Valores inventados.
+referencia:
+  ventana: T3
+  conjunto: mas_completo
+  metrica: auc_roc
+
+# DP-20: no inferioridad frente a R0. Métricas (DP-20a), margen de cada una
+# (DP-20b) y nivel (1 − α) de los intervalos (DP-20d). Valores inventados.
+comparacion:
+  metricas: [auc_roc, brier_escalado]
+  margenes:
+    auc_roc: 0.05
+    brier_escalado: 0.05
+  nivel: 0.95

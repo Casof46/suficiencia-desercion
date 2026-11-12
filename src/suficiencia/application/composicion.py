@@ -33,6 +33,8 @@ from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
 from suficiencia.persistence.corridas_archivos import (
     guardar_corrida,
     guardar_modelo_final,
+    guardar_predicciones_prueba,
+    leer_csv_verificado,
     leer_modelo,
     leer_predicciones,
 )
@@ -217,6 +219,9 @@ def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
         demostrar=lambda solicitud: ejecutar_demostracion_final(
             raiz, solicitud, crear_servicios, leer_yaml
         ),
+        carpeta_trabajo=reportes.carpeta_trabajo,
+        guardar_predicciones=guardar_predicciones_prueba,
+        leer_csv=leer_csv_verificado,
     )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,

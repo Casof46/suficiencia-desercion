@@ -425,3 +425,4 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "Intervalos percentil al 95% con 1000 réplicas" in salida
     assert "DEMOSTRACIÓN con datos SINTÉTICOS y protocolo FICTICIO" in salida
     assert "Regla de suficiencia:" in salida
+    assert "Evaluación comparativa de" in salida

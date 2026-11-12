@@ -7,6 +7,9 @@
 - PI-09: una configuración distinta de la congelada, o un modelo cambiado, se rechazan.
 - PI-15 y RF-M4-09: la prueba se abre una sola vez para todas las configuraciones;
   repetir exige justificación, que queda registrada.
+- F3.5: R0 y los controles se construyen, congelan y evalúan en el mismo acceso; la
+  comparación usa las predicciones guardadas y no abre la prueba (PI-15); sin R0 la
+  comparación no es válida (C7).
 - Demostración completa en un proyecto temporal, sin tocar el registro del proyecto.
 
 Todo es sintético y ficticio: ningún resultado es una conclusión sobre el método.
@@ -30,6 +33,7 @@ from sklearn.metrics import roc_auc_score
 from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial
 from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import (
+    SolicitudComparar,
     SolicitudConstruirPoblaciones,
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
@@ -127,8 +131,12 @@ def entrenado(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Any, str]
             clave_efimera=True,
         )
     )
+    # Los escenarios pedidos y los que necesitan R0 (T3) y R-ven de T1 (F3.5).
     servicios.experimentos.entrenar(
-        SolicitudEntrenar(**_comunes(proyecto), seleccion_escenarios=ESCENARIOS)
+        SolicitudEntrenar(
+            **_comunes(proyecto),
+            seleccion_escenarios=(*ESCENARIOS, "T3|A+F+S+B", "T1|A+F+S+B"),
+        )
     )
     return proyecto, servicios, poblaciones.carpeta_particion
 
@@ -166,6 +174,23 @@ def test_seleccion_con_validacion_segun_las_reglas_y_sin_tocar_la_prueba(
         assert candidata["algoritmo"] == elegido.familia
         assert candidata["umbral"] == elegido.umbral
         assert (proyecto / elegido.carpeta / "modelo_final.joblib").exists()
+    # F3.5 (PU-22, PU-23): R0 en el conjunto más completo de T3 con la familia de mayor
+    # AUC-ROC en validación; R0-fam por cada familia seleccionada; R-ven solo para T1.
+    referentes = {r.codigo: r for r in resultado.referentes}
+    r0 = referentes["R0"].seleccion
+    assert r0.escenario == "T3|A+F+S+B"
+    auc_t3 = {}
+    for familia in ("lr", "rf", "xgboost", "lightgbm", "svm"):
+        contenido = corridas[("T3|A+F+S+B", familia)].contenido
+        tabla = pd.read_csv(proyecto / contenido["resultados"]["carpeta"] / "predicciones.csv")
+        auc_t3[familia] = roc_auc_score(tabla["objetivo"], tabla["probabilidad"])
+    assert r0.familia == max(auc_t3, key=lambda f: auc_t3[f])
+    familias = {e.familia for e in resultado.escenarios}
+    assert {c for c in referentes if c.startswith("R0-fam-")} == {f"R0-fam-{f}" for f in familias}
+    assert set(referentes) - {"R0"} - {f"R0-fam-{f}" for f in familias} == {"R-ven-T1"}
+    assert referentes["R-ven-T1"].seleccion.escenario == "T1|A+F+S+B"
+    assert referentes["R0"].rol == "referencia_r0"
+    assert referentes["R-ven-T1"].rol == "control"
     registro = next(
         r.contenido
         for r in repositorio.listar(TipoRegistro.EXPERIMENTO)
@@ -303,6 +328,19 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
     )
     assert registro["modo"] == "confirmatorio"
     assert registro["version_protocolo"] == "1"
+    # CU-12 sin R0 congelada: la comparación no es válida (C7) y no abre la prueba.
+    comparacion = servicios.evaluacion_final.comparar(
+        SolicitudComparar(
+            evaluacion=resultado.identificador_registro,
+            experimentos=_comunes(proyecto)["experimentos"],
+            poblaciones=_comunes(proyecto)["poblaciones"],
+        )
+    )
+    assert comparacion.estado == "C7_comparacion_no_valida"
+    assert "R0 no es evaluable" in comparacion.motivos_no_validez
+    assert comparacion.accesos_a_la_prueba == 1
+    with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
+        servicios.evaluacion_final.comparar(SolicitudComparar(evaluacion="EXP-inexistente"))
     # RF-M4-09: repetir sin justificación se rechaza antes de abrir la prueba.
     with pytest.raises(EvaluacionFinalRepetida):
         servicios.evaluacion_final.evaluar(solicitud(identificadores), procedimientos)
@@ -351,7 +389,7 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     pasos = {p.titulo: p.resultado for p in resultado.pasos}
     assert (
         "Accesos a la prueba hasta aquí: 0 (PI-10)"
-        in pasos["Seleccionar modelo y umbral solo con desarrollo"]
+        in pasos["Seleccionar modelo y umbral con desarrollo; construir R0 y controles"]
     )
     assert pasos["Evaluación final sin protocolo aprobado"].startswith("Rechazado")
     assert pasos["Evaluar una configuración con el umbral cambiado"].startswith("Rechazado")
@@ -359,6 +397,15 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     assert "1 acceso permitido" in pasos["Registro de accesos al terminar"]
     assert resultado.evaluacion.accesos_a_la_prueba == 1
     assert resultado.evaluacion.ficticio
+    # F3.5: R0 y los controles se congelaron y evaluaron en el mismo acceso; la
+    # comparación no abre la prueba (PI-15).
+    roles = {c.rol for c in resultado.evaluacion.configuraciones}
+    assert roles == {"seleccionada", "referencia_r0", "control"}
+    comparacion = resultado.comparacion
+    assert comparacion.referencia == "R0"
+    assert comparacion.accesos_a_la_prueba == 1
+    assert comparacion.estado.startswith(("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"))
+    assert "Comparar con R0 y los controles sin volver a abrir la prueba" in pasos
     despues = len(servicios.reportes.repositorio().listar(TipoRegistro.EXPERIMENTO))
     assert despues == antes
     # La línea de comandos de la demostración.
@@ -375,6 +422,8 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     salida = capsys.readouterr().out
     assert "DEMOSTRACIÓN con datos SINTÉTICOS y protocolo FICTICIO" in salida
     assert "Regla de suficiencia:" in salida
+    assert "Evaluación comparativa de" in salida
+    assert "No se declara superioridad." in salida
 
 
 def test_la_demostracion_exige_protocolo_y_configuracion_ficticios(proyecto: Path) -> None:

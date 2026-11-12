@@ -1,20 +1,24 @@
-"""Demostración de F3.4: selección, congelamiento y evaluación final (EJEMPLO FICTICIO).
+"""Demostración de F3.4 y F3.5: selección, evaluación final y comparación (EJEMPLO FICTICIO).
 
 Recorre el final del método con datos sintéticos y configuraciones ficticias, en
 un **proyecto temporal** que se borra al terminar: nada llega al registro ni a la
 carpeta de trabajo del proyecto. Usa los mismos servicios que el proyecto real:
 
 1. Construye las poblaciones, la partición y el sello de la prueba (H2.5).
-2. Entrena las cinco familias en los escenarios pedidos (F3.2).
-3. Selecciona modelo y umbral por escenario solo con desarrollo (DP-10, DP-06) y
-   comprueba que el registro de accesos no tiene ningún acceso a la prueba (PI-10).
+2. Entrena las cinco familias en los escenarios pedidos y en los que necesitan R0 y
+   los controles (F3.2).
+3. Selecciona modelo y umbral por escenario solo con desarrollo (DP-10, DP-06),
+   construye R0 y los controles con su propia regla (DP-19) y comprueba que el
+   registro de accesos no tiene ningún acceso a la prueba (PI-10).
 4. Intenta la evaluación final sin protocolo: se rechaza (PU-05).
 5. Aprueba el protocolo ficticio en el registro temporal y congela cada
-   configuración seleccionada con su huella (RF-M4-12).
+   configuración seleccionada, R0 y los controles con su huella (RF-M4-12, RF-M4-17).
 6. Intenta evaluar una configuración modificada: se rechaza (PI-09).
 7. Ejecuta la evaluación final: abre la prueba una sola vez para todas las
    configuraciones y aplica la regla en modo confirmatorio (PI-15).
 8. Intenta repetirla sin justificación: se rechaza (RF-M4-09).
+9. Compara la seleccionada con R0 y los controles con las predicciones guardadas,
+   sin volver a abrir la prueba (CU-12; PI-15), y clasifica el resultado (C1 a C8).
 
 La clave de seudonimización es aleatoria, vive solo durante la demostración y es la
 misma para construir la partición y para evaluarla.
@@ -38,10 +42,12 @@ from typing import Any
 from suficiencia.application.contratos import (
     PasoDemostracion,
     ResultadoDemostracionFinal,
+    SolicitudComparar,
     SolicitudConstruirPoblaciones,
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
     SolicitudEvaluacionFinal,
+    SolicitudGenerarEscenarios,
     SolicitudSeleccionar,
 )
 from suficiencia.application.demostracion_protocolo import _SinAjusteFicticio
@@ -49,6 +55,7 @@ from suficiencia.application.servicio_experimentos import configuraciones_congel
 from suficiencia.application.servicio_protocolo import historial_protocolo
 from suficiencia.domain.errores import ConfiguracionInvalida, ErrorSuficiencia
 from suficiencia.domain.escenarios.particion import OPERACION_EVALUACION_FINAL
+from suficiencia.domain.evaluacion.comparacion import referentes_a_construir
 from suficiencia.domain.evaluacion.congelamiento import (
     ConfiguracionCongelable,
     RolConfiguracion,
@@ -60,6 +67,7 @@ from suficiencia.domain.evaluacion.protocolo import (
     contenido_desde_datos,
     guardar_borrador,
 )
+from suficiencia.domain.experimentos import configuracion_experimentos_desde_datos
 from suficiencia.domain.trazabilidad.registros import TipoRegistro
 
 RESPONSABLE = "Demostración de F3.4 (EJEMPLO FICTICIO)"
@@ -137,14 +145,38 @@ def ejecutar_demostracion_final(
                 "(solo se informa el tamaño)",
             )
         )
+        factibles = {
+            e.codigo: len(e.conjunto.split("+"))
+            for e in servicios.escenarios.generar_escenarios(
+                SolicitudGenerarEscenarios(
+                    configuracion=comunes["escenarios"], diccionario=comunes["diccionario"]
+                )
+            ).escenarios
+            if e.factible
+        }
+        referencia = configuracion_experimentos_desde_datos(datos_experimentos).referencia
+        necesarios = tuple(
+            dict.fromkeys(
+                [
+                    *escenarios,
+                    *(
+                        r.escenario
+                        for r in referentes_a_construir(
+                            referencia, dict.fromkeys(escenarios, "-"), factibles
+                        )
+                    ),
+                ]
+            )
+        )
         entrenamiento = servicios.experimentos.entrenar(
-            SolicitudEntrenar(**comunes, seleccion_escenarios=escenarios)
+            SolicitudEntrenar(**comunes, seleccion_escenarios=necesarios)
         )
         exitosas = sum(c.estado == "exitosa" for c in entrenamiento.corridas)
         pasos.append(
             PasoDemostracion(
                 titulo="Entrenar las cinco familias (exploratorio)",
-                resultado=f"{exitosas} corridas exitosas de {len(entrenamiento.corridas)}",
+                resultado=f"{exitosas} corridas exitosas de {len(entrenamiento.corridas)} en "
+                f"{', '.join(necesarios)} (los pedidos y los que necesitan R0 y los controles)",
             )
         )
         seleccion = servicios.experimentos.seleccionar(
@@ -154,16 +186,24 @@ def ejecutar_demostracion_final(
         accesos = repositorio.listar(TipoRegistro.ACCESO)
         pasos.append(
             PasoDemostracion(
-                titulo="Seleccionar modelo y umbral solo con desarrollo",
+                titulo="Seleccionar modelo y umbral con desarrollo; construir R0 y controles",
                 resultado="; ".join(
                     f"{e.escenario}: {e.familia}, umbral {e.umbral:.3f}"
                     for e in seleccion.escenarios
+                )
+                + ". Referentes: "
+                + "; ".join(
+                    f"{r.codigo} = {r.seleccion.escenario}, {r.seleccion.familia}"
+                    for r in seleccion.referentes
                 )
                 + f". Accesos a la prueba hasta aquí: {len(accesos)} (PI-10)",
             )
         )
 
-        identificadores = tuple(f"SEL-{e.escenario}" for e in seleccion.escenarios)
+        a_congelar = [
+            (f"SEL-{e.escenario}", RolConfiguracion.SELECCIONADA, e) for e in seleccion.escenarios
+        ] + [(r.codigo, RolConfiguracion(r.rol), r.seleccion) for r in seleccion.referentes]
+        identificadores = tuple(i for i, _, _ in a_congelar)
 
         def solicitud_final(justificacion: str | None = None) -> SolicitudEvaluacionFinal:
             return SolicitudEvaluacionFinal(
@@ -196,10 +236,10 @@ def ejecutar_demostracion_final(
         )
         repositorio.agregar(aprobacion.aprobacion)
         congeladas = []
-        for elegido, identificador in zip(seleccion.escenarios, identificadores, strict=True):
+        for identificador, rol, elegido in a_congelar:
             configuracion = ConfiguracionCongelable(
                 identificador=identificador,
-                rol=RolConfiguracion.SELECCIONADA,
+                rol=rol,
                 version_protocolo=borrador.version,
                 ficticio=True,
                 **{
@@ -217,7 +257,7 @@ def ejecutar_demostracion_final(
             congeladas.append(configuracion)
         pasos.append(
             PasoDemostracion(
-                titulo="Aprobar el protocolo ficticio y congelar las configuraciones",
+                titulo="Aprobar el protocolo ficticio y congelar selección, R0 y controles",
                 resultado=f"Versión {borrador.version} aprobada; congeladas: "
                 + ", ".join(f"{c.identificador} ({c.huella().valor[:12]}…)" for c in congeladas),
             )
@@ -256,6 +296,25 @@ def ejecutar_demostracion_final(
                 ),
             )
         )
+        comparacion = servicios.evaluacion_final.comparar(
+            SolicitudComparar(
+                evaluacion=evaluacion.identificador_registro,
+                experimentos=comunes["experimentos"],
+                poblaciones=comunes["poblaciones"],
+            )
+        )
+        pasos.append(
+            PasoDemostracion(
+                titulo="Comparar con R0 y los controles sin volver a abrir la prueba",
+                resultado=f"Estado: {comparacion.estado}"
+                + (
+                    f" ({'; '.join(comparacion.motivos_no_validez)})"
+                    if comparacion.motivos_no_validez
+                    else ""
+                )
+                + f". Accesos permitidos a la prueba: {comparacion.accesos_a_la_prueba}",
+            )
+        )
         permitidos = sum(
             1
             for g in repositorio.listar(TipoRegistro.ACCESO)
@@ -271,5 +330,6 @@ def ejecutar_demostracion_final(
         archivo_protocolo=str(solicitud.protocolo),
         seleccion=seleccion,
         evaluacion=evaluacion,
+        comparacion=comparacion,
         pasos=tuple(pasos),
     )

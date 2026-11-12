@@ -340,16 +340,16 @@ def estimar(
     return _percentil(funcion(y, p), valores, nivel)
 
 
-def diferencia_pareada(
+def replicas_diferencia(
     funcion: Callable[[np.ndarray, np.ndarray], float],
     mayor_es_mejor: bool,
     y: np.ndarray,
     p_evaluada: np.ndarray,
     p_referencia: np.ndarray,
     indices: np.ndarray,
-    nivel: float,
-) -> EstimacionBootstrap:
-    """Δ = métrica(evaluada) − métrica(referencia), orientada para que mayor sea mejor.
+) -> tuple[float, np.ndarray]:
+    """Δ = métrica(evaluada) − métrica(referencia), orientada para que mayor sea mejor,
+    y su valor en cada réplica.
 
     Ambas configuraciones predicen a los mismos estudiantes (``y`` común) y cada réplica
     remuestrea pares de predicciones con los mismos índices (RF-M4-18, PU-24).
@@ -361,5 +361,20 @@ def diferencia_pareada(
     def delta(i: np.ndarray | slice) -> float:
         return signo * (funcion(y[i], p_evaluada[i]) - funcion(y[i], p_referencia[i]))
 
-    valores = np.array([delta(i) for i in indices])
-    return _percentil(delta(slice(None)), valores, nivel)
+    return delta(slice(None)), np.array([delta(i) for i in indices])
+
+
+def diferencia_pareada(
+    funcion: Callable[[np.ndarray, np.ndarray], float],
+    mayor_es_mejor: bool,
+    y: np.ndarray,
+    p_evaluada: np.ndarray,
+    p_referencia: np.ndarray,
+    indices: np.ndarray,
+    nivel: float,
+) -> EstimacionBootstrap:
+    """Δ pareada con su intervalo percentil bilateral (ver ``replicas_diferencia``)."""
+    puntual, valores = replicas_diferencia(
+        funcion, mayor_es_mejor, y, p_evaluada, p_referencia, indices
+    )
+    return _percentil(puntual, valores, nivel)

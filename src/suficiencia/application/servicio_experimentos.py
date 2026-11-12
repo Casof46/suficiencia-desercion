@@ -29,6 +29,7 @@ from suficiencia.application.contratos import (
     EstimacionResumen,
     FoldResumen,
     MetricasCorridaResumen,
+    ReferenteResumen,
     ResultadoCongelamiento,
     ResultadoEntrenamiento,
     ResultadoMetricas,
@@ -53,9 +54,15 @@ from suficiencia.application.servicio_protocolo import historial_protocolo
 from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.escenarios.matrices import MatrizEscenario
 from suficiencia.domain.escenarios.poblaciones import ConfiguracionPoblaciones
+from suficiencia.domain.evaluacion.comparacion import (
+    elegir_familia_referencia,
+    referentes_a_construir,
+)
 from suficiencia.domain.evaluacion.congelamiento import configuracion_desde_datos, congelar
 from suficiencia.domain.evaluacion.metricas import (
+    MAYOR_ES_MEJOR,
     EstimacionBootstrap,
+    MetricaProbabilidad,
     estimar,
     prevalencia,
     remuestras,
@@ -475,34 +482,12 @@ class ServicioExperimentos(ServicioCasosDeUso):
         matrices = _seleccionar_escenarios(preparacion, solicitud.seleccion_escenarios)
         repositorio = self._repositorio(self._archivo_registro())
         regla = experimentos.seleccion
-        funcion = experimentos.metricas.funcion(regla.metrica)
         escenarios = []
         for matriz in matrices:
-            corridas = _corridas_por_familia(
-                repositorio, experimentos.nombre, historial.huella_fuente.valor, matriz.escenario
+            corridas, predicciones, valores = self._validacion_familias(
+                repositorio, experimentos, historial, matriz.escenario, regla.metrica
             )
-            predicciones = {
-                familia: self._leer_predicciones(
-                    self._raiz / c["resultados"]["carpeta"],
-                    c["resultados"]["huellas_archivos"]["predicciones.csv"],
-                )
-                for familia, c in corridas.items()
-            }
-            valores = {
-                familia: funcion(
-                    t["objetivo"].to_numpy(dtype="int64"),
-                    t["probabilidad"].to_numpy(dtype="float64"),
-                )
-                for familia, t in predicciones.items()
-            }
             elegida = seleccionar_familia(valores, regla)
-            validacion = predicciones[elegida]
-            umbral = elegir_umbral(
-                validacion["objetivo"].to_numpy(dtype="int64"),
-                validacion["probabilidad"].to_numpy(dtype="float64"),
-                experimentos.umbral,
-                experimentos.metricas.q,
-            )
             escenarios.append(
                 self._modelo_final(
                     experimentos,
@@ -513,11 +498,47 @@ class ServicioExperimentos(ServicioCasosDeUso):
                     corridas[elegida],
                     regla.reentrenamiento,
                     valores,
-                    umbral,
+                    self._umbral(experimentos, predicciones[elegida]),
+                )
+            )
+        # R0 y controles (DP-19; RF-M4-15, RF-M4-16): se construyen aquí, con el mismo
+        # procedimiento, para congelarlos junto con la selección antes de abrir la prueba.
+        por_codigo = {m.escenario: m for m in preparacion.matrices}
+        factibles = {m.escenario: len(m.conjunto.split("+")) for m in preparacion.matrices}
+        referencia = experimentos.referencia
+        referentes = []
+        for referente in referentes_a_construir(
+            referencia, {e.escenario: e.familia for e in escenarios}, factibles
+        ):
+            corridas, predicciones, valores = self._validacion_familias(
+                repositorio, experimentos, historial, referente.escenario, referencia.metrica
+            )
+            familia = referente.familia or elegir_familia_referencia(
+                valores, regla.orden_familias, MAYOR_ES_MEJOR[referencia.metrica]
+            )
+            referentes.append(
+                ReferenteResumen(
+                    codigo=referente.codigo,
+                    tipo=referente.tipo,
+                    rol="referencia_r0" if referente.tipo == "r0" else "control",
+                    seleccion=self._modelo_final(
+                        experimentos,
+                        historial,
+                        preparacion,
+                        por_codigo[referente.escenario],
+                        Familia(familia),
+                        corridas[familia],
+                        regla.reentrenamiento,
+                        valores,
+                        self._umbral(experimentos, predicciones[familia]),
+                    ),
                 )
             )
         guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
-            lambda: {"escenarios": [e.model_dump() for e in escenarios]},
+            lambda: {
+                "escenarios": [e.model_dump() for e in escenarios],
+                "referentes": [r.model_dump() for r in referentes],
+            },
             modo=ModoExperimento.EXPLORATORIO,
             configuracion={
                 "tipo": "seleccion_desarrollo",
@@ -544,7 +565,46 @@ class ServicioExperimentos(ServicioCasosDeUso):
             configuracion_experimentos=experimentos.nombre,
             configuraciones_ficticias=ficticias,
             escenarios=tuple(escenarios),
+            referentes=tuple(referentes),
             identificador_registro=guardado.contenido["identificador"],
+        )
+
+    def _validacion_familias(
+        self,
+        repositorio: RepositorioRegistros,
+        experimentos: ConfiguracionExperimentos,
+        historial: HistorialPreparado,
+        escenario: str,
+        metrica: MetricaProbabilidad,
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, pd.DataFrame], dict[str, float]]:
+        """Corridas, predicciones de validación y métrica de las cinco familias de un escenario."""
+        corridas = _corridas_por_familia(
+            repositorio, experimentos.nombre, historial.huella_fuente.valor, escenario
+        )
+        predicciones = {
+            familia: self._leer_predicciones(
+                self._raiz / c["resultados"]["carpeta"],
+                c["resultados"]["huellas_archivos"]["predicciones.csv"],
+            )
+            for familia, c in corridas.items()
+        }
+        funcion = experimentos.metricas.funcion(metrica)
+        valores = {
+            familia: funcion(
+                t["objetivo"].to_numpy(dtype="int64"),
+                t["probabilidad"].to_numpy(dtype="float64"),
+            )
+            for familia, t in predicciones.items()
+        }
+        return corridas, predicciones, valores
+
+    @staticmethod
+    def _umbral(experimentos: ConfiguracionExperimentos, validacion: pd.DataFrame) -> float:
+        return elegir_umbral(
+            validacion["objetivo"].to_numpy(dtype="int64"),
+            validacion["probabilidad"].to_numpy(dtype="float64"),
+            experimentos.umbral,
+            experimentos.metricas.q,
         )
 
     def _modelo_final(
