@@ -36,7 +36,7 @@ Todo se probó con datos **sintéticos** y configuraciones **ficticias**. Ningú
 | H2.5 | Poblaciones D1 a D3, partición cronológica y sello de la prueba | `69e9efe` | Cinco `OK`; 470 pasan | 29-10-2026 |
 | H2.D | Visor de demostración local (fuera del plan, a pedido del profesor) | `9ae248a` | Cinco `OK`; 486 pasan | 11-11-2026 |
 | H2.6 | Protocolo versionado, desviaciones, congelamiento y regla de suficiencia; configuración de VS Code | `05fbed9`, `b4f3c1e` | Cinco `OK`; 584 pasan | 11-11-2026 |
-| H2.8 | Comando `decisiones`, pruebas de aceptación de CU-03 a CU-05, PI-11 determinista, este informe | Pendiente | Cinco `OK`; 600 pasan | Pendiente |
+| H2.8 | Comando `decisiones`, pruebas de aceptación de CU-03 a CU-05, PI-11 determinista, este informe | `0a32344` | Cinco `OK`; 600 pasan, también en un clon nuevo | Pendiente |
 
 Todas las aceptaciones las comunicó Jorge en nombre del equipo y están pendientes de confirmación de Javier. El detalle de cada hito está en `docs/gestion/registro_h2_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_h2_*.md` y sus pruebas en `docs/desarrollo/pruebas_h2_*.md`.
 
@@ -44,8 +44,8 @@ Todas las aceptaciones las comunicó Jorge en nombre del equipo y están pendien
 
 | Criterio (plan) | Estado | Evidencia |
 | --- | --- | --- |
-| Salida completa de pytest adjunta | **Pendiente** | `docs/gestion/evidencia_fase_2/pytest_windows.txt` |
-| Instalación verificada desde el README en un entorno limpio | Linux (Python 3.12, clon nuevo): cumplido, 600 pasan. Windows: **pendiente** | `docs/gestion/evidencia_fase_2/` |
+| Salida completa de pytest adjunta | Cumplido: 600 pasan en Windows sobre `0a32344` | `docs/gestion/evidencia_fase_2/pytest_windows.txt` |
+| Instalación verificada desde el README en un entorno limpio | Cumplido. Linux (Python 3.12, clon nuevo): 600 pasan. Windows (Python 3.13.0, clon nuevo desde GitHub): 600 pasan | `docs/gestion/evidencia_fase_2/` |
 | Lista de limitaciones conocidas | Cumplido | Sección 6 |
 | Criterios de aceptación de CU-03, CU-04 y CU-05 sobre datos sintéticos | Cumplido en Linux y Windows | `tests/acceptance/test_casos_de_uso_sinteticos.py` |
 | Suite completa sin red | Cumplido: Linux, 600 pasan en un clon nuevo; Windows, 600 pasan | `scripts/verificar.py` |

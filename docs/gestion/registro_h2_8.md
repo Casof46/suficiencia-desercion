@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 2 (paquete de cierre, sección E, H2.8); especificación Fase 1 v0.6 (CU-03, CU-04, CU-05; PI-11; RF-M6-05) |
 | Autorización | El equipo aceptó H2.D y H2.6 el 11 de noviembre de 2026 y pidió seguir. Comunicado por Jorge; pendiente de confirmación de Javier |
 | Riesgo aceptado | Los de H2.4 a H2.6: si la asesoría pide cambios en REC-01 a REC-03, esos hitos y sus pruebas de aceptación se ajustan |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; pendientes la evidencia de Windows (pytest completo e instalación limpia) y la aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows, con la evidencia de cierre completa; versionado en git y en GitHub (commit `0a32344`); pendiente de aceptación por el equipo** |
 
 ## 1. Qué se construyó
 
@@ -34,14 +34,14 @@ Ninguna.
 | Linux, Python 3.11 (entorno de desarrollo, sin git) | Cinco `OK`; 6 contratos cumplidos; 599 pasan y 1 se omite (sin git) |
 | Linux, Python 3.12, clon nuevo e instalación siguiendo el README | Cinco `OK`; **600 pasan** (`evidencia_fase_2/instalacion_limpia_linux.txt`) |
 | Windows 11, Python 3.13.0 (11 de noviembre de 2026) | Cinco `OK`; 6 contratos cumplidos; **600 pasan** |
-| Windows 11, clon nuevo desde GitHub e instalación siguiendo el README | **Pendiente** |
+| Windows 11, Python 3.13.0, clon nuevo desde GitHub (commit `0a32344`) en `C:\proyectos\suficiencia-desercion-limpia` e instalación siguiendo el README | Cinco `OK`; **600 pasan** (`evidencia_fase_2/instalacion_limpia_windows.txt`) |
 
 ## 4. Matriz de criterios de aceptación de H2.8
 
 | # | Criterio | Estado | Evidencia |
 | --- | --- | --- | --- |
-| 1 | Salida completa de pytest adjunta | **Pendiente** | `evidencia_fase_2/pytest_windows.txt` |
-| 2 | Instalación verificada desde el README en un entorno limpio | Linux: cumplido (600 pasan). Windows: **pendiente** | `evidencia_fase_2/` |
+| 1 | Salida completa de pytest adjunta | Cumplido: 600 pasan en Windows sobre `0a32344` | `evidencia_fase_2/pytest_windows.txt` |
+| 2 | Instalación verificada desde el README en un entorno limpio | Cumplido: Linux (600 pasan) y Windows (600 pasan) | `evidencia_fase_2/` |
 | 3 | Lista de limitaciones conocidas | Cumplido | Informe de cierre, sección 6 |
 | 4 | Criterios de aceptación de CU-03 a CU-05 sobre datos sintéticos | Cumplido en Linux y Windows | `tests/acceptance/` |
 | 5 | PI-11 en las partes deterministas | Cumplido en Linux y Windows | `tests/acceptance/` |
