@@ -40,7 +40,7 @@ suficiencia-desercion/
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
 │   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5); matrices.py (F3.1)
 │   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6)
-│   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1)
+│   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1); familias, búsqueda, desbalance y calibración (F3.2)
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
 │   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
@@ -50,7 +50,7 @@ suficiencia-desercion/
 │   │   ├── preparacion_desarrollo.py # matrices y folds solo con desarrollo; F3.1
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
-│   ├── experimentation/        # pipelines.py: preprocesamiento con scikit-learn dentro de cada fold; F3.1
+│   ├── experimentation/        # pipelines.py: preprocesamiento por fold (F3.1); modelos.py: las cinco familias (F3.2)
 │   ├── persistence/
 │   │   ├── configuracion.py    # lector de config/proyecto.yaml; implementa FuenteConfiguracion
 │   │   ├── escenarios_yaml.py  # lector de config/escenarios.yaml y de variables; H2.2
@@ -60,6 +60,7 @@ suficiencia-desercion/
 │   │   ├── objetivo_yaml.py    # lector de la definición del objetivo (DP-01, DP-18); H2.4
 │   │   ├── poblaciones_yaml.py # lector de ventanas, diseños y partición (DP-01d, DP-04, DP-05, DP-17); H2.5
 │   │   ├── experimentos_yaml.py # lector de la configuración de experimentos (DP-03, DP-07, DP-12); F3.1
+│   │   ├── corridas_archivos.py # predicciones, modelos y manifiesto de cada corrida en workspace/experimentos/; F3.2
 │   │   ├── particion_archivos.py # índices de la partición en workspace/particiones/; H2.5
 │   │   ├── protocolo_yaml.py   # lector YAML del protocolo y de configuraciones para congelar; H2.6
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6

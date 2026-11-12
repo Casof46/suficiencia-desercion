@@ -1,4 +1,4 @@
-"""Configuración de experimentos y folds cronológicos (F3.1).
+"""Configuración de experimentos y folds cronológicos (F3.1); modelos y búsqueda (F3.2).
 
 PI-07 (parte de los folds): en cada fold, la cohorte de validación es posterior a
 todas las de ajuste y calibración, y ninguna cohorte está en dos papeles. DP-07 y
@@ -19,11 +19,19 @@ from hypothesis import strategies as st
 
 from suficiencia.domain.errores import ConfiguracionInvalida, DecisionPendiente
 from suficiencia.domain.experimentos import (
+    Calibracion,
+    DefinicionBusqueda,
     DefinicionValidacion,
+    Desbalance,
     Escalado,
     Esquema,
+    Familia,
     ImputacionCategorica,
     ImputacionNumerica,
+    MetodoBusqueda,
+    MetricaBusqueda,
+    ModeloFamilia,
+    combinaciones_a_evaluar,
     configuracion_experimentos_desde_datos,
     construir_folds,
 )
@@ -174,3 +182,110 @@ def test_estructuras_invalidas_se_rechazan(cambio: Any) -> None:
     cambio(datos)
     with pytest.raises(ConfiguracionInvalida):
         configuracion_experimentos_desde_datos(datos)
+
+
+# --- F3.2: modelos, búsqueda, desbalance, calibración y semilla ---------------------
+
+
+def test_el_ejemplo_declara_las_cinco_familias_y_lo_demas_de_f32() -> None:
+    configuracion = cargar_configuracion_experimentos(EJEMPLO)
+    assert list(configuracion.modelos) == list(Familia)
+    assert configuracion.busqueda == DefinicionBusqueda(
+        MetodoBusqueda.MALLA, MetricaBusqueda.AUC_ROC, None
+    )
+    assert configuracion.desbalance is Desbalance.PESOS_CLASE
+    assert configuracion.calibracion is Calibracion.PLATT
+    assert configuracion.semilla == 20261111
+    assert configuracion.modelos[Familia.LR].perfil == "lineal"
+    assert configuracion.modelos[Familia.RF].perfil == "arboles"
+
+
+def test_pi08_las_combinaciones_dependen_solo_de_familia_busqueda_y_semilla() -> None:
+    espacio: dict[str, tuple[Any, ...]] = {"max_depth": (2, 4, 8), "n_estimators": (50, 100)}
+    modelo = ModeloFamilia(Familia.RF, "arboles", espacio)
+    malla = modelo.malla()
+    assert len(malla) == 6
+    assert malla[0] == {"max_depth": 2, "n_estimators": 50}
+    en_malla = DefinicionBusqueda(MetodoBusqueda.MALLA, MetricaBusqueda.AUC_ROC, None)
+    assert combinaciones_a_evaluar(modelo, en_malla, 1) == malla
+    aleatoria = DefinicionBusqueda(MetodoBusqueda.ALEATORIA, MetricaBusqueda.AUC_ROC, 3)
+    elegidas = combinaciones_a_evaluar(modelo, aleatoria, 7)
+    assert len(elegidas) == 3
+    assert set(map(repr, elegidas)) <= set(map(repr, malla))
+    # Misma semilla, mismas combinaciones: no hay nada por escenario ni por fold.
+    assert combinaciones_a_evaluar(modelo, aleatoria, 7) == elegidas
+    todas = DefinicionBusqueda(MetodoBusqueda.ALEATORIA, MetricaBusqueda.AUC_ROC, 99)
+    assert combinaciones_a_evaluar(modelo, todas, 7) == malla
+
+
+@pytest.mark.parametrize(
+    ("ruta", "decision"),
+    [
+        (("busqueda",), "DP-07"),
+        (("busqueda", "metodo"), "DP-07"),
+        (("modelos",), "DP-07"),
+        (("modelos", "svm"), "DP-07"),
+        (("modelos", "lr", "espacio"), "DP-07"),
+        (("modelos", "lr", "perfil"), "DP-12"),
+        (("modelos", "rf", "espacio", "max_depth"), "DP-07"),
+        (("desbalance",), "DP-06"),
+        (("calibracion",), "DP-09"),
+    ],
+)
+def test_f32_un_null_detiene_con_la_decision_pendiente(
+    ruta: tuple[str, ...], decision: str
+) -> None:
+    datos = copy.deepcopy(_datos())
+    destino = datos
+    for clave in ruta[:-1]:
+        destino = destino[clave]
+    destino[ruta[-1]] = None
+    with pytest.raises(DecisionPendiente, match=decision):
+        configuracion_experimentos_desde_datos(datos)
+
+
+def test_f32_un_valor_null_dentro_del_espacio_tambien_detiene() -> None:
+    datos = copy.deepcopy(_datos())
+    datos["modelos"]["rf"]["espacio"]["max_depth"] = [4, None]
+    with pytest.raises(DecisionPendiente, match="DP-07"):
+        configuracion_experimentos_desde_datos(datos)
+
+
+@pytest.mark.parametrize(
+    "cambio",
+    [
+        lambda d: d["modelos"].pop("svm"),  # faltan familias (RF-M3-01)
+        lambda d: d["modelos"].update(knn={"perfil": "lineal", "espacio": {"k": [3]}}),
+        lambda d: d["modelos"]["lr"]["espacio"].update(random_state=[1]),  # reservado
+        lambda d: d["modelos"]["xgboost"]["espacio"].update(scale_pos_weight=[2.0]),
+        lambda d: d["modelos"]["lr"].update(perfil="inexistente"),
+        lambda d: d["modelos"]["lr"]["espacio"].update(C=[]),
+        lambda d: d["modelos"]["lr"]["espacio"].update(C=[1.0, 1.0]),
+        lambda d: d["modelos"]["lr"]["espacio"].update(C=[{"a": 1}]),
+        lambda d: d["busqueda"].update(intentos=3),  # la malla no lleva intentos
+        lambda d: d["busqueda"].update(metodo="aleatoria"),  # sin intentos
+        lambda d: d["busqueda"].update(metrica="precision"),
+        lambda d: d.update(desbalance="sobremuestreo"),
+        lambda d: d.update(calibracion="beta"),
+        lambda d: d.update(semilla=-1),
+        lambda d: d.update(semilla=True),
+        lambda d: d.pop("semilla"),
+        # Sin cohorte de calibración no se puede buscar ni calibrar.
+        lambda d: d["validacion"].update(cohorte_calibracion=False),
+    ],
+)
+def test_f32_estructuras_invalidas_se_rechazan(cambio: Any) -> None:
+    datos = copy.deepcopy(_datos())
+    cambio(datos)
+    with pytest.raises(ConfiguracionInvalida):
+        configuracion_experimentos_desde_datos(datos)
+
+
+def test_sin_cohorte_de_calibracion_vale_con_una_combinacion_y_sin_calibrar() -> None:
+    datos = copy.deepcopy(_datos())
+    datos["validacion"]["cohorte_calibracion"] = False
+    datos["calibracion"] = "ninguna"
+    for bloque in datos["modelos"].values():
+        bloque["espacio"] = {n: v[:1] for n, v in bloque["espacio"].items()}
+    configuracion = configuracion_experimentos_desde_datos(datos)
+    assert not configuracion.validacion.cohorte_calibracion

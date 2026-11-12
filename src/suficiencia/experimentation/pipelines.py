@@ -51,20 +51,31 @@ def tipos_de_columnas(predictores: pd.DataFrame) -> TiposColumnas:
     return TiposColumnas(tuple(numericas), tuple(categoricas))
 
 
-def _a_tipos_sklearn(tipos: TiposColumnas) -> FunctionTransformer:
-    """Convierte los tipos de pandas con faltantes (pd.NA) a los que entiende scikit-learn."""
+@dataclass(frozen=True)
+class _ATiposSklearn:
+    """Convierte los tipos de pandas con faltantes (pd.NA) a los que entiende scikit-learn.
 
-    def convertir(tabla: pd.DataFrame) -> pd.DataFrame:
+    Es una clase del módulo, y no una función interna, para que el modelo ajustado
+    se pueda guardar con joblib (F3.2).
+    """
+
+    tipos: TiposColumnas
+
+    def __call__(self, tabla: pd.DataFrame) -> pd.DataFrame:
         salida = pd.DataFrame(index=tabla.index)
-        for columna in tipos.numericas:
+        for columna in self.tipos.numericas:
             salida[columna] = pd.to_numeric(
                 tabla[columna].astype("Float64"), errors="raise"
             ).to_numpy(dtype="float64", na_value=np.nan)
-        for columna in tipos.categoricas:
+        for columna in self.tipos.categoricas:
             salida[columna] = tabla[columna].astype("object").where(tabla[columna].notna(), np.nan)
         return salida
 
-    return FunctionTransformer(convertir, validate=False, feature_names_out="one-to-one")
+
+def _a_tipos_sklearn(tipos: TiposColumnas) -> FunctionTransformer:
+    return FunctionTransformer(
+        _ATiposSklearn(tipos), validate=False, feature_names_out="one-to-one"
+    )
 
 
 def construir_preprocesador(perfil: PerfilPreprocesamiento, tipos: TiposColumnas) -> Pipeline:

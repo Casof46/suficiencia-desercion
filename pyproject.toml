@@ -23,6 +23,8 @@ dependencies = [
     "numpy>=1.26",     # cálculo numérico; dependencia de pandas usada directamente; H2.3
     "openpyxl>=3.1",   # lectura y escritura de archivos .xlsx (RF-M1-01); H2.3
     "scikit-learn>=1.5",  # preprocesamiento dentro de cada fold (RF-M3-02); F3.1
+    "xgboost-cpu>=3.0,<3.3",  # XGBoost sin CUDA; misma versión con Python 3.11 y 3.13 (RF-M3-01); F3.2, D-136
+    "lightgbm>=4.5",      # LightGBM (RF-M3-01); F3.2
 ]
 
 [project.scripts]
@@ -75,7 +77,7 @@ plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
 mypy_path = ["src", "tests"]
 
-# scikit-learn no publica tipos (sin py.typed ni stubs oficiales); F3.1, D-131.
+# scikit-learn y joblib no publican tipos (sin py.typed ni stubs oficiales); F3.1 y F3.2, D-131.
 [[tool.mypy.overrides]]
-module = ["sklearn", "sklearn.*"]
+module = ["sklearn", "sklearn.*", "joblib", "joblib.*"]
 ignore_missing_imports = true

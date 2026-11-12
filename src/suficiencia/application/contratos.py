@@ -652,3 +652,34 @@ class ResultadoPreparacionDesarrollo(Contrato):
     escenarios: tuple[EscenarioPreparadoResumen, ...]
     no_factibles: tuple[str, ...]
     perfiles: tuple[str, ...]
+
+
+class SolicitudEntrenar(SolicitudPrepararDesarrollo):
+    """Entrena las familias en los folds de desarrollo (CU-06, F3.2), en modo exploratorio.
+
+    Sin ``seleccion_escenarios`` se entrenan todos los escenarios factibles; sin
+    ``seleccion_familias``, las cinco familias.
+    """
+
+    seleccion_escenarios: tuple[str, ...] = ()
+    seleccion_familias: tuple[str, ...] = ()
+
+
+class CorridaResumen(Contrato):
+    escenario: str
+    familia: str
+    estado: Literal["exitosa", "fallida", "omitida"]
+    identificador: str | None
+    configuraciones_evaluadas: int
+    carpeta: str | None
+    error: str | None
+
+
+class ResultadoEntrenamiento(Contrato):
+    archivo: str
+    sintetico: bool
+    configuraciones_ficticias: bool
+    huella_dataset: str
+    modo: str
+    semilla: int
+    corridas: tuple[CorridaResumen, ...]

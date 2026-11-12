@@ -5,7 +5,8 @@ biblioteca de la lista, la quita de ``POSTERGADAS`` y registra el cambio en
 docs/arquitectura/. H2.1 incorporó pydantic (decisión D-20) y H2.3, pandas, NumPy y
 openpyxl (decisión D-41). H2.D incorporó Streamlit, y con él pyarrow como
 dependencia transitiva, para el visor de demostración (decisión D-91). F3.1 incorporó
-scikit-learn, y con él joblib como dependencia transitiva (decisión D-127).
+scikit-learn, y con él joblib como dependencia transitiva (decisión D-127). F3.2
+incorporó XGBoost (paquete ``xgboost-cpu``) y LightGBM (decisión D-136).
 """
 
 from __future__ import annotations
@@ -18,8 +19,6 @@ from pathlib import Path
 # Bibliotecas que ningún hito construido usa todavía (decisión D-04 de H2.0).
 POSTERGADAS = {
     "plotly",
-    "xgboost",
-    "lightgbm",
     "shap",
     "lime",
     "imbalanced-learn",

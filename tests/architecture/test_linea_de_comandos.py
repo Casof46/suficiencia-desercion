@@ -377,6 +377,12 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "      '--poblaciones', ejemplos_dir + 'poblaciones_ampliado_ficticio.yaml',\n"
         "      '--escenarios', ejemplos_dir + 'escenarios_ficticio.yaml',\n"
         "      '--experimentos', ejemplos_dir + 'experimentos_ficticio.yaml', '--clave-efimera'])\n"
+        "main(['--raiz', proyecto, 'experimentos', 'entrenar', proyecto + '/data/ampliado.csv',\n"
+        "      '--diccionario', diccionario, '--definicion', objetivo,\n"
+        "      '--poblaciones', ejemplos_dir + 'poblaciones_ampliado_ficticio.yaml',\n"
+        "      '--escenarios', ejemplos_dir + 'escenarios_ficticio.yaml',\n"
+        "      '--experimentos', ejemplos_dir + 'experimentos_ficticio.yaml', '--clave-efimera',\n"
+        "      '--escenario', 'T0|A', '--familia', 'lr'])\n"
     )
     entorno = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}
     proceso = subprocess.run(
@@ -405,3 +411,5 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "CARGADAS=\r\n" in salida or "CARGADAS=\n" in salida
     assert "Folds cronológicos (DP-07): 6" in salida
     assert "Escenarios preparados: 28; no factibles (no se entrenan): 4" in salida
+    assert "Modo: EXPLORATORIO" in salida
+    assert "Exitosas: 1; omitidas: 0; fallidas: 0." in salida

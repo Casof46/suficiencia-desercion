@@ -24,7 +24,17 @@ VARIABLES_HILOS = (
     "OPENBLAS_NUM_THREADS",
     "NUMEXPR_NUM_THREADS",
 )
-PAQUETES = ("suficiencia", "numpy", "pandas", "pydantic", "PyYAML", "openpyxl")
+PAQUETES = (
+    "suficiencia",
+    "numpy",
+    "pandas",
+    "pydantic",
+    "PyYAML",
+    "openpyxl",
+    "scikit-learn",
+    "xgboost-cpu",
+    "lightgbm",
+)
 
 
 def _git(raiz: Path, *argumentos: str) -> str | None:

@@ -21,6 +21,8 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia experimentos preparar ARCHIVO --diccionario RUTA [--definicion RUTA]
                                       [--poblaciones RUTA] [--escenarios RUTA]
                                       [--experimentos RUTA] [--clave-efimera]
+    suficiencia experimentos entrenar ARCHIVO (mismas opciones que preparar)
+                                      [--escenario T1|A+F ...] [--familia lr ...]
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver TIPO
@@ -65,6 +67,7 @@ from suficiencia.application.contratos import (
     ResultadoDemostracionObjetivo,
     ResultadoDemostracionProtocolo,
     ResultadoDiccionario,
+    ResultadoEntrenamiento,
     ResultadoEscenarios,
     ResultadoEstadoDecisiones,
     ResultadoImportacion,
@@ -78,6 +81,7 @@ from suficiencia.application.contratos import (
     SolicitudConstruirObjetivo,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
+    SolicitudEntrenar,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
     SolicitudGuardarBorrador,
@@ -130,6 +134,43 @@ def _separador(texto: str) -> str:
     if len(texto) != 1:
         raise argparse.ArgumentTypeError("el separador debe ser un solo carácter, por ejemplo ';'.")
     return texto
+
+
+def _opciones_desarrollo(analizador: argparse.ArgumentParser) -> None:
+    """Opciones comunes de `experimentos preparar` y `experimentos entrenar`."""
+    analizador.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
+    analizador.add_argument(
+        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    )
+    analizador.add_argument(
+        "--definicion",
+        type=Path,
+        help="Definición del objetivo (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    )
+    analizador.add_argument(
+        "--poblaciones",
+        type=Path,
+        help="Poblaciones y partición (por omisión, config/poblaciones.yaml; DP-04, DP-05).",
+    )
+    analizador.add_argument(
+        "--escenarios",
+        type=Path,
+        help="Ventanas y conjuntos (por omisión, config/escenarios.yaml; DP-01d).",
+    )
+    analizador.add_argument(
+        "--experimentos",
+        type=Path,
+        help="Validación, lecturas y preprocesamiento "
+        "(por omisión, config/experimentos.yaml; DP-03, DP-07, DP-12).",
+    )
+    analizador.add_argument(
+        "--clave-efimera",
+        action="store_true",
+        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
+    )
+    analizador.add_argument(
+        "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
+    )
 
 
 def construir_analizador() -> argparse.ArgumentParser:
@@ -299,38 +340,24 @@ def construir_analizador() -> argparse.ArgumentParser:
         "preparar",
         help="Matrices por escenario, folds cronológicos y preprocesamiento por fold (F3.1).",
     )
-    preparar_p.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
-    preparar_p.add_argument(
-        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    _opciones_desarrollo(preparar_p)
+    entrenar_p = acciones_experimentos.add_parser(
+        "entrenar",
+        help="Entrena las cinco familias en los folds, en modo exploratorio (F3.2).",
     )
-    preparar_p.add_argument(
-        "--definicion",
-        type=Path,
-        help="Definición del objetivo (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    _opciones_desarrollo(entrenar_p)
+    entrenar_p.add_argument(
+        "--escenario",
+        action="append",
+        default=[],
+        help="Solo ese escenario (por ejemplo, 'T1|A+F'); se puede repetir.",
     )
-    preparar_p.add_argument(
-        "--poblaciones",
-        type=Path,
-        help="Poblaciones y partición (por omisión, config/poblaciones.yaml; DP-04, DP-05).",
-    )
-    preparar_p.add_argument(
-        "--escenarios",
-        type=Path,
-        help="Ventanas y conjuntos (por omisión, config/escenarios.yaml; DP-01d).",
-    )
-    preparar_p.add_argument(
-        "--experimentos",
-        type=Path,
-        help="Validación, lecturas y preprocesamiento "
-        "(por omisión, config/experimentos.yaml; DP-03, DP-07, DP-12).",
-    )
-    preparar_p.add_argument(
-        "--clave-efimera",
-        action="store_true",
-        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
-    )
-    preparar_p.add_argument(
-        "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
+    entrenar_p.add_argument(
+        "--familia",
+        action="append",
+        default=[],
+        choices=["lr", "rf", "xgboost", "lightgbm", "svm"],
+        help="Solo esa familia; se puede repetir.",
     )
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
@@ -783,6 +810,48 @@ def _mostrar_preparacion(resultado: ResultadoPreparacionDesarrollo, salida: Text
     )
 
 
+def _mostrar_entrenamiento(resultado: ResultadoEntrenamiento, salida: TextIO) -> None:
+    if resultado.sintetico:
+        print(
+            "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+            file=salida,
+        )
+    if resultado.configuraciones_ficticias:
+        print(
+            "CONFIGURACIÓN FICTICIA: modelos, búsqueda, desbalance, calibración y validación son "
+            "ejemplos, no decisiones (DP-06, DP-07, DP-09, DP-12).",
+            file=salida,
+        )
+    print(f"\nArchivo: {resultado.archivo}", file=salida)
+    print(f"  Huella del dataset: {resultado.huella_dataset}", file=salida)
+    print(
+        f"  Modo: {resultado.modo.upper()} (no hay protocolo aprobado). "
+        f"Semilla: {resultado.semilla}",
+        file=salida,
+    )
+    print("\nCorridas (escenario, familia, estado, combinaciones evaluadas):", file=salida)
+    for c in resultado.corridas:
+        detalle = {
+            "exitosa": f"{c.configuraciones_evaluadas} evaluadas; {c.carpeta}",
+            "omitida": f"ya estaba completa ({c.identificador})",
+            "fallida": f"FALLIDA: {c.error}",
+        }[c.estado]
+        print(f"  {c.escenario:<12} {c.familia:<9} {detalle}", file=salida)
+    estados = ("exitosa", "omitida", "fallida")
+    cuenta = {e: sum(c.estado == e for c in resultado.corridas) for e in estados}
+    total = sum(c.configuraciones_evaluadas for c in resultado.corridas)
+    print(
+        f"\nExitosas: {cuenta['exitosa']}; omitidas: {cuenta['omitida']}; "
+        f"fallidas: {cuenta['fallida']}. Configuraciones evaluadas: {total} (RF-M3-11).",
+        file=salida,
+    )
+    print(
+        "Todas las corridas quedaron en el registro (`registro ver experimentos`). Las "
+        "probabilidades de validación no son una estimación final del desempeño.",
+        file=salida,
+    )
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -895,6 +964,24 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_objetivo(argumentos, servicios)
     if argumentos.comando == "poblaciones":
         return _ejecutar_poblaciones(argumentos, servicios)
+    if argumentos.comando == "experimentos" and argumentos.accion == "entrenar":
+        entrenamiento = servicios.experimentos.entrenar(
+            SolicitudEntrenar(
+                archivo=argumentos.archivo,
+                diccionario=argumentos.diccionario,
+                definicion=argumentos.definicion,
+                poblaciones=argumentos.poblaciones,
+                escenarios=argumentos.escenarios,
+                experimentos=argumentos.experimentos,
+                clave_efimera=argumentos.clave_efimera,
+                separador=argumentos.separador,
+                seleccion_escenarios=tuple(argumentos.escenario),
+                seleccion_familias=tuple(argumentos.familia),
+            )
+        )
+        _mostrar_entrenamiento(entrenamiento, sys.stdout)
+        fallidas = any(c.estado == "fallida" for c in entrenamiento.corridas)
+        return SALIDA_ERROR if fallidas else SALIDA_CORRECTA
     if argumentos.comando == "experimentos":
         _mostrar_preparacion(
             servicios.experimentos.preparar_desarrollo(

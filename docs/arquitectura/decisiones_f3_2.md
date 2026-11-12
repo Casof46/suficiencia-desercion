@@ -1,0 +1,34 @@
+# Decisiones técnicas del hito F3.2 — los cinco modelos
+
+Son decisiones **técnicas y reversibles**. Ninguna resuelve una decisión metodológica DP-xx: cada valor que depende de una DP-xx abierta (búsqueda y espacios, DP-07; desbalance, DP-06; calibración, DP-09) entra como dato obligatorio, con un ejemplo rotulado "EJEMPLO FICTICIO" en `config/ejemplos/experimentos_ficticio.yaml`. Continúan la numeración de `decisiones_f3_1.md`.
+
+## Decisiones
+
+| ID | Decisión | Alternativas consideradas | Motivo | Estado |
+| --- | --- | --- | --- | --- |
+| D-136 | Se agregan XGBoost como paquete `xgboost-cpu` (3.2.0, limitado a `<3.3`) y LightGBM (4.7.0), fijados en `requirements.lock` con hashes y `--exclude-newer 2026-10-28` (D-92). Se quitan de la lista de bibliotecas postergadas | El paquete `xgboost` completo, que trae soporte para GPU (CUDA) | El proyecto no usa GPU y `xgboost-cpu` pesa mucho menos, algo importante con la conexión del equipo. Sin el límite `<3.3`, Python 3.11 (Linux) y Python 3.13 (Windows) recibirían versiones distintas de XGBoost | Aplicada |
+| D-137 | Búsqueda de hiperparámetros (DP-07): cada combinación se ajusta con las filas de ajuste del fold y se compara en su cohorte de calibración con la métrica declarada (`auc_roc` o `log_loss`). Gana la mejor; en un empate, la primera en el orden de la malla. Con `aleatoria` se eligen `intentos` combinaciones de la malla con la semilla. Las combinaciones dependen solo de la familia, la búsqueda y la semilla, nunca del escenario ni del fold (RF-M3-04, PI-08) | Validación cruzada interna dentro del ajuste; búsqueda bayesiana (Optuna) | La especificación permite "una cohorte de validación posterior" (sección de selección del modelo representativo), y la cohorte de calibración de F3.1 cumple ese papel sin tocar la de validación. Optuna solo entra si DP-07 la elige | Aplicada |
+| D-138 | Desbalance (DP-06): `ninguno` o `pesos_clase`. Los pesos se calculan solo con las filas de ajuste de cada fold: `class_weight="balanced"` en LR, RF, LightGBM y SVM, y `scale_pos_weight` = negativos / positivos en XGBoost | Remuestreo dentro del fold | El remuestreo necesita imbalanced-learn, que sigue postergada. Se agrega si DP-06 lo elige | Aplicada |
+| D-139 | Las probabilidades de SVM se obtienen con Platt por validación cruzada interna sobre las filas de ajuste (`CalibratedClassifierCV(SVC, method="sigmoid", ensemble=False)`) | `SVC(probability=True)` | `SVC(probability=True)` está obsoleto desde scikit-learn 1.9, que recomienda esta forma equivalente. Solo usa filas de ajuste | Aplicada |
+| D-140 | Calibración (DP-09): `ninguna`, `platt` o `isotonica`. Se ajusta con la cohorte de calibración sobre el modelo ya ajustado, que queda congelado (`FrozenEstimator`) y no se vuelve a ajustar | Calibrar con validación cruzada dentro del ajuste | Usa la cohorte reservada en F3.1 y no toca la de validación. Una prueba comprueba que el modelo de dentro del calibrador predice igual que el modelo sin calibrar | Aplicada |
+| D-141 | Semilla única (RF-M3-06) para todos los componentes aleatorios, y un solo hilo (`n_jobs=1`; en LightGBM, además, `deterministic` y `force_row_wise`). El espacio no puede fijar semilla, hilos, desbalance ni probabilidades: los fija el programa. Los nombres de hiperparámetros se comparan con los de cada biblioteca y uno desconocido detiene la corrida | Varias semillas; varios hilos | Con un hilo y la misma semilla, dos ejecuciones dan exactamente las mismas probabilidades (PI-11) | Aplicada |
+| D-142 | Una corrida por escenario y familia, siempre en modo **exploratorio**, registrada con el registrador de corridas de H2.7: con su configuración completa, semillas, huella del dataset y entorno, tanto si termina bien como si falla (RF-M3-11). Una falla no detiene las demás corridas. La línea de comandos termina con código 1 si alguna falló | Detener el lote en la primera falla | RF-M3-11 pide registrar todas las corridas, también las fallidas, y PI-12 lo comprueba. No hay protocolo aprobado, así que no puede haber corridas confirmatorias (regla 2 del plan de la Fase 3) | Aplicada |
+| D-143 | Archivos de cada corrida en `workspace/experimentos/<escenario>-<familia>-<clave>/` (no versionado): `predicciones.csv` con las probabilidades de validación fuera de fold, su fold, cohorte y etiqueta, **sin seudónimos**; `modelo_fold_<n>.joblib` y `manifiesto.json`. Se escriben en una carpeta `.incompleta` que solo se renombra al terminar. Las huellas de los archivos quedan en el registro | Guardar las predicciones en el registro SQLite | RF-M3-07 pide persistir cada modelo. Las predicciones son la entrada de las métricas de F3.3 y pesan demasiado para el registro | Aplicada |
+| D-144 | Reanudación (RF-M3-08): cada corrida tiene una clave SHA-256 de su configuración, la semilla y la huella del archivo de origen. Una corrida exitosa con la misma clave se omite al repetir; una fallida se vuelve a intentar | Usar la huella del dataset seudonimizado | Con clave efímera, el dataset seudonimizado cambia en cada ejecución y nunca se reanudaría; el archivo de origen no cambia | Aplicada |
+| D-145 | El entorno registrado con cada corrida incluye las versiones de scikit-learn, xgboost-cpu y LightGBM | Solo las bibliotecas de la Fase 2 | RNF-17: con modelos, sus versiones son parte del entorno | Aplicada |
+| D-146 | La conversión de tipos del preprocesamiento es una clase del módulo y no una función interna | Dejar la función interna de F3.1 | Una función interna no se puede guardar con joblib; sin este cambio, ninguna corrida podía guardar su modelo | Aplicada |
+| D-147 | XGBoost, LightGBM y scikit-learn se importan solo al entrenar (importación diferida en `composicion.py`, como en D-134). mypy ignora la falta de tipos de joblib (amplía D-131) | Importarlas al arrancar | Mantiene el arranque rápido de los demás comandos y la comprobación de bibliotecas prohibidas | Aplicada |
+
+## Desviaciones respecto de la documentación anterior
+
+| Documento | Qué preveía | Qué se hizo | Motivo |
+| --- | --- | --- | --- |
+| Plan de la Fase 3, F3.2 | "Corridas registradas" | Además, archivos por corrida y reanudación (RF-M3-07, RF-M3-08) | Con 28 escenarios × 5 familias, repetir todo tras una falla sería costoso |
+| `config/ejemplos/experimentos_ficticio.yaml` | Solo validación, lecturas y preprocesamiento (F3.1) | Agrega `busqueda`, `modelos`, `desbalance`, `calibracion` y `semilla`, todos obligatorios | Son los datos de F3.2 |
+
+## No implementado en F3.2
+
+- Métricas e intervalos (F3.3): las probabilidades de validación quedan guardadas, pero todavía no se resumen.
+- Selección del modelo representativo, umbral y reentrenamiento sobre todo el desarrollo (DP-10, DP-06; F3.4).
+- Remuestreo (imbalanced-learn) y búsqueda bayesiana (Optuna), salvo que DP-06 o DP-07 los elijan.
+- Valores reales de DP-06, DP-07 o DP-09.

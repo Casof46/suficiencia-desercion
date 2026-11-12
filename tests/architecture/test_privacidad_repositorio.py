@@ -49,6 +49,8 @@ DEBEN_IGNORARSE = [
     "data/interim/procesado.csv",
     "workspace/registro.sqlite",
     "workspace/registro_demostracion.sqlite",
+    "workspace/experimentos/T1_AF-lr-0123456789ab/modelo_fold_1.joblib",
+    "workspace/experimentos/T1_AF-lr-0123456789ab/predicciones.csv",
     "reports/decisiones.xlsx",
     "~$plantilla.xlsx",
 ]
@@ -83,6 +85,8 @@ DEBEN_VERSIONARSE = [
     "config/ejemplos/experimentos_ficticio.yaml",
     "config/ejemplos/poblaciones_ampliado_ficticio.yaml",
     "src/suficiencia/experimentation/pipelines.py",
+    "src/suficiencia/experimentation/modelos.py",
+    "src/suficiencia/persistence/corridas_archivos.py",
     "docs/gestion/plan_fase_3.md",
 ]
 

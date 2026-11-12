@@ -1,11 +1,11 @@
 # EJEMPLO FICTICIO de configuración de los experimentos de desarrollo (F3.1), para
 # probar el programa con el historial sintético. NO es la configuración del
-# proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-07 y
-# DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
+# proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-06,
+# DP-07, DP-09 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
 # Todos los campos son obligatorios; un valor null detiene el programa nombrando
 # la decisión pendiente.
 version_experimentos: 1
-nombre: "Experimentos ficticios de prueba (F3.1)"
+nombre: "Experimentos ficticios de prueba (F3.1, F3.2)"
 ficticio: true
 
 # DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
@@ -30,7 +30,7 @@ matrices:
     horas_plataforma_ciclo: ultimo_ciclo
 
 # DP-12: perfiles de preprocesamiento, ajustados solo con el ajuste de cada fold.
-# Los modelos de F3.2 elegirán un perfil cada uno.
+# Cada familia de modelos elige uno (sección 'modelos').
 preprocesamiento:
   perfiles:
     lineal:                   # pensado para modelos sensibles a la escala
@@ -43,3 +43,55 @@ preprocesamiento:
       indicador_faltante: true
       escalado: ninguno
       imputacion_categorica: categoria_faltante
+
+# DP-07: búsqueda de hiperparámetros (F3.2). Cada combinación se ajusta con el
+# ajuste del fold y se compara en su cohorte de calibración; las combinaciones son
+# las mismas en todos los escenarios. Valores inventados para que la prueba tarde
+# poco; no son una propuesta.
+busqueda:
+  metodo: malla               # malla | aleatoria (esta exige 'intentos')
+  metrica: auc_roc            # auc_roc | log_loss
+
+# DP-07: perfil y espacio de hiperparámetros de cada familia (RF-M3-01). Los
+# nombres son los de cada biblioteca. La semilla, el desbalance y el número de
+# hilos los fija el programa y no pueden ir aquí.
+modelos:
+  lr:
+    perfil: lineal
+    espacio:
+      C: [0.1, 1.0]
+      max_iter: [1000]
+  rf:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      max_depth: [4, 8]
+      min_samples_leaf: [5]
+  xgboost:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      max_depth: [2, 4]
+      learning_rate: [0.05]
+  lightgbm:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      num_leaves: [7, 15]
+      learning_rate: [0.05]
+      min_child_samples: [10]
+  svm:
+    perfil: lineal
+    espacio:
+      C: [0.5, 2.0]
+      kernel: [rbf]
+
+# DP-06: desbalance dentro de cada fold: ninguno | pesos_clase
+desbalance: pesos_clase
+
+# DP-09: calibración con la cohorte de calibración de cada fold:
+# ninguna | platt | isotonica
+calibracion: platt
+
+# RF-M3-06: semilla de todos los componentes aleatorios (inventada).
+semilla: 20261111

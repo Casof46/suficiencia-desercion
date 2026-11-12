@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -24,10 +25,11 @@ from suficiencia.application.servicio_protocolo import ServicioProtocolo
 from suficiencia.application.servicio_proyecto import ServicioProyecto
 from suficiencia.application.servicio_reportes import ServicioReportes
 from suficiencia.domain.errores import ErrorSuficiencia
-from suficiencia.domain.experimentos import PerfilPreprocesamiento
+from suficiencia.domain.experimentos import PerfilPreprocesamiento, ResultadoFold
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
+from suficiencia.persistence.corridas_archivos import guardar_corrida
 from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario, cargar_diccionario
 from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
@@ -103,6 +105,14 @@ def _columnas_tras_preprocesar(
     return columnas_tras_preprocesar(perfil, ajuste, otras)
 
 
+def _entrenar_en_folds(*argumentos: Any) -> list[ResultadoFold]:
+    # Igual que el preprocesamiento: scikit-learn, XGBoost y LightGBM se importan
+    # solo al entrenar.
+    from suficiencia.experimentation.modelos import entrenar_en_folds
+
+    return entrenar_en_folds(*argumentos)
+
+
 def crear_servicios(raiz: Path) -> Servicios:
     """Construye los servicios para el proyecto ubicado en ``raiz``."""
     datos = ServicioDatos(
@@ -147,6 +157,10 @@ def crear_servicios(raiz: Path) -> Servicios:
         fuente_diccionario=_fuente_diccionario,
         cargar_experimentos=cargar_configuracion_experimentos,
         preprocesar=_columnas_tras_preprocesar,
+        capturador=CapturadorEntornoLocal(raiz),
+        carpeta_trabajo=reportes.carpeta_trabajo,
+        entrenar_familia=_entrenar_en_folds,
+        guardar_corrida=guardar_corrida,
     )
     evaluacion_final = ServicioEvaluacionFinal(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
