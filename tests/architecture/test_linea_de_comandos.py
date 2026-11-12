@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from fixtures.generador_sintetico import generar_historial, sembrar_problemas
+from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial, sembrar_problemas
 from suficiencia.cli import (
     SALIDA_CORRECTA,
     SALIDA_ERROR,
@@ -322,6 +322,9 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     completo = generar_historial(200, semilla=2)
     assert completo["cohorte"].nunique() == 8  # la partición de ejemplo usa las 8 cohortes
     completo.to_csv(tmp_path / "data" / "completo.csv", index=False)
+    generar_historial(300, semilla=2, cohortes=COHORTES_AMPLIADAS).to_csv(
+        tmp_path / "data" / "ampliado.csv", index=False
+    )
     con_problemas, _ = sembrar_problemas(generar_historial(15, semilla=2))
     con_problemas.to_csv(tmp_path / "data" / "mal.csv", index=False)
     _proyecto_con_config(tmp_path, raiz)
@@ -368,6 +371,12 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "          '--diccionario', diccionario, '--clave-efimera'])\n"
         f"cargadas = [m for m in {BIBLIOTECAS_PROHIBIDAS!r} if m in sys.modules]\n"
         "print('CARGADAS=' + ','.join(cargadas))\n"
+        # Preparar el desarrollo sí carga scikit-learn (F3.1); va al final por eso.
+        "main(['--raiz', proyecto, 'experimentos', 'preparar', proyecto + '/data/ampliado.csv',\n"
+        "      '--diccionario', diccionario, '--definicion', objetivo,\n"
+        "      '--poblaciones', ejemplos_dir + 'poblaciones_ampliado_ficticio.yaml',\n"
+        "      '--escenarios', ejemplos_dir + 'escenarios_ficticio.yaml',\n"
+        "      '--experimentos', ejemplos_dir + 'experimentos_ficticio.yaml', '--clave-efimera'])\n"
     )
     entorno = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}
     proceso = subprocess.run(
@@ -393,4 +402,6 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "empate_sin_resolver" in salida
     assert "[EJEMPLO FICTICIO" in salida
     assert "borrador de la versión 1" in salida
-    assert salida.rstrip().endswith("CARGADAS=")
+    assert "CARGADAS=\r\n" in salida or "CARGADAS=\n" in salida
+    assert "Folds cronológicos (DP-07): 6" in salida
+    assert "Escenarios preparados: 28; no factibles (no se entrenan): 4" in salida

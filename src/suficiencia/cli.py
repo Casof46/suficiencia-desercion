@@ -18,6 +18,9 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia poblaciones construir ARCHIVO --diccionario RUTA [--definicion RUTA]
                                       [--configuracion RUTA] [--clave-efimera]
     suficiencia poblaciones leer-prueba CARPETA --motivo TEXTO
+    suficiencia experimentos preparar ARCHIVO --diccionario RUTA [--definicion RUTA]
+                                      [--poblaciones RUTA] [--escenarios RUTA]
+                                      [--experimentos RUTA] [--clave-efimera]
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver TIPO
@@ -68,6 +71,7 @@ from suficiencia.application.contratos import (
     ResultadoIntegridad,
     ResultadoObjetivo,
     ResultadoPoblaciones,
+    ResultadoPreparacionDesarrollo,
     ResultadoValidacionConfiguracion,
     SolicitudAprobarProtocolo,
     SolicitudCasoDeUso,
@@ -79,6 +83,7 @@ from suficiencia.application.contratos import (
     SolicitudGuardarBorrador,
     SolicitudImportarDataset,
     SolicitudLeerPrueba,
+    SolicitudPrepararDesarrollo,
     SolicitudRegistrarDecision,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
@@ -284,6 +289,49 @@ def construir_analizador() -> argparse.ArgumentParser:
     )
     leer_prueba.add_argument("particion", type=Path, help="Carpeta de la partición guardada.")
     leer_prueba.add_argument("--motivo", required=True, help="Por qué se intenta leer.")
+    experimentos = comandos.add_parser(
+        "experimentos", help="Desarrollo con datos sintéticos: matrices, folds (Fase 3)."
+    )
+    acciones_experimentos = experimentos.add_subparsers(
+        dest="accion", required=True, title="acciones"
+    )
+    preparar_p = acciones_experimentos.add_parser(
+        "preparar",
+        help="Matrices por escenario, folds cronológicos y preprocesamiento por fold (F3.1).",
+    )
+    preparar_p.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
+    preparar_p.add_argument(
+        "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
+    )
+    preparar_p.add_argument(
+        "--definicion",
+        type=Path,
+        help="Definición del objetivo (por omisión, config/objetivo/definicion.yaml; DP-01).",
+    )
+    preparar_p.add_argument(
+        "--poblaciones",
+        type=Path,
+        help="Poblaciones y partición (por omisión, config/poblaciones.yaml; DP-04, DP-05).",
+    )
+    preparar_p.add_argument(
+        "--escenarios",
+        type=Path,
+        help="Ventanas y conjuntos (por omisión, config/escenarios.yaml; DP-01d).",
+    )
+    preparar_p.add_argument(
+        "--experimentos",
+        type=Path,
+        help="Validación, lecturas y preprocesamiento "
+        "(por omisión, config/experimentos.yaml; DP-03, DP-07, DP-12).",
+    )
+    preparar_p.add_argument(
+        "--clave-efimera",
+        action="store_true",
+        help="Seudonimiza con una clave aleatoria que no se guarda (para datos sintéticos).",
+    )
+    preparar_p.add_argument(
+        "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
+    )
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
         "registro", help="Registro de trazabilidad: decisiones, corridas y accesos (H2.7)."
@@ -669,6 +717,72 @@ def _mostrar_poblaciones(resultado: ResultadoPoblaciones, salida: TextIO) -> Non
     )
 
 
+def _mostrar_preparacion(resultado: ResultadoPreparacionDesarrollo, salida: TextIO) -> None:
+    if resultado.sintetico:
+        print(
+            "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+            file=salida,
+        )
+    if resultado.configuraciones_ficticias:
+        print(
+            "CONFIGURACIÓN FICTICIA: la validación, las lecturas, el preprocesamiento, las "
+            "ventanas y la partición son ejemplos, no decisiones (DP-03, DP-05, DP-07, DP-12).",
+            file=salida,
+        )
+    print(f"\nArchivo: {resultado.archivo}", file=salida)
+    print(f"  Huella del dataset: {resultado.huella_dataset}", file=salida)
+    print(
+        f"  Diseño principal: {resultado.diseno}. Solo cohortes de desarrollo: "
+        f"{', '.join(resultado.cohortes_desarrollo)}. La prueba no se lee.",
+        file=salida,
+    )
+    print(f"\nFolds cronológicos (DP-07): {len(resultado.folds)}", file=salida)
+    for f in resultado.folds:
+        calibracion = ", ".join(f.calibracion) or "ninguna"
+        print(
+            f"  Fold {f.numero}: ajuste {', '.join(f.ajuste)} | calibración {calibracion} | "
+            f"validación {f.validacion}",
+            file=salida,
+        )
+    print("\nFilas y eventos por ventana y fold (ajuste / calibración / validación):", file=salida)
+    for v in resultado.ventanas:
+        print(
+            f"  {v.ventana} (periodo índice {v.periodo_indice}): {v.filas} filas, "
+            f"{v.eventos} eventos",
+            file=salida,
+        )
+        for c in v.folds:
+            print(
+                f"    Fold {c.numero}: {c.ajuste} ({c.eventos_ajuste}) / "
+                f"{c.calibracion} ({c.eventos_calibracion}) / "
+                f"{c.validacion} ({c.eventos_validacion})",
+                file=salida,
+            )
+    perfiles = ", ".join(resultado.perfiles)
+    print(
+        f"\nEscenarios preparados: {len(resultado.escenarios)}; no factibles (no se "
+        f"entrenan): {len(resultado.no_factibles)}",
+        file=salida,
+    )
+    print(f"  Columnas tras el preprocesamiento por perfil ({perfiles}):", file=salida)
+    for e in resultado.escenarios:
+        columnas = "; ".join(
+            f"{p} {a}" if a == b else f"{p} {a}-{b}"
+            for p, (a, b) in e.columnas_preprocesadas.items()
+        )
+        print(
+            f"  {e.escenario:<12} {e.filas:>5} filas, {len(e.variables)} variables; {columnas}",
+            file=salida,
+        )
+    for codigo in resultado.no_factibles:
+        print(f"  {codigo:<12} no factible", file=salida)
+    print(
+        "\nEl preprocesamiento se ajustó solo con el ajuste de cada fold (PI-01). "
+        "Todavía no se entrena ningún modelo (F3.2).",
+        file=salida,
+    )
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -781,6 +895,23 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_objetivo(argumentos, servicios)
     if argumentos.comando == "poblaciones":
         return _ejecutar_poblaciones(argumentos, servicios)
+    if argumentos.comando == "experimentos":
+        _mostrar_preparacion(
+            servicios.experimentos.preparar_desarrollo(
+                SolicitudPrepararDesarrollo(
+                    archivo=argumentos.archivo,
+                    diccionario=argumentos.diccionario,
+                    definicion=argumentos.definicion,
+                    poblaciones=argumentos.poblaciones,
+                    escenarios=argumentos.escenarios,
+                    experimentos=argumentos.experimentos,
+                    clave_efimera=argumentos.clave_efimera,
+                    separador=argumentos.separador,
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
     if argumentos.comando == "entorno":
         _mostrar_entorno(servicios.reportes.entorno(), sys.stdout)
         return SALIDA_CORRECTA

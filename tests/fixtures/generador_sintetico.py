@@ -11,10 +11,15 @@ seguimiento incompleto en las cohortes más recientes. Los cuatro primeros
 estudiantes tienen historiales fijos para que cada caso aparezca siempre.
 
 Nunca se usa para reportar resultados (sección 6 de la especificación).
+
+Desde F3.1 puede generar además un historial **ampliado** de 12 cohortes
+(2010-1 a 2015-2), con suficientes cohortes de desarrollo para la validación
+cronológica por cohortes. El historial por omisión no cambia.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -25,6 +30,11 @@ ORIGEN = "SINTETICO"
 COHORTES = ("2014-1", "2014-2", "2015-1", "2015-2", "2016-1", "2016-2", "2017-1", "2017-2")
 FECHA_CORTE = date(2019, 1, 15)
 """Fecha de corte ficticia: las cohortes recientes no completan sus 8 ciclos."""
+COHORTES_AMPLIADAS = tuple(
+    f"{anio}-{semestre}" for anio in range(2010, 2016) for semestre in (1, 2)
+)
+"""12 cohortes para la Fase 3; con la misma fecha de corte, la última (2015-2) observa
+7 de los 8 ciclos."""
 CICLOS = 8
 ESTADOS = ("matriculado", "no_matriculado", "reserva", "retiro_total", "traslado")
 COLUMNAS = (
@@ -72,9 +82,9 @@ def _fecha_ciclo(cohorte: str, ciclo: int) -> date:
     return _inicio_cohorte(cohorte) + timedelta(days=183 * (ciclo - 1))
 
 
-def ciclos_observados(cohorte: str) -> int:
+def ciclos_observados(cohorte: str, fecha_corte: date = FECHA_CORTE) -> int:
     """Ciclos con fecha anterior al corte: menos de 8 en las cohortes recientes."""
-    return sum(1 for c in range(1, CICLOS + 1) if _fecha_ciclo(cohorte, c) <= FECHA_CORTE)
+    return sum(1 for c in range(1, CICLOS + 1) if _fecha_ciclo(cohorte, c) <= fecha_corte)
 
 
 def _siguiente_estado(anterior: str, riesgo: float, rng: np.random.Generator) -> str:
@@ -88,7 +98,8 @@ def _siguiente_estado(anterior: str, riesgo: float, rng: np.random.Generator) ->
         }
         salidas["matriculado"] = max(0.0, 1.0 - sum(salidas.values()))
     elif anterior == "no_matriculado":
-        salidas = {"matriculado": 0.25 / factor, "no_matriculado": 1 - 0.25 / factor}
+        reingreso = min(0.25 / factor, 1.0)  # acotada: con riesgo muy bajo superaba 1 (F3.1)
+        salidas = {"matriculado": reingreso, "no_matriculado": 1 - reingreso}
     elif anterior == "reserva":
         salidas = {"matriculado": 0.6, "reserva": 0.15, "no_matriculado": 0.25}
     else:  # retiro_total
@@ -98,10 +109,12 @@ def _siguiente_estado(anterior: str, riesgo: float, rng: np.random.Generator) ->
     return str(rng.choice(estados, p=probabilidades / probabilidades.sum()))
 
 
-def generar_historial(n_estudiantes: int, semilla: int) -> pd.DataFrame:
+def generar_historial(
+    n_estudiantes: int, semilla: int, cohortes: Sequence[str] = COHORTES
+) -> pd.DataFrame:
     """Historial sintético: una fila por estudiante y ciclo observado, todo como texto.
 
-    Con la misma semilla produce exactamente la misma tabla.
+    Con la misma semilla y las mismas cohortes produce exactamente la misma tabla.
     """
     if n_estudiantes < len(HISTORIALES_FIJOS):
         raise ValueError(f"Se necesitan al menos {len(HISTORIALES_FIJOS)} estudiantes.")
@@ -112,7 +125,7 @@ def generar_historial(n_estudiantes: int, semilla: int) -> pd.DataFrame:
 
     filas: list[dict[str, str]] = []
     for i, codigo in enumerate(codigos):
-        cohorte = COHORTES[0] if i < len(fijos) else str(rng.choice(COHORTES))
+        cohorte = cohortes[0] if i < len(fijos) else str(rng.choice(list(cohortes)))
         riesgo = float(rng.normal())
         puntaje = float(np.clip(rng.normal(60 - 6 * riesgo, 12), 0, 100))
         beca = bool(rng.random() < 0.2)

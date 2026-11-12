@@ -1,0 +1,45 @@
+# EJEMPLO FICTICIO de configuración de los experimentos de desarrollo (F3.1), para
+# probar el programa con el historial sintético. NO es la configuración del
+# proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-07 y
+# DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
+# Todos los campos son obligatorios; un valor null detiene el programa nombrando
+# la decisión pendiente.
+version_experimentos: 1
+nombre: "Experimentos ficticios de prueba (F3.1)"
+ficticio: true
+
+# DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
+# valores inventados, 8 cohortes de desarrollo dan 6 folds, como la base de
+# trabajo del informe del OE3.
+validacion:
+  esquema: expansivo          # expansivo | deslizante (este último exige 'ancho')
+  cohortes_iniciales: 2       # cohortes anteriores a la primera de validación
+  cohorte_calibracion: true   # reservar la cohorte anterior a la de validación
+
+# DP-03 y DP-15: cómo se lee cada variable del diccionario sintético en el corte
+# de cada ventana. primer_registro solo vale para variables disponibles desde T0.
+matrices:
+  agregacion:
+    puntaje_admision: primer_registro
+    beca_al_ingreso: primer_registro
+    tipo_colegio: primer_registro
+    promedio_ciclo: ultimo_ciclo
+    creditos_aprobados_ciclo: ultimo_ciclo
+    deuda_vencida_ciclo: ultimo_ciclo
+    rango_ingreso_familiar: ultimo_ciclo
+    horas_plataforma_ciclo: ultimo_ciclo
+
+# DP-12: perfiles de preprocesamiento, ajustados solo con el ajuste de cada fold.
+# Los modelos de F3.2 elegirán un perfil cada uno.
+preprocesamiento:
+  perfiles:
+    lineal:                   # pensado para modelos sensibles a la escala
+      imputacion_numerica: mediana
+      indicador_faltante: true
+      escalado: estandar
+      imputacion_categorica: categoria_faltante
+    arboles:                  # pensado para modelos de árboles
+      imputacion_numerica: mediana
+      indicador_faltante: true
+      escalado: ninguno
+      imputacion_categorica: categoria_faltante

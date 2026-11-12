@@ -5,6 +5,8 @@ Uso, desde la raíz del repositorio (en Linux o macOS, con ``.venv/bin/python``)
     .venv\\Scripts\\python scripts\\generar_sintetico.py --semilla 1 \\
         --salida data\\sintetico\\historial.csv
 
+Con ``--ampliado`` genera 12 cohortes (2010-1 a 2015-2) para la Fase 3.
+
 Los datos son inventados (ver ``tests/fixtures/generador_sintetico.py``) y cada fila
 lleva ``origen_datos = SINTETICO``. La salida debe quedar dentro de ``data/``, que
 git no versiona. Con ``--con-errores`` se siembran cuatro problemas de calidad para
@@ -21,6 +23,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "tests"))
 
 from fixtures.generador_sintetico import (  # noqa: E402
+    COHORTES,
+    COHORTES_AMPLIADAS,
     HISTORIALES_FIJOS,
     generar_historial,
     sembrar_problemas,
@@ -41,6 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     analizador.add_argument(
         "--con-errores", action="store_true", help="Siembra problemas de calidad conocidos."
     )
+    analizador.add_argument(
+        "--ampliado",
+        action="store_true",
+        help="12 cohortes (2010-1 a 2015-2) para la validación cronológica de la Fase 3.",
+    )
     argumentos = analizador.parse_args(argv)
 
     salida: Path = argumentos.salida
@@ -60,7 +69,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    tabla = generar_historial(argumentos.estudiantes, argumentos.semilla)
+    cohortes = COHORTES_AMPLIADAS if argumentos.ampliado else COHORTES
+    tabla = generar_historial(argumentos.estudiantes, argumentos.semilla, cohortes)
     if argumentos.con_errores:
         tabla, sembrados = sembrar_problemas(tabla)
     destino.parent.mkdir(parents=True, exist_ok=True)

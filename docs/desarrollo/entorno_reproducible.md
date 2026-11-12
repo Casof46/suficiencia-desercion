@@ -99,11 +99,13 @@ Resultado esperado: el resumen final muestra `OK` en las cinco comprobaciones (r
 Solo es necesario al cambiar dependencias en `pyproject.toml`. Requiere la herramienta `uv`, que no es necesaria para instalar.
 
 ```bash
-uv pip compile pyproject.toml --extra dev --universal --generate-hashes --python-version 3.11 --annotation-style line -o requirements.lock
+uv pip compile pyproject.toml --extra dev --extra ui --universal --generate-hashes --python-version 3.11 --annotation-style line --exclude-newer AAAA-MM-DD -o requirements.lock
 ```
 
 - `--universal` resuelve para Windows, Linux y macOS a la vez. Por ejemplo, incluye `colorama`, que pytest solo usa en Windows.
 - `--python-version 3.11` garantiza que el bloqueo sirva para la versión mínima.
+- `--extra ui` incluye las bibliotecas del visor (Streamlit), que también se instalan desde el bloqueo.
+- `--exclude-newer` con una fecha de al menos dos semanas antes de hoy aplica la regla de versiones de D-92. En F3.1 se usó `2026-10-28`.
 - Después de regenerar: reinstale el entorno, ejecute `scripts/verificar.py` y registre el cambio en `docs/arquitectura/`.
 
 ## 5. Problemas frecuentes

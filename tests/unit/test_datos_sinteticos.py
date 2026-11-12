@@ -12,6 +12,8 @@ import pandas as pd
 import pytest
 
 from fixtures.generador_sintetico import (
+    COHORTES,
+    COHORTES_AMPLIADAS,
     COLUMNAS,
     ORIGEN,
     ciclos_observados,
@@ -60,6 +62,19 @@ def test_el_generador_es_reproducible_y_marca_cada_fila_como_sintetica(
     assert not historial.equals(generar_historial(120, semilla=1))
     assert tuple(historial.columns) == COLUMNAS
     assert (historial["origen_datos"] == ORIGEN).all()
+
+
+def test_el_historial_ampliado_tiene_12_cohortes_y_el_de_omision_no_cambia() -> None:
+    """F3.1: cohortes 2010-1 a 2015-2; con muchos estudiantes no falla (D-128)."""
+    assert generar_historial(120, semilla=5).equals(generar_historial(120, 5, COHORTES))
+    ampliado = generar_historial(1500, semilla=5, cohortes=COHORTES_AMPLIADAS)
+    assert COHORTES_AMPLIADAS[0] == "2010-1"
+    assert COHORTES_AMPLIADAS[-1] == "2015-2"
+    assert set(ampliado["cohorte"]) == set(COHORTES_AMPLIADAS)
+    assert (ampliado["origen_datos"] == ORIGEN).all()
+    ciclos = ampliado.groupby(["cohorte", "codigo_estudiante"])["ciclo"].count().reset_index()
+    for cohorte, cantidad in zip(ciclos["cohorte"], ciclos["ciclo"], strict=True):
+        assert cantidad <= ciclos_observados(str(cohorte))
 
 
 def test_el_generador_incluye_los_casos_especiales(historial: pd.DataFrame) -> None:

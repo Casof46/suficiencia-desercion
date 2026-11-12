@@ -7,6 +7,7 @@ obtienen aquí los servicios y no importan otras capas (contratos de ``.importli
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,12 +24,14 @@ from suficiencia.application.servicio_protocolo import ServicioProtocolo
 from suficiencia.application.servicio_proyecto import ServicioProyecto
 from suficiencia.application.servicio_reportes import ServicioReportes
 from suficiencia.domain.errores import ErrorSuficiencia
+from suficiencia.domain.experimentos import PerfilPreprocesamiento
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
 from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario, cargar_diccionario
 from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
+from suficiencia.persistence.experimentos_yaml import cargar_configuracion_experimentos
 from suficiencia.persistence.exportacion import exportar_tabla
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
 from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
@@ -90,6 +93,16 @@ def _exportar(tabla: pd.DataFrame, archivo: Path) -> Huella:
     return exportar_tabla(tabla, archivo)
 
 
+def _columnas_tras_preprocesar(
+    perfil: PerfilPreprocesamiento, ajuste: pd.DataFrame, otras: Sequence[pd.DataFrame]
+) -> int:
+    # scikit-learn se importa solo al preparar el desarrollo: el resto de los
+    # comandos no debe cargarlo (arranque rápido; prueba de la línea de comandos).
+    from suficiencia.experimentation.pipelines import columnas_tras_preprocesar
+
+    return columnas_tras_preprocesar(perfil, ajuste, otras)
+
+
 def crear_servicios(raiz: Path) -> Servicios:
     """Construye los servicios para el proyecto ubicado en ``raiz``."""
     datos = ServicioDatos(
@@ -123,7 +136,18 @@ def crear_servicios(raiz: Path) -> Servicios:
     )
     archivo_registro = reportes.archivo_registro
     protocolo = ServicioProtocolo(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
-    experimentos = ServicioExperimentos(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
+    experimentos = ServicioExperimentos(
+        raiz,
+        RepositorioSqlite,
+        archivo_registro,
+        leer_yaml,
+        preparar_historial=datos.preparar_historial,
+        cargar_poblaciones=cargar_configuracion_poblaciones,
+        fuente_catalogo=FuenteCatalogoYaml,
+        fuente_diccionario=_fuente_diccionario,
+        cargar_experimentos=cargar_configuracion_experimentos,
+        preprocesar=_columnas_tras_preprocesar,
+    )
     evaluacion_final = ServicioEvaluacionFinal(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,

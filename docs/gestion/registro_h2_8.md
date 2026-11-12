@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 2 (paquete de cierre, sección E, H2.8); especificación Fase 1 v0.6 (CU-03, CU-04, CU-05; PI-11; RF-M6-05) |
 | Autorización | El equipo aceptó H2.D y H2.6 el 11 de noviembre de 2026 y pidió seguir. Comunicado por Jorge; pendiente de confirmación de Javier |
 | Riesgo aceptado | Los de H2.4 a H2.6: si la asesoría pide cambios en REC-01 a REC-03, esos hitos y sus pruebas de aceptación se ajustan |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows, con la evidencia de cierre completa; versionado en git y en GitHub (commit `0a32344`); pendiente de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows, con la evidencia de cierre completa; versionado en git y en GitHub (commits `0a32344` y `ae37410`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría dio su conformidad con el informe de cierre de la Fase 2 |
 
 ## 1. Qué se construyó
 

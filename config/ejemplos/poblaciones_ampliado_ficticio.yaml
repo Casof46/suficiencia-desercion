@@ -1,0 +1,28 @@
+# EJEMPLO FICTICIO de poblaciones y partición para el historial sintético AMPLIADO
+# (12 cohortes, 2010-1 a 2015-2; `generar_sintetico.py --ampliado`), que usa la
+# Fase 3 para la validación cronológica por cohortes. NO es la configuración del
+# proyecto: cada valor es un supuesto inventado (DP-01d, DP-04, DP-05 y DP-17
+# siguen abiertas; DP-08h la decidió el equipo: se permite un piloto, aquí no se usa).
+version_poblaciones: 1
+nombre: "Poblaciones y partición ficticias del historial ampliado (F3.1)"
+ficticio: true
+
+periodo_indice:
+  T0: 0
+  T1: 1
+  T2: 2
+  T3: 3
+
+diseno_principal: D1
+analisis_complementarios: [D2, D3]
+
+particion:
+  cohortes_piloto: []
+  cohortes_desarrollo: ["2010-1", "2010-2", "2011-1", "2011-2", "2012-1", "2012-2", "2013-1", "2013-2"]
+  cohortes_prueba: ["2014-1", "2014-2"]
+  # Se excluyen solo para imitar la estructura de la base de trabajo del informe del
+  # OE3 (8 cohortes de desarrollo, 2 de prueba y 2 excluidas). No es una recomendación.
+  cohortes_excluidas: ["2015-1", "2015-2"]
+  plan_contingencia: >-
+    EJEMPLO FICTICIO. Si las cohortes con seguimiento completo no alcanzan para
+    desarrollo y prueba, se registra una desviación antes de ver resultados.

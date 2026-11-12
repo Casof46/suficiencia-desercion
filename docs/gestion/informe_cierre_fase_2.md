@@ -6,7 +6,7 @@
 | Fecha | 11 de noviembre de 2026 |
 | Base | Especificación Fase 1 v0.6; plan de la Fase 2 (paquete de cierre de la Fase 1, sección E) |
 | Repositorio | `Casof46/suficiencia-desercion`, rama `main` |
-| Estado | **Hitos H2.0 a H2.7 y H2.D aceptados por el equipo; H2.8 ejecutado y verificado en Linux y Windows, pendiente de aceptación.** Este informe no ha sido revisado por la asesoría |
+| Estado | **Fase 2 cerrada: los diez hitos aceptados por el equipo** (el último, el 11 de noviembre de 2026; comunicado por Jorge, pendiente de confirmación de Javier). **La asesoría dio su conformidad con este informe** el 11 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
 
 ## 1. Resumen
 
@@ -36,7 +36,7 @@ Todo se probó con datos **sintéticos** y configuraciones **ficticias**. Ningú
 | H2.5 | Poblaciones D1 a D3, partición cronológica y sello de la prueba | `69e9efe` | Cinco `OK`; 470 pasan | 29-10-2026 |
 | H2.D | Visor de demostración local (fuera del plan, a pedido del profesor) | `9ae248a` | Cinco `OK`; 486 pasan | 11-11-2026 |
 | H2.6 | Protocolo versionado, desviaciones, congelamiento y regla de suficiencia; configuración de VS Code | `05fbed9`, `b4f3c1e` | Cinco `OK`; 584 pasan | 11-11-2026 |
-| H2.8 | Comando `decisiones`, pruebas de aceptación de CU-03 a CU-05, PI-11 determinista, este informe | `0a32344` | Cinco `OK`; 600 pasan, también en un clon nuevo | Pendiente |
+| H2.8 | Comando `decisiones`, pruebas de aceptación de CU-03 a CU-05, PI-11 determinista, este informe | `0a32344`, `ae37410` | Cinco `OK`; 600 pasan, también en un clon nuevo | 11-11-2026 |
 
 Todas las aceptaciones las comunicó Jorge en nombre del equipo y están pendientes de confirmación de Javier. El detalle de cada hito está en `docs/gestion/registro_h2_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_h2_*.md` y sus pruebas en `docs/desarrollo/pruebas_h2_*.md`.
 
@@ -105,6 +105,6 @@ La validación del OE3 con estudiantes reales exige además los datos autorizado
 
 | Rol | Nombre | Fecha | Conformidad |
 | --- | --- | --- | --- |
-| Equipo | Javier Barquinero | | |
-| Equipo | Jorge Caso | | |
-| Asesoría | | | |
+| Equipo | Javier Barquinero | | Pendiente de confirmación |
+| Equipo | Jorge Caso | 11-11-2026 | Aceptación comunicada en nombre del equipo |
+| Asesoría | | 11-11-2026 | Conformidad con este informe (comunicada por Jorge) |

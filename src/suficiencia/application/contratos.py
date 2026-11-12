@@ -581,3 +581,74 @@ class ResultadoEstadoDecisiones(Contrato):
     decisiones: tuple[EstadoDecisionResumen, ...]
     registradas: int
     abiertas: int
+
+
+# --- F3.1: preparación del desarrollo -------------------------------------------
+
+
+class SolicitudPrepararDesarrollo(Contrato):
+    """Prepara matrices, folds y preprocesamiento del desarrollo (CU-06, F3.1).
+
+    Sin ``experimentos`` se usa ``config/experimentos.yaml`` (DP-07); sin
+    ``poblaciones``, ``config/poblaciones.yaml`` (DP-04, DP-05); sin ``escenarios``,
+    ``config/escenarios.yaml`` (DP-01d); sin ``definicion``, la del objetivo (DP-01).
+    """
+
+    archivo: Path
+    diccionario: Path
+    definicion: Path | None = None
+    poblaciones: Path | None = None
+    escenarios: Path | None = None
+    experimentos: Path | None = None
+    clave_efimera: bool = False
+    separador: str = Field(default=",", min_length=1, max_length=1)
+
+
+class FoldResumen(Contrato):
+    numero: int
+    ajuste: tuple[str, ...]
+    calibracion: tuple[str, ...]
+    validacion: str
+
+
+class ConteoFoldResumen(Contrato):
+    numero: int
+    ajuste: int
+    eventos_ajuste: int
+    calibracion: int
+    eventos_calibracion: int
+    validacion: int
+    eventos_validacion: int
+
+
+class VentanaPreparadaResumen(Contrato):
+    ventana: str
+    periodo_indice: int
+    filas: int
+    eventos: int
+    folds: tuple[ConteoFoldResumen, ...]
+
+
+class EscenarioPreparadoResumen(Contrato):
+    escenario: str
+    ventana: str
+    conjunto: str
+    variables: tuple[str, ...]
+    filas: int
+    columnas_preprocesadas: dict[str, tuple[int, int]] = Field(
+        description="Por perfil: mínimo y máximo de columnas tras el preprocesamiento en los folds."
+    )
+
+
+class ResultadoPreparacionDesarrollo(Contrato):
+    archivo: str
+    sintetico: bool
+    configuraciones_ficticias: bool
+    huella_dataset: str
+    diseno: str
+    cohortes_desarrollo: tuple[str, ...]
+    folds: tuple[FoldResumen, ...]
+    ventanas: tuple[VentanaPreparadaResumen, ...]
+    escenarios: tuple[EscenarioPreparadoResumen, ...]
+    no_factibles: tuple[str, ...]
+    perfiles: tuple[str, ...]

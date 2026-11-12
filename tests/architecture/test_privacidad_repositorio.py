@@ -80,6 +80,10 @@ DEBEN_VERSIONARSE = [
     ".vscode/tasks.json",
     "config/decisiones_metodologicas.yaml",
     "tests/acceptance/test_casos_de_uso_sinteticos.py",
+    "config/ejemplos/experimentos_ficticio.yaml",
+    "config/ejemplos/poblaciones_ampliado_ficticio.yaml",
+    "src/suficiencia/experimentation/pipelines.py",
+    "docs/gestion/plan_fase_3.md",
 ]
 
 # Extensiones prohibidas entre los archivos versionados de un repositorio real.
