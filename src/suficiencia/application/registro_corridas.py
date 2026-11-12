@@ -4,6 +4,9 @@ Ejecuta una función de experimento y registra la corrida, tanto si termina bien
 como si falla. Las corridas fallidas quedan registradas junto con las exitosas,
 con su error, y no detienen a quien ejecuta un lote. Lo usarán los experimentos
 de fases posteriores; en H2.7 solo se prueba con funciones simuladas.
+
+Desde H2.6, una corrida confirmatoria se rechaza antes de ejecutarse si no hay
+protocolo aprobado vigente o si declara otra versión (RF-M4-05, RF-M3-12; PU-05).
 """
 
 from __future__ import annotations
@@ -13,12 +16,14 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
+from suficiencia.domain.evaluacion.protocolo import HistorialProtocolo, exigir_vigente
 from suficiencia.domain.puertos import CapturadorEntorno, RepositorioRegistros
 from suficiencia.domain.trazabilidad.registros import (
     EstadoCorrida,
     ModoExperimento,
     RegistroExperimento,
     RegistroGuardado,
+    TipoRegistro,
 )
 
 
@@ -46,7 +51,17 @@ class RegistradorCorridas:
 
         El entorno se captura antes de ejecutar. Si la función falla, se registra
         el tipo y el mensaje del error, sin la traza (que podría incluir datos).
+
+        Raises:
+            SinProtocoloVigente: si la corrida es confirmatoria y no hay protocolo
+                aprobado vigente o ``version_protocolo`` no es la vigente. En ese caso
+                la función no se ejecuta.
         """
+        if modo is ModoExperimento.CONFIRMATORIO:
+            historial = HistorialProtocolo.desde_registros(
+                [g.contenido for g in self._repositorio.listar(TipoRegistro.PROTOCOLO)]
+            )
+            exigir_vigente(historial, version_protocolo, "Un experimento confirmatorio")
         entorno = self._capturador.capturar()
         identificador = nuevo_identificador()
         try:

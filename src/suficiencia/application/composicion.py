@@ -34,6 +34,7 @@ from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, l
 from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
 from suficiencia.persistence.particion_archivos import cargador_de_prueba, guardar_division
 from suficiencia.persistence.poblaciones_yaml import cargar_configuracion_poblaciones
+from suficiencia.persistence.protocolo_yaml import leer_yaml
 from suficiencia.persistence.repositorio_sqlite import RepositorioSqlite
 from suficiencia.persistence.seudonimizacion import SeudonimizadorHmac
 
@@ -46,6 +47,9 @@ class Servicios:
     datos: ServicioDatos
     escenarios: ServicioEscenarios
     reportes: ServicioReportes
+    protocolo: ServicioProtocolo
+    experimentos: ServicioExperimentos
+    evaluacion_final: ServicioEvaluacionFinal
     casos_de_uso: tuple[ServicioCasosDeUso, ...]
 
     def servicio_de(self, codigo: str) -> ServicioCasosDeUso:
@@ -116,12 +120,16 @@ def crear_servicios(raiz: Path) -> Servicios:
         registrar_acceso=reportes.registrar_acceso,
         carpeta_trabajo=reportes.carpeta_trabajo,
     )
+    archivo_registro = reportes.archivo_registro
+    protocolo = ServicioProtocolo(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
+    experimentos = ServicioExperimentos(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
+    evaluacion_final = ServicioEvaluacionFinal(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,
         escenarios,
-        ServicioProtocolo(),
-        ServicioExperimentos(),
-        ServicioEvaluacionFinal(),
+        protocolo,
+        experimentos,
+        evaluacion_final,
         ServicioInterpretabilidad(),
         reportes,
     )
@@ -136,5 +144,8 @@ def crear_servicios(raiz: Path) -> Servicios:
         datos=datos,
         escenarios=escenarios,
         reportes=reportes,
+        protocolo=protocolo,
+        experimentos=experimentos,
+        evaluacion_final=evaluacion_final,
         casos_de_uso=casos_de_uso,
     )

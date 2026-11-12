@@ -197,7 +197,7 @@ class ResultadoImportacion(Contrato):
 
 # H2.7: trazabilidad --------------------------------------------------------------
 
-PATRON_TIPO_REGISTRO = r"^(experimentos|decisiones|accesos)$"
+PATRON_TIPO_REGISTRO = r"^(experimentos|decisiones|accesos|protocolos|desviaciones|congelamientos)$"
 
 
 class EntornoResumen(Contrato):
@@ -418,3 +418,138 @@ class SolicitudLeerPrueba(Contrato):
     particion: Path
     motivo: str = Field(min_length=1)
     origen: Literal["linea_de_comandos", "visor"] = "linea_de_comandos"
+
+
+# --- H2.6: protocolo, desviaciones y congelamiento ------------------------------
+
+
+class SolicitudGuardarBorrador(Contrato):
+    """Guarda un borrador del protocolo leído de un archivo YAML.
+
+    Sin ``version``, crea una versión nueva (o reemplaza la última si sigue en
+    borrador). Con ``version``, edita esa versión solo si sigue en borrador.
+    """
+
+    archivo: Path
+    version: int | None = Field(default=None, ge=1)
+
+
+class ResultadoBorradorProtocolo(Contrato):
+    version: int
+    huella: str
+    ficticio: bool
+    decisiones_faltantes: tuple[str, ...]
+    archivo_registro: str
+
+
+class SolicitudAprobarProtocolo(Contrato):
+    """Aprueba una versión en borrador. ``huella`` es la que revisó quien aprueba.
+
+    La desviación (descripción y justificación) es obligatoria si ya hay
+    experimentos confirmatorios (RF-M4-13).
+    """
+
+    version: int = Field(ge=1)
+    huella: str = Field(pattern=r"^[0-9a-f]{64}$")
+    responsable: str = Field(min_length=1)
+    desviacion: str | None = Field(default=None, min_length=1)
+    justificacion: str | None = Field(default=None, min_length=1)
+
+
+class ResultadoAprobacionProtocolo(Contrato):
+    version: int
+    huella: str
+    version_reemplazada: int | None
+    desviacion_registrada: bool
+    resultados_afectados: tuple[str, ...]
+
+
+class VersionProtocoloResumen(Contrato):
+    numero: int
+    estado: str
+    huella: str
+    ficticio: bool
+    responsable_aprobacion: str | None
+    decisiones_faltantes: tuple[str, ...]
+    multiplicidad: str
+    condiciones: int
+
+
+class DesviacionResumen(Contrato):
+    version_anterior: int
+    version_nueva: int
+    descripcion: str
+    justificacion: str
+    responsable: str
+    resultados_afectados: tuple[str, ...]
+
+
+class ResultadoConsultaProtocolo(Contrato):
+    archivo_registro: str
+    versiones: tuple[VersionProtocoloResumen, ...]
+    vigente: int | None
+    desviaciones: tuple[DesviacionResumen, ...]
+
+
+class SolicitudCongelar(Contrato):
+    """Congela una configuración descrita en un archivo YAML (CU-07; RF-M4-12)."""
+
+    archivo: Path
+
+
+class ResultadoCongelamiento(Contrato):
+    identificador: str
+    rol: str
+    escenario: str
+    huella: str
+    version_protocolo: int
+    ficticio: bool
+
+
+class SolicitudVerificarEvaluacionFinal(Contrato):
+    """Comprueba, sin abrir la prueba, las configuraciones que se evaluarían.
+
+    Corresponde a los pasos 2 y 3 de CU-08.
+    """
+
+    archivos: tuple[Path, ...] = Field(min_length=1)
+
+
+class ResultadoVerificacionEvaluacionFinal(Contrato):
+    version_protocolo: int
+    huella_protocolo: str
+    configuraciones: dict[str, str]
+    ficticio: bool
+
+
+class CondicionDemostracion(Contrato):
+    descripcion: str
+    cumple: bool | None
+
+
+class EscenarioDemostracion(Contrato):
+    escenario: str
+    estado: str
+    condiciones: tuple[CondicionDemostracion, ...]
+
+
+class CasoReglaDemostracion(Contrato):
+    titulo: str
+    estado: str
+    escenario: str | None
+    empatados: tuple[str, ...]
+    escenarios: tuple[EscenarioDemostracion, ...]
+
+
+class PasoDemostracion(Contrato):
+    titulo: str
+    resultado: str
+
+
+class ResultadoDemostracionProtocolo(Contrato):
+    """Recorrido completo con el protocolo ficticio en un registro temporal (EJEMPLO FICTICIO)."""
+
+    archivo_protocolo: str
+    huella_protocolo: str
+    casos: tuple[CasoReglaDemostracion, ...]
+    pasos: tuple[PasoDemostracion, ...]

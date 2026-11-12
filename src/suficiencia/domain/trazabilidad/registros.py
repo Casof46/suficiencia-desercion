@@ -1,4 +1,5 @@
-"""Registros de trazabilidad (M6): experimentos, decisiones y accesos a la prueba.
+"""Registros de trazabilidad (M6): experimentos, decisiones y accesos a la prueba;
+desde H2.6, también protocolos, desviaciones y configuraciones congeladas.
 
 Los registros solo se agregan; nunca se editan ni se borran (invariante de M6).
 Cada registro guarda la huella de su contenido encadenada con la del anterior:
@@ -26,6 +27,9 @@ class TipoRegistro(Enum):
     EXPERIMENTO = "experimentos"
     DECISION = "decisiones"
     ACCESO = "accesos"
+    PROTOCOLO = "protocolos"
+    DESVIACION = "desviaciones"
+    CONGELAMIENTO = "congelamientos"
 
 
 class ModoExperimento(Enum):

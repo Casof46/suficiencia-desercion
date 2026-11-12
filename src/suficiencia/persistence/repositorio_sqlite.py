@@ -18,6 +18,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from suficiencia.domain.errores import ConfiguracionInvalida
+from suficiencia.domain.evaluacion.congelamiento import RegistroCongelamiento
+from suficiencia.domain.evaluacion.protocolo import RegistroDesviacion, RegistroProtocolo
 from suficiencia.domain.trazabilidad.registros import (
     HUELLA_INICIAL,
     RegistroAcceso,
@@ -30,13 +32,26 @@ from suficiencia.domain.trazabilidad.registros import (
 )
 
 ARCHIVO_REGISTRO = "registro.sqlite"
-VERSION_ESQUEMA = 1
+VERSION_ESQUEMA = 2
+"""1: H2.7. 2: H2.6 agrega protocolos, desviaciones y congelamientos (tablas nuevas)."""
 
 _TIPO_DE = {
     RegistroExperimento: TipoRegistro.EXPERIMENTO,
     RegistroDecision: TipoRegistro.DECISION,
     RegistroAcceso: TipoRegistro.ACCESO,
+    RegistroProtocolo: TipoRegistro.PROTOCOLO,
+    RegistroDesviacion: TipoRegistro.DESVIACION,
+    RegistroCongelamiento: TipoRegistro.CONGELAMIENTO,
 }
+
+Registro = (
+    RegistroExperimento
+    | RegistroDecision
+    | RegistroAcceso
+    | RegistroProtocolo
+    | RegistroDesviacion
+    | RegistroCongelamiento
+)
 
 
 def _esquema() -> str:
@@ -77,9 +92,7 @@ class RepositorioSqlite:
         conexion.executescript(_esquema())
         return conexion
 
-    def agregar(
-        self, registro: RegistroExperimento | RegistroDecision | RegistroAcceso
-    ) -> RegistroGuardado:
+    def agregar(self, registro: Registro) -> RegistroGuardado:
         tipo = _TIPO_DE[type(registro)]
         contenido = registro.contenido()
         texto = json_canonico(contenido)

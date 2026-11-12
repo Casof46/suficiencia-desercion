@@ -33,6 +33,8 @@ from typing import Protocol
 import pandas as pd
 
 from suficiencia.domain.escenarios.modelo import CatalogoDeclarado, VariablesDeclaradas
+from suficiencia.domain.evaluacion.congelamiento import RegistroCongelamiento
+from suficiencia.domain.evaluacion.protocolo import RegistroDesviacion, RegistroProtocolo
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
 from suficiencia.domain.trazabilidad.registros import (
@@ -108,10 +110,17 @@ class Seudonimizador(Protocol):
 
 
 class RepositorioRegistros(Protocol):
-    """Registro de solo agregar para experimentos, decisiones y accesos (M6)."""
+    """Registro de solo agregar para experimentos, decisiones y accesos (M6) y, desde
+    H2.6, protocolos, desviaciones y configuraciones congeladas (M4)."""
 
     def agregar(
-        self, registro: RegistroExperimento | RegistroDecision | RegistroAcceso
+        self,
+        registro: RegistroExperimento
+        | RegistroDecision
+        | RegistroAcceso
+        | RegistroProtocolo
+        | RegistroDesviacion
+        | RegistroCongelamiento,
     ) -> RegistroGuardado:
         """Agrega el registro al final de su cadena y lo devuelve tal como quedó guardado."""
         ...

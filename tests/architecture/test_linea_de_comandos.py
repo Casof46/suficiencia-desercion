@@ -357,6 +357,11 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "import pathlib\n"
         "carpeta = next(pathlib.Path(proyecto, 'workspace', 'particiones').iterdir())\n"
         "main(['--raiz', proyecto, 'poblaciones', 'leer-prueba', str(carpeta), '--motivo', 'm'])\n"
+        "protocolo = ejemplos_dir + 'protocolo_ficticio.yaml'\n"
+        "main(['--raiz', raiz, 'protocolo', 'demostracion', '--protocolo', protocolo])\n"
+        "main(['--raiz', proyecto, 'protocolo', 'borrador', protocolo])\n"
+        "main(['--raiz', proyecto, 'protocolo', 'ver'])\n"
+        "main(['--raiz', proyecto, 'registro', 'ver', 'protocolos'])\n"
         "for archivo in ('bien.csv', 'mal.csv'):\n"
         "    main(['--raiz', proyecto, 'datos', 'importar', proyecto + '/data/' + archivo,\n"
         "          '--diccionario', diccionario, '--clave-efimera'])\n"
@@ -382,4 +387,8 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "DEMOSTRACIÓN: historiales FICTICIOS" in salida
     assert "omitida hasta el sellado" in salida
     assert "SELLADA: solo se informa el tamaño" in salida
+    assert "DEMOSTRACIÓN: protocolo FICTICIO" in salida
+    assert "empate_sin_resolver" in salida
+    assert "[EJEMPLO FICTICIO" in salida
+    assert "borrador de la versión 1" in salida
     assert salida.rstrip().endswith("CARGADAS=")

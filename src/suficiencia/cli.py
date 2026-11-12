@@ -20,10 +20,17 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia poblaciones leer-prueba CARPETA --motivo TEXTO
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
-    suficiencia registro ver {experimentos,decisiones,accesos}
+    suficiencia registro ver TIPO
     suficiencia registro verificar
-    suficiencia registro exportar {experimentos,decisiones,accesos} --salida RUTA
+    suficiencia registro exportar TIPO --salida RUTA
     suficiencia registro demostracion
+    suficiencia protocolo borrador ARCHIVO [--version N]
+    suficiencia protocolo aprobar VERSION --huella H --responsable T
+                                  [--desviacion T --justificacion T]
+    suficiencia protocolo ver
+    suficiencia protocolo demostracion [--protocolo RUTA]
+
+TIPO es experimentos, decisiones, accesos, protocolos, desviaciones o congelamientos.
     suficiencia ejecutar CU-03
 
 Códigos de salida: 0, correcto; 1, configuración inválida o error del motor;
@@ -48,9 +55,11 @@ from suficiencia.application.contratos import (
     EntornoResumen,
     EstadoProyecto,
     RegistroResumen,
+    ResultadoConsultaProtocolo,
     ResultadoConsultaRegistro,
     ResultadoDefinicionObjetivo,
     ResultadoDemostracionObjetivo,
+    ResultadoDemostracionProtocolo,
     ResultadoDiccionario,
     ResultadoEscenarios,
     ResultadoImportacion,
@@ -58,12 +67,14 @@ from suficiencia.application.contratos import (
     ResultadoObjetivo,
     ResultadoPoblaciones,
     ResultadoValidacionConfiguracion,
+    SolicitudAprobarProtocolo,
     SolicitudCasoDeUso,
     SolicitudConstruirObjetivo,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
+    SolicitudGuardarBorrador,
     SolicitudImportarDataset,
     SolicitudLeerPrueba,
     SolicitudRegistrarDecision,
@@ -284,7 +295,14 @@ def construir_analizador() -> argparse.ArgumentParser:
     decision.add_argument("--justificacion", required=True, help="Por qué.")
     decision.add_argument("--responsable", required=True, help="Quién decide o comunica.")
     decision.add_argument("--observaciones", help="Notas, por ejemplo confirmaciones pendientes.")
-    tipos = ("experimentos", "decisiones", "accesos")
+    tipos = (
+        "experimentos",
+        "decisiones",
+        "accesos",
+        "protocolos",
+        "desviaciones",
+        "congelamientos",
+    )
     ver = acciones_registro.add_parser("ver", help="Muestra los registros de un tipo.")
     ver.add_argument("tipo", choices=tipos)
     acciones_registro.add_parser(
@@ -300,6 +318,42 @@ def construir_analizador() -> argparse.ArgumentParser:
     acciones_registro.add_parser(
         "demostracion",
         help="Registra una corrida simulada exitosa y otra fallida en un registro aparte.",
+    )
+    protocolo = comandos.add_parser(
+        "protocolo", help="Protocolo confirmatorio: borradores, aprobación y desviaciones (H2.6)."
+    )
+    acciones_protocolo = protocolo.add_subparsers(dest="accion", required=True, title="acciones")
+    borrador = acciones_protocolo.add_parser(
+        "borrador", help="Guarda un borrador del protocolo leído de un YAML (CU-05)."
+    )
+    borrador.add_argument("archivo", type=Path, help="Protocolo en YAML.")
+    borrador.add_argument(
+        "--version",
+        type=int,
+        help="Edita esa versión si sigue en borrador; sin ella, crea una versión nueva.",
+    )
+    aprobar_p = acciones_protocolo.add_parser(
+        "aprobar", help="Aprueba una versión en borrador; desde entonces no se puede editar."
+    )
+    aprobar_p.add_argument("version", type=int, help="Número de versión.")
+    aprobar_p.add_argument(
+        "--huella", required=True, help="Huella del borrador revisado (`protocolo ver`)."
+    )
+    aprobar_p.add_argument("--responsable", required=True, help="Quién aprueba.")
+    aprobar_p.add_argument(
+        "--desviacion", help="Qué cambia respecto de la versión vigente (RF-M4-13)."
+    )
+    aprobar_p.add_argument("--justificacion", help="Por qué cambia (obligatoria con --desviacion).")
+    acciones_protocolo.add_parser("ver", help="Muestra las versiones y las desviaciones.")
+    demostracion_p = acciones_protocolo.add_parser(
+        "demostracion",
+        help="Recorre el ciclo con un protocolo FICTICIO en un registro temporal.",
+    )
+    demostracion_p.add_argument(
+        "--protocolo",
+        type=Path,
+        default=Path("config/ejemplos/protocolo_ficticio.yaml"),
+        help="Protocolo marcado como ficticio (por omisión, el ejemplo del repositorio).",
     )
     ejecutar = comandos.add_parser("ejecutar", help="Ejecuta un caso de uso (CU-01 a CU-12).")
     ejecutar.add_argument("caso", type=_codigo_caso_de_uso, help="Código, por ejemplo CU-03.")
@@ -637,6 +691,21 @@ def _resumen_registro(registro: RegistroResumen) -> str:
     if registro.tipo == "experimentos":
         texto = f"{c['identificador']} {c['modo']} {c['estado']}"
         return texto + (f" - {c['error']}" if c.get("error") else "")
+    if registro.tipo == "protocolos":
+        if c["accion"] == "borrador":
+            return f"borrador de la versión {c['version']}, huella {c['huella'][:12]}..."
+        return f"aprobación de la versión {c['version']} (responsable: {c['responsable']})"
+    if registro.tipo == "desviaciones":
+        return (
+            f"versión {c['version_anterior']} -> {c['version_nueva']}: {c['descripcion']} "
+            f"({len(c['resultados_afectados'])} resultado(s) afectado(s))"
+        )
+    if registro.tipo == "congelamientos":
+        configuracion = c["configuracion"]
+        return (
+            f"{configuracion['identificador']} ({configuracion['rol']}, "
+            f"{configuracion['escenario']}), huella {c['huella'][:12]}..."
+        )
     permitido = "permitido" if c["permitido"] else "RECHAZADO"
     return f"{c['operacion']} ({permitido}): {c['motivo']}"
 
@@ -711,6 +780,8 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return SALIDA_CORRECTA
     if argumentos.comando == "registro":
         return _ejecutar_registro(argumentos, servicios)
+    if argumentos.comando == "protocolo":
+        return _ejecutar_protocolo(argumentos, servicios)
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
 
@@ -798,6 +869,113 @@ def _ejecutar_registro(argumentos: argparse.Namespace, servicios: Servicios) -> 
     print(f"Registro: {demostracion.archivo}")
     for registro in demostracion.registros:
         print(f"  n.º {registro.numero}  {_resumen_registro(registro)}")
+    return SALIDA_CORRECTA
+
+
+def _mostrar_protocolo(resultado: ResultadoConsultaProtocolo, salida: TextIO) -> None:
+    print(f"Registro: {resultado.archivo_registro}", file=salida)
+    if not resultado.versiones:
+        print("No hay ninguna versión del protocolo. Ningún criterio está aprobado.", file=salida)
+        return
+    vigente = resultado.vigente if resultado.vigente is not None else "ninguna"
+    print(f"Versión vigente: {vigente}", file=salida)
+    for version in resultado.versiones:
+        marca = "  [EJEMPLO FICTICIO]" if version.ficticio else ""
+        print(f"\n  Versión {version.numero}: {version.estado}{marca}", file=salida)
+        print(f"    Huella: {version.huella}", file=salida)
+        print(
+            f"    Criterio: {version.condiciones} condición(es); multiplicidad: "
+            f"{version.multiplicidad}",
+            file=salida,
+        )
+        if version.responsable_aprobacion:
+            print(f"    Aprobada por: {version.responsable_aprobacion}", file=salida)
+        if version.decisiones_faltantes:
+            print(
+                "    Decisiones que faltan para aprobar: "
+                f"{', '.join(version.decisiones_faltantes)}",
+                file=salida,
+            )
+    if resultado.desviaciones:
+        print("\nDesviaciones:", file=salida)
+        for desviacion in resultado.desviaciones:
+            afectados = ", ".join(desviacion.resultados_afectados) or "ninguno"
+            print(
+                f"  Versión {desviacion.version_anterior} -> {desviacion.version_nueva}: "
+                f"{desviacion.descripcion}",
+                file=salida,
+            )
+            print(f"    Justificación: {desviacion.justificacion}", file=salida)
+            print(f"    Resultados afectados: {afectados}", file=salida)
+
+
+def _mostrar_demostracion_protocolo(
+    resultado: ResultadoDemostracionProtocolo, salida: TextIO
+) -> None:
+    print(
+        "DEMOSTRACIÓN: protocolo FICTICIO y resultados fabricados a partir de sus límites, "
+        "en un registro temporal que se borra al terminar. No son criterios, métricas "
+        "ni decisiones del proyecto.",
+        file=salida,
+    )
+    print(f"Protocolo: {resultado.archivo_protocolo}", file=salida)
+    print("\nCiclo del protocolo:", file=salida)
+    for numero, paso in enumerate(resultado.pasos, start=1):
+        print(f"  {numero}. {paso.titulo}", file=salida)
+        print(f"     {paso.resultado}", file=salida)
+    print("\nRegla de suficiencia (modo confirmatorio):", file=salida)
+    for caso in resultado.casos:
+        print(f"\n  {caso.titulo}", file=salida)
+        for escenario in caso.escenarios:
+            print(f"    {escenario.escenario}: {escenario.estado}", file=salida)
+            for condicion in escenario.condiciones:
+                marca = {True: "cumple", False: "no cumple", None: "sin dato"}[condicion.cumple]
+                print(f"      - {condicion.descripcion} ({marca})", file=salida)
+        if caso.escenario:
+            print(f"    Resultado: {caso.estado}: {caso.escenario}", file=salida)
+        elif caso.empatados:
+            print(
+                f"    Resultado: {caso.estado}: {', '.join(caso.empatados)}. "
+                "El programa no elige: lo decide el protocolo (DP-08g).",
+                file=salida,
+            )
+        else:
+            print(f"    Resultado: {caso.estado}", file=salida)
+
+
+def _ejecutar_protocolo(argumentos: argparse.Namespace, servicios: Servicios) -> int:
+    protocolo = servicios.protocolo
+    if argumentos.accion == "borrador":
+        borrador = protocolo.guardar_borrador(
+            SolicitudGuardarBorrador(archivo=argumentos.archivo, version=argumentos.version)
+        )
+        marca = " [EJEMPLO FICTICIO: no podrá aprobarse]" if borrador.ficticio else ""
+        print(f"Borrador guardado: versión {borrador.version}{marca}")
+        print(f"  Huella: {borrador.huella}")
+        if borrador.decisiones_faltantes:
+            print(f"  Faltan para aprobar: {', '.join(borrador.decisiones_faltantes)}")
+        return SALIDA_CORRECTA
+    if argumentos.accion == "aprobar":
+        aprobacion = protocolo.aprobar(
+            SolicitudAprobarProtocolo(
+                version=argumentos.version,
+                huella=argumentos.huella,
+                responsable=argumentos.responsable,
+                desviacion=argumentos.desviacion,
+                justificacion=argumentos.justificacion,
+            )
+        )
+        print(f"Versión {aprobacion.version} aprobada y vigente. Ya no puede modificarse.")
+        if aprobacion.version_reemplazada is not None:
+            print(f"  Reemplaza a la versión {aprobacion.version_reemplazada}.")
+        if aprobacion.desviacion_registrada:
+            afectados = ", ".join(aprobacion.resultados_afectados) or "ninguno"
+            print(f"  Desviación registrada. Resultados afectados: {afectados}")
+        return SALIDA_CORRECTA
+    if argumentos.accion == "ver":
+        _mostrar_protocolo(protocolo.consultar(), sys.stdout)
+        return SALIDA_CORRECTA
+    _mostrar_demostracion_protocolo(protocolo.demostracion(argumentos.protocolo), sys.stdout)
     return SALIDA_CORRECTA
 
 

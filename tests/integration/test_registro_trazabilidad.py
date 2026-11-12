@@ -14,6 +14,7 @@ from typing import Any
 import pandas as pd
 import pytest
 
+from fixtures.protocolo_de_prueba import aprobar_protocolo_ficticio
 from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import (
     SolicitudConsultarRegistro,
@@ -184,8 +185,10 @@ def test_pi03_y_pi12_las_corridas_exitosas_y_fallidas_quedan_registradas(proyect
         "semillas": {"global": 7},
         "huella_datos": "a" * 64,
     }
+    # Desde H2.6, una corrida confirmatoria exige un protocolo aprobado vigente (PU-05).
+    version = aprobar_protocolo_ficticio(repositorio)
     exito = registrador.ejecutar(
-        exitosa, modo=ModoExperimento.CONFIRMATORIO, version_protocolo="v1-prueba", **comunes
+        exitosa, modo=ModoExperimento.CONFIRMATORIO, version_protocolo=str(version), **comunes
     )
     falla = registrador.ejecutar(
         fallida, modo=ModoExperimento.EXPLORATORIO, version_protocolo=None, **comunes
@@ -196,7 +199,7 @@ def test_pi03_y_pi12_las_corridas_exitosas_y_fallidas_quedan_registradas(proyect
     primero, segundo = (e.contenido for e in experimentos)
     # PI-03: modo, protocolo, configuración, semilla, entorno, huella de datos y commit.
     assert primero["modo"] == "confirmatorio"
-    assert primero["version_protocolo"] == "v1-prueba"
+    assert primero["version_protocolo"] == "1"
     assert primero["configuracion"] == {"algoritmo": "simulado", "parametros": {"a": 1}}
     assert primero["semillas"] == {"global": 7}
     assert primero["huella_datos"] == "a" * 64
@@ -229,7 +232,14 @@ def test_el_servicio_registra_consulta_verifica_y_exporta(proyecto: Path) -> Non
     assert consulta.registros[0].contenido["codigo"] == "DP-16"
     integridad = reportes.verificar()
     assert integridad.correcto
-    assert integridad.registros_por_tipo == {"experimentos": 0, "decisiones": 1, "accesos": 0}
+    assert integridad.registros_por_tipo == {
+        "experimentos": 0,
+        "decisiones": 1,
+        "accesos": 0,
+        "protocolos": 0,
+        "desviaciones": 0,
+        "congelamientos": 0,
+    }
 
     for extension in (".csv", ".xlsx"):
         exportacion = reportes.exportar(

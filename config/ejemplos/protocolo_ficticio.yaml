@@ -1,0 +1,45 @@
+# EJEMPLO FICTICIO: protocolo inventado para las pruebas y para
+# `suficiencia protocolo demostracion` (H2.6).
+# No es una propuesta del equipo ni de la asesoría. Las métricas, los límites, el
+# comparador, el desempate y el nombre del procedimiento de multiplicidad son
+# invenciones para comprobar el motor. DP-08 sigue abierta.
+#
+# No es un valor por defecto: ningún comando lo lee si no se le indica, y el
+# programa se niega a aprobar un protocolo marcado como ficticio en el registro
+# del proyecto. El protocolo real no existe todavía.
+ficticio: true
+
+criterio_suficiencia:
+  metricas:                      # DP-08a (inventado)
+    - nombre: metrica_a
+      sentido: mayor_es_mejor
+    - nombre: metrica_b
+      sentido: menor_es_mejor
+  condiciones:                   # DP-08b, DP-08c, DP-08d, DP-08e (inventado)
+    - tipo: umbral
+      metrica: metrica_a
+      estadistico: limite_inferior
+      limite: 0.7
+      inclusivo: true
+      comparador: null
+    - tipo: no_inferioridad
+      metrica: metrica_a
+      estadistico: limite_inferior
+      limite: 0.05
+      inclusivo: false
+      comparador: comparador_ficticio
+  multiplicidad: procedimiento_ficticio   # DP-08f (inventado; no existe en el código)
+  desempate:                     # DP-08g (inventado)
+    - ventana_mas_temprana
+    - menos_bloques
+
+decisiones:                      # Texto inventado para cada decisión previa a CU-05
+  DP-06: "EJEMPLO FICTICIO: regla de umbral inventada."
+  DP-07: "EJEMPLO FICTICIO: espacio y presupuesto de búsqueda inventados."
+  DP-08: "EJEMPLO FICTICIO: el criterio de este archivo."
+  DP-09: "EJEMPLO FICTICIO: calibración inventada."
+  DP-10: "EJEMPLO FICTICIO: selección de modelo inventada."
+  DP-12: "EJEMPLO FICTICIO: tratamiento de faltantes inventado."
+  DP-17: "EJEMPLO FICTICIO: análisis complementarios inventados."
+  DP-19: "EJEMPLO FICTICIO: regla de la referencia R0 inventada."
+  DP-20: "EJEMPLO FICTICIO: protocolo comparativo inventado."

@@ -76,6 +76,8 @@ DEBEN_VERSIONARSE = [
     "tests/conftest.py",
     "docs/gestion/acta_cierre_fase_1_propuesta.md",
     "scripts/verificar.py",
+    ".vscode/settings.json",
+    ".vscode/tasks.json",
 ]
 
 # Extensiones prohibidas entre los archivos versionados de un repositorio real.

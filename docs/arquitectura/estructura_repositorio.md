@@ -11,11 +11,12 @@ suficiencia-desercion/
 ├── README.md
 ├── .gitignore                  # exclusiones de datos, secretos, modelos, entornos y cachés
 ├── .importlinter               # contratos de dependencias entre capas
-├── .streamlit/config.toml      # telemetría desactivada (RNF-06, PA-03)
+├── .streamlit/config.toml      # telemetría desactivada (RNF-06, PA-03); visor solo en localhost (H2.D)
+├── .vscode/                    # intérprete, pruebas, tareas y depuración para VS Code (H2.6, D-120)
 ├── config/
 │   ├── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
 │   ├── escenarios.yaml         # bloques, conjuntos y fechas índice (pendientes, DP-01d); H2.2
-│   └── ejemplos/               # catálogo, variables, diccionario, objetivo, poblaciones y partición FICTICIOS; H2.2 a H2.5
+│   └── ejemplos/               # catálogo, variables, diccionario, objetivo, poblaciones, partición y protocolo FICTICIOS; H2.2 a H2.6
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
@@ -37,12 +38,14 @@ suficiencia-desercion/
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
-│   │   └── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5)
+│   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5)
+│   │   └── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6)
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
 │   │   ├── errores.py          # errores reexportados para la CLI y la interfaz
 │   │   ├── _base.py            # base de los servicios de casos de uso
 │   │   ├── demostracion_objetivo.py # historiales FICTICIOS para `objetivo demostracion`; H2.4
+│   │   ├── demostracion_protocolo.py # ciclo del protocolo FICTICIO en un registro temporal; H2.6
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
 │   ├── experimentation/        # vacía todavía
@@ -55,14 +58,15 @@ suficiencia-desercion/
 │   │   ├── objetivo_yaml.py    # lector de la definición del objetivo (DP-01, DP-18); H2.4
 │   │   ├── poblaciones_yaml.py # lector de ventanas, diseños y partición (DP-01d, DP-04, DP-05, DP-17); H2.5
 │   │   ├── particion_archivos.py # índices de la partición en workspace/particiones/; H2.5
-│   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7
+│   │   ├── protocolo_yaml.py   # lector YAML del protocolo y de configuraciones para congelar; H2.6
+│   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
 │   └── ui/                     # visor de demostración (H2.D)
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
-    ├── fixtures/               # generador de historiales SINTÉTICOS (solo pruebas); H2.3
-    ├── integration/            # registro SQLite, entorno, corridas y exportación (H2.7); objetivo (H2.4); poblaciones, partición y sello (H2.5)
+    ├── fixtures/               # generador de historiales SINTÉTICOS (H2.3); ayudas del protocolo FICTICIO (H2.6); solo pruebas
+    ├── integration/            # registro SQLite, entorno, corridas y exportación (H2.7); objetivo (H2.4); poblaciones, partición y sello (H2.5); protocolo, congelamiento y evaluación final (H2.6)
     ├── unit/                   # dominio, servicios, persistencia, configuración, red
     └── architecture/           # contratos de capas, línea de comandos, privacidad, alcance
 ```
@@ -71,7 +75,7 @@ suficiencia-desercion/
 
 | Especificación v0.5 | Repositorio (H2.1) | Motivo |
 | --- | --- | --- |
-| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03 y `objetivo/` de DP-01 y DP-18 (el ejemplo ficticio está en `ejemplos/`); el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
+| `config/` con `proyecto.yaml`, `escenarios.yaml`, `modelos.yaml`, `diccionario/`, `objetivo/`, `protocolo/` | `proyecto.yaml`, `escenarios.yaml` y `ejemplos/` | `diccionario/` depende de DP-03, `objetivo/` de DP-01 y DP-18, y `protocolo/` de DP-06 a DP-20 (los ejemplos ficticios están en `ejemplos/`; el protocolo se guarda en el registro, no en `config/`); el resto, de hitos posteriores. Se mantiene el nombre `config/` de la especificación, no `configs/` |
 | `data/raw`, `interim`, `processed` | `data/README.md` | Las subcarpetas se crean al usarse; nunca se versionan |
 | `workspace/`, `reports/` | No existen | Se generan en ejecución y están excluidas por `.gitignore` |
 | `docs/especificacion/` | Copias de referencia de la v0.6, la v0.5 y la v0.4 | Igual |
@@ -79,7 +83,7 @@ suficiencia-desercion/
 | `docs/decisiones/` | Ficha de DP-16, la primera decisión resuelta (RF-M6-05) | Las decisiones técnicas de cada hito están en `docs/arquitectura/`, y no son decisiones metodológicas |
 | — | `docs/gestion/`, `docs/arquitectura/`, `docs/desarrollo/` | Carpetas solicitadas en la instrucción de H2.0 |
 | `src/suficiencia/{domain,application,experimentation,persistence,ui}` | Igual, con `__init__.py` documentado | El contenido empieza en H2.1 |
-| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2, con poblaciones y partición desde H2.5), `datos/` (H2.3, con el objetivo desde H2.4) y `trazabilidad/` (H2.7); sin evaluación | `evaluacion/` en H2.6 |
+| `domain/{datos,escenarios,evaluacion,trazabilidad}/` | `escenarios/` (H2.2, con poblaciones y partición desde H2.5), `datos/` (H2.3, con el objetivo desde H2.4), `trazabilidad/` (H2.7) y `evaluacion/` (H2.6) | Igual |
 | Siete `application/servicio_*.py` | Los siete, más `servicio_proyecto.py`, `_base.py`, `errores.py` y `composicion.py` | Ver decisiones D-22 y D-23 de H2.1 |
 | `src/suficiencia/cli.py` | Igual | Comandos `estado`, `config validar` y `ejecutar` (H2.1) |
 | `tests/{unit,integration,acceptance,architecture,fixtures}` | Todas salvo `acceptance/` | Se crea con su primera prueba |
