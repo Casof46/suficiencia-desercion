@@ -86,6 +86,7 @@ DEBEN_VERSIONARSE = [
     "config/ejemplos/poblaciones_ampliado_ficticio.yaml",
     "src/suficiencia/experimentation/pipelines.py",
     "src/suficiencia/experimentation/modelos.py",
+    "src/suficiencia/domain/evaluacion/metricas.py",
     "src/suficiencia/persistence/corridas_archivos.py",
     "docs/gestion/plan_fase_3.md",
 ]

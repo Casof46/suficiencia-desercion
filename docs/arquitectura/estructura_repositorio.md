@@ -39,7 +39,7 @@ suficiencia-desercion/
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
 │   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5); matrices.py (F3.1)
-│   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6)
+│   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6); metricas.py (F3.3)
 │   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1); familias, búsqueda, desbalance y calibración (F3.2)
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)

@@ -1,11 +1,11 @@
 # EJEMPLO FICTICIO de configuración de los experimentos de desarrollo (F3.1), para
 # probar el programa con el historial sintético. NO es la configuración del
 # proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-06,
-# DP-07, DP-09 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
+# DP-07, DP-08a, DP-08e, DP-08i, DP-09 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
 # Todos los campos son obligatorios; un valor null detiene el programa nombrando
 # la decisión pendiente.
 version_experimentos: 1
-nombre: "Experimentos ficticios de prueba (F3.1, F3.2)"
+nombre: "Experimentos ficticios de prueba (F3.1 a F3.3)"
 ficticio: true
 
 # DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
@@ -95,3 +95,17 @@ calibracion: platt
 
 # RF-M3-06: semilla de todos los componentes aleatorios (inventada).
 semilla: 20261111
+
+# DP-08a: métricas que se calculan sobre las probabilidades de validación fuera de
+# fold (F3.3): auc_roc | brier | brier_escalado | recall_q
+metricas:
+  calcular: [auc_roc, brier, brier_escalado, recall_q]
+  q: 0.2                      # DP-08i: capacidad de alerta; la aporta la institución (inventada)
+
+# DP-08e: intervalos bootstrap. Se remuestrean estudiantes dentro de cada grupo de
+# la estratificación, con la semilla de arriba. Valores inventados.
+intervalos:
+  metodo: percentil           # percentil
+  nivel: 0.95
+  replicas: 1000
+  estratificacion: cohorte_resultado   # cohorte_resultado | resultado | ninguna

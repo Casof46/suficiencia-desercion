@@ -683,3 +683,44 @@ class ResultadoEntrenamiento(Contrato):
     modo: str
     semilla: int
     corridas: tuple[CorridaResumen, ...]
+
+
+class SolicitudMetricas(Contrato):
+    """Métricas e intervalos de las corridas registradas (CU-06, F3.3), en modo exploratorio.
+
+    Usa las corridas exitosas de la configuración de experimentos indicada (sin
+    ``experimentos``, ``config/experimentos.yaml``).
+    """
+
+    experimentos: Path | None = None
+    seleccion_escenarios: tuple[str, ...] = ()
+    seleccion_familias: tuple[str, ...] = ()
+
+
+class EstimacionResumen(Contrato):
+    puntual: float | None
+    limite_inferior: float | None
+    limite_superior: float | None
+    replicas_validas: int
+
+
+class MetricasCorridaResumen(Contrato):
+    identificador: str
+    escenario: str
+    familia: str
+    filas: int
+    eventos: int
+    prevalencia: float
+    metricas: dict[str, EstimacionResumen]
+
+
+class ResultadoMetricas(Contrato):
+    configuracion_experimentos: str
+    configuraciones_ficticias: bool
+    metodo: str
+    nivel: float
+    replicas: int
+    estratificacion: str
+    q: float | None
+    corridas: tuple[MetricasCorridaResumen, ...]
+    identificador_registro: str

@@ -4,8 +4,10 @@ Desde H2.6: congelar una configuración con su huella (RF-M4-12). Congelar exige
 protocolo aprobado vigente. Desde F3.1: preparar el desarrollo (matrices por
 escenario, folds cronológicos y preprocesamiento dentro de cada fold). Desde
 F3.2: entrenar las cinco familias en esos folds, en modo exploratorio, con cada
-corrida registrada (también las fallidas) y sus archivos guardados. La selección
-del modelo representativo (DP-10) llega en F3.4.
+corrida registrada (también las fallidas) y sus archivos guardados. Desde F3.3:
+métricas con prevalencia e intervalos bootstrap sobre las probabilidades de
+validación de esas corridas. La selección del modelo representativo (DP-10) llega
+en F3.4.
 """
 
 from __future__ import annotations
@@ -23,12 +25,16 @@ from suficiencia.application.contratos import (
     ConteoFoldResumen,
     CorridaResumen,
     EscenarioPreparadoResumen,
+    EstimacionResumen,
     FoldResumen,
+    MetricasCorridaResumen,
     ResultadoCongelamiento,
     ResultadoEntrenamiento,
+    ResultadoMetricas,
     ResultadoPreparacionDesarrollo,
     SolicitudCongelar,
     SolicitudEntrenar,
+    SolicitudMetricas,
     SolicitudPrepararDesarrollo,
     VentanaPreparadaResumen,
 )
@@ -44,6 +50,12 @@ from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.escenarios.matrices import MatrizEscenario
 from suficiencia.domain.escenarios.poblaciones import ConfiguracionPoblaciones
 from suficiencia.domain.evaluacion.congelamiento import configuracion_desde_datos, congelar
+from suficiencia.domain.evaluacion.metricas import (
+    EstimacionBootstrap,
+    estimar,
+    prevalencia,
+    remuestras,
+)
 from suficiencia.domain.experimentos import (
     Calibracion,
     ConfiguracionExperimentos,
@@ -90,6 +102,7 @@ EntrenarFamilia = Callable[
     ],
     list[ResultadoFold],
 ]
+LeerPredicciones = Callable[[Path, str], pd.DataFrame]
 GuardarCorrida = Callable[
     [Path, pd.DataFrame, Mapping[int, object], Mapping[str, Any]], dict[str, str]
 ]
@@ -142,6 +155,7 @@ class ServicioExperimentos(ServicioCasosDeUso):
         carpeta_trabajo: Callable[[], Path],
         entrenar_familia: EntrenarFamilia,
         guardar_corrida: GuardarCorrida,
+        leer_predicciones: LeerPredicciones,
     ) -> None:
         self._raiz = raiz
         self._repositorio = repositorio
@@ -157,6 +171,7 @@ class ServicioExperimentos(ServicioCasosDeUso):
         self._carpeta_trabajo = carpeta_trabajo
         self._entrenar_familia = entrenar_familia
         self._guardar_corrida = guardar_corrida
+        self._leer_predicciones = leer_predicciones
 
     def _ruta(self, archivo: Path | None, por_omision: Path) -> Path:
         if archivo is None:
@@ -307,6 +322,93 @@ class ServicioExperimentos(ServicioCasosDeUso):
             modo=ModoExperimento.EXPLORATORIO.value,
             semilla=experimentos.semilla,
             corridas=tuple(corridas),
+        )
+
+    def metricas(self, solicitud: SolicitudMetricas) -> ResultadoMetricas:
+        """Métricas con prevalencia e intervalos de las corridas registradas (RF-M4-01 a 03).
+
+        Se calculan sobre las probabilidades de validación fuera de fold de todos los
+        folds juntos. Son exploratorias: el máximo de muchas puntuaciones de validación
+        es optimista y no es una estimación final. El cálculo queda en el registro.
+
+        Raises:
+            DecisionPendiente: si falta la configuración (DP-07) o un dato de DP-08a,
+                DP-08e o DP-08i.
+            ConfiguracionInvalida: si no hay corridas, si se pide un escenario o una
+                familia sin corridas, o si un archivo de predicciones cambió.
+        """
+        experimentos = self._cargar_experimentos(
+            self._ruta(solicitud.experimentos, ARCHIVO_EXPERIMENTOS)
+        )
+        definicion = experimentos.metricas
+        repositorio = self._repositorio(self._archivo_registro())
+        corridas = _corridas_de(
+            repositorio,
+            experimentos.nombre,
+            solicitud.seleccion_escenarios,
+            _seleccionar_familias(solicitud.seleccion_familias),
+        )
+        filas = []
+        for contenido in corridas:
+            resultados = contenido["resultados"]
+            predicciones = self._leer_predicciones(
+                self._raiz / resultados["carpeta"],
+                resultados["huellas_archivos"]["predicciones.csv"],
+            )
+            y = predicciones["objetivo"].to_numpy(dtype="int64")
+            p = predicciones["probabilidad"].to_numpy(dtype="float64")
+            cohorte = predicciones["cohorte"].astype(str).tolist()
+            indices = remuestras(
+                y, cohorte, definicion.estratificacion, definicion.replicas, experimentos.semilla
+            )
+            filas.append(
+                MetricasCorridaResumen(
+                    identificador=contenido["identificador"],
+                    escenario=contenido["configuracion"]["escenario"],
+                    familia=contenido["configuracion"]["familia"],
+                    filas=len(y),
+                    eventos=int(y.sum()),
+                    prevalencia=prevalencia(y),
+                    metricas={
+                        m.value: _resumen_estimacion(
+                            estimar(definicion.funcion(m), y, p, indices, definicion.nivel)
+                        )
+                        for m in definicion.metricas
+                    },
+                )
+            )
+        configuracion = {
+            "tipo": "metricas_validacion",
+            "configuracion_experimentos": experimentos.nombre,
+            "configuraciones_ficticias": experimentos.ficticio,
+            "corridas": [f.identificador for f in filas],
+            "metricas": [m.value for m in definicion.metricas],
+            "q": definicion.q,
+            "intervalos": {
+                "metodo": definicion.metodo.value,
+                "nivel": definicion.nivel,
+                "replicas": definicion.replicas,
+                "estratificacion": definicion.estratificacion.value,
+            },
+        }
+        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
+            lambda: {"corridas": [f.model_dump() for f in filas]},
+            modo=ModoExperimento.EXPLORATORIO,
+            configuracion=configuracion,
+            semillas={"bootstrap": experimentos.semilla},
+            huella_datos=None,
+            version_protocolo=None,
+        )
+        return ResultadoMetricas(
+            configuracion_experimentos=experimentos.nombre,
+            configuraciones_ficticias=experimentos.ficticio,
+            metodo=definicion.metodo.value,
+            nivel=definicion.nivel,
+            replicas=definicion.replicas,
+            estratificacion=definicion.estratificacion.value,
+            q=definicion.q,
+            corridas=tuple(filas),
+            identificador_registro=guardado.contenido["identificador"],
         )
 
     def _corrida(
@@ -596,3 +698,47 @@ def _resumen_fold(
         "filas_validacion": len(fold.validacion),
         "eventos_validacion": int(objetivo[list(fold.validacion)].sum()),
     }
+
+
+def _numero(valor: float) -> float | None:
+    return None if valor != valor else valor  # NaN no se guarda en el registro
+
+
+def _resumen_estimacion(estimacion: EstimacionBootstrap) -> EstimacionResumen:
+    return EstimacionResumen(
+        puntual=_numero(estimacion.puntual),
+        limite_inferior=_numero(estimacion.limite_inferior),
+        limite_superior=_numero(estimacion.limite_superior),
+        replicas_validas=estimacion.replicas_validas,
+    )
+
+
+def _corridas_de(
+    repositorio: RepositorioRegistros,
+    configuracion: str,
+    escenarios: tuple[str, ...],
+    familias: tuple[Familia, ...],
+) -> list[dict[str, Any]]:
+    """Corridas de entrenamiento exitosas de una configuración, en el orden del registro."""
+    nombres = {f.value for f in familias}
+    elegidas = []
+    for guardado in repositorio.listar(TipoRegistro.EXPERIMENTO):
+        contenido = guardado.contenido
+        datos = contenido.get("configuracion", {})
+        if (
+            contenido.get("estado") == EstadoCorrida.EXITOSA.value
+            and datos.get("tipo") == "entrenamiento_desarrollo"
+            and datos.get("configuracion_experimentos") == configuracion
+            and datos.get("familia") in nombres
+            and (not escenarios or datos.get("escenario") in escenarios)
+        ):
+            elegidas.append(contenido)
+    encontrados = {c["configuracion"]["escenario"] for c in elegidas}
+    faltan = [e for e in escenarios if e not in encontrados]
+    if not elegidas or faltan:
+        detalle = f" para {', '.join(faltan)}" if faltan else ""
+        raise ConfiguracionInvalida(
+            f"No hay corridas de entrenamiento exitosas de '{configuracion}'{detalle}.",
+            "Entrene primero con `suficiencia experimentos entrenar` y la misma configuración.",
+        )
+    return elegidas

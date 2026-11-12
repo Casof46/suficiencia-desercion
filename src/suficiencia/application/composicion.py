@@ -29,7 +29,7 @@ from suficiencia.domain.experimentos import PerfilPreprocesamiento, ResultadoFol
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
-from suficiencia.persistence.corridas_archivos import guardar_corrida
+from suficiencia.persistence.corridas_archivos import guardar_corrida, leer_predicciones
 from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario, cargar_diccionario
 from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
@@ -161,6 +161,7 @@ def crear_servicios(raiz: Path) -> Servicios:
         carpeta_trabajo=reportes.carpeta_trabajo,
         entrenar_familia=_entrenar_en_folds,
         guardar_corrida=guardar_corrida,
+        leer_predicciones=leer_predicciones,
     )
     evaluacion_final = ServicioEvaluacionFinal(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (

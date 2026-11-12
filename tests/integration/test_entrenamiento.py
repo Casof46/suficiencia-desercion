@@ -10,6 +10,8 @@
 - PI-12 y RF-M3-11: una corrida que falla queda registrada junto con las exitosas.
 - RF-M3-07 y RF-M3-08: archivos de cada corrida con sus huellas; al repetir, las
   corridas completas se omiten y las fallidas se reintentan.
+- F3.3: métricas con prevalencia e intervalos de las corridas registradas, que
+  coinciden con scikit-learn, se reproducen y rechazan predicciones modificadas.
 
 Todo es sintético y ficticio: las probabilidades no son resultados del método.
 """
@@ -31,7 +33,11 @@ from sklearn.pipeline import Pipeline
 
 from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial
 from suficiencia.application.composicion import crear_servicios
-from suficiencia.application.contratos import SolicitudConsultarRegistro, SolicitudEntrenar
+from suficiencia.application.contratos import (
+    SolicitudConsultarRegistro,
+    SolicitudEntrenar,
+    SolicitudMetricas,
+)
 from suficiencia.application.preparacion_desarrollo import filas_de, preparar
 from suficiencia.cli import SALIDA_CORRECTA, SALIDA_ERROR, main
 from suficiencia.domain.errores import ConfiguracionInvalida
@@ -397,3 +403,94 @@ def test_linea_de_comandos(proyecto: Path, capsys: pytest.CaptureFixture[str]) -
     )
     assert codigo == SALIDA_ERROR
     assert "FALLIDA: ConfiguracionInvalida" in capsys.readouterr().out
+
+
+# --- F3.3: métricas e intervalos de las corridas registradas -----------------------
+
+
+def test_metricas_de_las_corridas_registradas(proyecto: Path) -> None:
+    servicios = crear_servicios(proyecto)
+    servicios.experimentos.entrenar(_solicitud(proyecto, seleccion_escenarios=("T1|A+F",)))
+    rapido = Path("config/experimentos_rapido.yaml")
+    resultado = servicios.experimentos.metricas(
+        SolicitudMetricas(experimentos=rapido, seleccion_escenarios=("T1|A+F",))
+    )
+    assert [c.familia for c in resultado.corridas] == [f.value for f in Familia]
+    registros = {r["identificador"]: r for r in _experimentos(servicios)}
+    for corrida in resultado.corridas:
+        registro = registros[corrida.identificador]
+        carpeta = proyecto / registro["resultados"]["carpeta"]
+        predicciones = pd.read_csv(carpeta / "predicciones.csv")
+        y = predicciones["objetivo"].to_numpy()
+        p = predicciones["probabilidad"].to_numpy()
+        assert corrida.filas == len(y)
+        assert corrida.eventos == int(y.sum())
+        assert corrida.prevalencia == pytest.approx(y.mean())
+        auc = corrida.metricas["auc_roc"]
+        assert auc.puntual == pytest.approx(roc_auc_score(y, p))
+        assert auc.puntual is not None
+        assert auc.limite_inferior is not None and auc.limite_superior is not None
+        assert auc.limite_inferior <= auc.puntual <= auc.limite_superior
+        assert set(corrida.metricas) == {"auc_roc", "brier", "brier_escalado", "recall_q"}
+    calculo = registros[resultado.identificador_registro]
+    assert calculo["modo"] == "exploratorio"
+    assert calculo["configuracion"]["tipo"] == "metricas_validacion"
+    assert calculo["configuracion"]["corridas"] == [c.identificador for c in resultado.corridas]
+    assert calculo["semillas"] == {"bootstrap": 20261111}
+    # Con la misma semilla, el cálculo se reproduce exactamente (PU-20).
+    otra = servicios.experimentos.metricas(
+        SolicitudMetricas(experimentos=rapido, seleccion_escenarios=("T1|A+F",))
+    )
+    assert otra.corridas == resultado.corridas
+
+
+def test_metricas_rechazan_predicciones_modificadas_y_escenarios_sin_corridas(
+    proyecto: Path,
+) -> None:
+    servicios = crear_servicios(proyecto)
+    servicios.experimentos.entrenar(
+        _solicitud(proyecto, seleccion_escenarios=("T1|A+F",), seleccion_familias=("lr",))
+    )
+    rapido = Path("config/experimentos_rapido.yaml")
+    with pytest.raises(ConfiguracionInvalida, match="T3"):
+        servicios.experimentos.metricas(
+            SolicitudMetricas(experimentos=rapido, seleccion_escenarios=("T3|A",))
+        )
+    registro = next(
+        r
+        for r in _experimentos(servicios)
+        if r["estado"] == "exitosa"
+        and r["configuracion"].get("escenario") == "T1|A+F"
+        and r["configuracion"].get("familia") == "lr"
+    )
+    archivo = proyecto / registro["resultados"]["carpeta"] / "predicciones.csv"
+    original = archivo.read_bytes()
+    try:
+        archivo.write_bytes(original.replace(b",1,", b",0,", 1))
+        with pytest.raises(ConfiguracionInvalida, match="huella"):
+            servicios.experimentos.metricas(
+                SolicitudMetricas(
+                    experimentos=rapido,
+                    seleccion_escenarios=("T1|A+F",),
+                    seleccion_familias=("lr",),
+                )
+            )
+    finally:
+        archivo.write_bytes(original)
+
+
+def test_linea_de_comandos_metricas(proyecto: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    servicios = crear_servicios(proyecto)
+    servicios.experimentos.entrenar(
+        _solicitud(proyecto, seleccion_escenarios=("T1|A+F",), seleccion_familias=("rf",))
+    )
+    rapido = str(proyecto / "config" / "experimentos_rapido.yaml")
+    argumentos = ["--raiz", str(proyecto), "experimentos", "metricas", "--experimentos", rapido]
+    codigo = main([*argumentos, "--escenario", "T1|A+F", "--familia", "rf"])
+    salida = capsys.readouterr().out
+    assert codigo == SALIDA_CORRECTA
+    assert "DATOS SINTÉTICOS" in salida
+    assert "CONFIGURACIÓN FICTICIA" in salida
+    assert "Intervalos percentil al 95% con 1000 réplicas" in salida
+    assert "auc_roc" in salida and "prevalencia=" in salida
+    assert "no es una estimación final" in salida

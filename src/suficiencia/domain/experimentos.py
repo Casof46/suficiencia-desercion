@@ -16,6 +16,8 @@ como datos obligatorios sin valor por omisión:
   búsqueda. El espacio y el presupuesto son por familia y no por escenario, así
   que todos los escenarios usan los mismos (RF-M3-04, PI-08).
 - **Desbalance** (DP-06), **calibración** (DP-09) y **semilla** (RF-M3-06).
+- **Métricas e intervalos** (DP-08a, DP-08i, DP-08e; F3.3): ver
+  ``evaluacion.metricas``.
 
 Un valor ``null`` detiene el programa nombrando la decisión pendiente.
 """
@@ -33,6 +35,10 @@ from suficiencia.domain.errores import ConfiguracionInvalida, DecisionPendiente
 from suficiencia.domain.escenarios.matrices import (
     DefinicionMatrices,
     definicion_matrices_desde_datos,
+)
+from suficiencia.domain.evaluacion.metricas import (
+    DefinicionMetricas,
+    definicion_metricas_desde_datos,
 )
 
 
@@ -447,6 +453,7 @@ class ConfiguracionExperimentos:
     desbalance: Desbalance
     calibracion: Calibracion
     semilla: int
+    metricas: DefinicionMetricas
 
 
 _CLAVES = {
@@ -461,6 +468,8 @@ _CLAVES = {
     "desbalance",
     "calibracion",
     "semilla",
+    "metricas",
+    "intervalos",
 }
 VERSION_SOPORTADA = 1
 
@@ -526,6 +535,7 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
         desbalance=desbalance,
         calibracion=calibracion,
         semilla=semilla,
+        metricas=definicion_metricas_desde_datos(datos["metricas"], datos["intervalos"]),
     )
 
 

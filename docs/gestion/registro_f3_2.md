@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 3 (sección 2, F3.2); especificación Fase 1 v0.6 (M3: RF-M3-01, 04 a 09, 11; PI-06, PI-08, PI-11, PI-12; RT-01, RT-02) |
 | Autorización | El equipo aceptó F3.1 y pidió empezar F3.2 el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 | Riesgo aceptado | Si la asesoría cambia REC-01 a REC-03 o el diseño comparativo, el entrenamiento se ajusta; todo valor está parametrizado |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows.** Pendiente: commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `1122610`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -58,5 +58,5 @@ Ninguna DP-xx se resolvió. DP-06, DP-07 y DP-09 entran como datos obligatorios;
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 12 de noviembre de 2026 | Acepta F3.2 y pide empezar F3.3 |

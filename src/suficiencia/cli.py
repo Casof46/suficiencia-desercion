@@ -23,6 +23,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
                                       [--experimentos RUTA] [--clave-efimera]
     suficiencia experimentos entrenar ARCHIVO (mismas opciones que preparar)
                                       [--escenario T1|A+F ...] [--familia lr ...]
+    suficiencia experimentos metricas [--experimentos RUTA] [--escenario ...] [--familia ...]
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver TIPO
@@ -60,6 +61,7 @@ from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
     EntornoResumen,
     EstadoProyecto,
+    EstimacionResumen,
     RegistroResumen,
     ResultadoConsultaProtocolo,
     ResultadoConsultaRegistro,
@@ -72,6 +74,7 @@ from suficiencia.application.contratos import (
     ResultadoEstadoDecisiones,
     ResultadoImportacion,
     ResultadoIntegridad,
+    ResultadoMetricas,
     ResultadoObjetivo,
     ResultadoPoblaciones,
     ResultadoPreparacionDesarrollo,
@@ -87,6 +90,7 @@ from suficiencia.application.contratos import (
     SolicitudGuardarBorrador,
     SolicitudImportarDataset,
     SolicitudLeerPrueba,
+    SolicitudMetricas,
     SolicitudPrepararDesarrollo,
     SolicitudRegistrarDecision,
     SolicitudValidarConfiguracion,
@@ -353,6 +357,26 @@ def construir_analizador() -> argparse.ArgumentParser:
         help="Solo ese escenario (por ejemplo, 'T1|A+F'); se puede repetir.",
     )
     entrenar_p.add_argument(
+        "--familia",
+        action="append",
+        default=[],
+        choices=["lr", "rf", "xgboost", "lightgbm", "svm"],
+        help="Solo esa familia; se puede repetir.",
+    )
+    metricas_p = acciones_experimentos.add_parser(
+        "metricas",
+        help="Métricas con prevalencia e intervalos de las corridas registradas (F3.3).",
+    )
+    metricas_p.add_argument(
+        "--experimentos",
+        type=Path,
+        help="Configuración de experimentos con la que se entrenó "
+        "(por omisión, config/experimentos.yaml; DP-08a, DP-08e, DP-08i).",
+    )
+    metricas_p.add_argument(
+        "--escenario", action="append", default=[], help="Solo ese escenario; se puede repetir."
+    )
+    metricas_p.add_argument(
         "--familia",
         action="append",
         default=[],
@@ -852,6 +876,54 @@ def _mostrar_entrenamiento(resultado: ResultadoEntrenamiento, salida: TextIO) ->
     )
 
 
+def _formato_estimacion(e: EstimacionResumen) -> str:
+    if e.puntual is None:
+        return "no definida"
+    if e.limite_inferior is None or e.limite_superior is None:
+        return f"{e.puntual:.3f}"
+    return f"{e.puntual:.3f} [{e.limite_inferior:.3f}; {e.limite_superior:.3f}]"
+
+
+def _mostrar_metricas(resultado: ResultadoMetricas, salida: TextIO) -> None:
+    print(
+        "DATOS SINTÉTICOS: las predicciones vienen de corridas con datos inventados. "
+        "No usar como resultado.",
+        file=salida,
+    )
+    if resultado.configuraciones_ficticias:
+        print(
+            "CONFIGURACIÓN FICTICIA: las métricas, q y el método de intervalo son ejemplos, no "
+            "decisiones (DP-08a, DP-08e, DP-08i).",
+            file=salida,
+        )
+    print(f"\nConfiguración: {resultado.configuracion_experimentos}", file=salida)
+    q = f"; q = {resultado.q:g}" if resultado.q is not None else ""
+    print(
+        f"  Intervalos {resultado.metodo} al {resultado.nivel:.0%} con {resultado.replicas} "
+        f"réplicas, estratificadas por {resultado.estratificacion}{q} (DP-08e)",
+        file=salida,
+    )
+    print(
+        "\nMétricas sobre las probabilidades de validación fuera de fold, con la prevalencia "
+        "de la población evaluada (RF-M4-01):",
+        file=salida,
+    )
+    for c in resultado.corridas:
+        print(
+            f"  {c.escenario:<12} {c.familia:<9} n={c.filas} eventos={c.eventos} "
+            f"prevalencia={c.prevalencia:.3f}",
+            file=salida,
+        )
+        for nombre, estimacion in c.metricas.items():
+            print(f"      {nombre:<15} {_formato_estimacion(estimacion)}", file=salida)
+    print(
+        f"\nCálculo registrado como {resultado.identificador_registro} (exploratorio). Son "
+        "puntuaciones de validación: el máximo de muchas es optimista y no es una estimación "
+        "final del desempeño.",
+        file=salida,
+    )
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -964,6 +1036,18 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_objetivo(argumentos, servicios)
     if argumentos.comando == "poblaciones":
         return _ejecutar_poblaciones(argumentos, servicios)
+    if argumentos.comando == "experimentos" and argumentos.accion == "metricas":
+        _mostrar_metricas(
+            servicios.experimentos.metricas(
+                SolicitudMetricas(
+                    experimentos=argumentos.experimentos,
+                    seleccion_escenarios=tuple(argumentos.escenario),
+                    seleccion_familias=tuple(argumentos.familia),
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
     if argumentos.comando == "experimentos" and argumentos.accion == "entrenar":
         entrenamiento = servicios.experimentos.entrenar(
             SolicitudEntrenar(

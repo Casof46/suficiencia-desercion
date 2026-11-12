@@ -64,3 +64,24 @@ def guardar_corrida(
     )
     carpeta.rename(final)
     return huellas
+
+
+def leer_predicciones(carpeta: Path, huella_esperada: str) -> pd.DataFrame:
+    """Lee ``predicciones.csv`` de una corrida, después de comprobar su huella.
+
+    Raises:
+        ConfiguracionInvalida: si el archivo no existe o cambió desde que se registró.
+    """
+    archivo = carpeta / "predicciones.csv"
+    if not archivo.exists():
+        raise ConfiguracionInvalida(
+            f"No se encuentra {archivo}.",
+            "Los archivos de la corrida se movieron o se borraron; vuelva a entrenarla.",
+        )
+    contenido = archivo.read_bytes()
+    if Huella.de_bytes(contenido).valor != huella_esperada:
+        raise ConfiguracionInvalida(
+            f"{archivo} cambió después de registrarse: su huella no coincide.",
+            "No use predicciones modificadas; vuelva a entrenar la corrida.",
+        )
+    return pd.read_csv(archivo, dtype={"cohorte": str})

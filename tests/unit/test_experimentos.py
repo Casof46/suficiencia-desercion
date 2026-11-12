@@ -289,3 +289,19 @@ def test_sin_cohorte_de_calibracion_vale_con_una_combinacion_y_sin_calibrar() ->
         bloque["espacio"] = {n: v[:1] for n, v in bloque["espacio"].items()}
     configuracion = configuracion_experimentos_desde_datos(datos)
     assert not configuracion.validacion.cohorte_calibracion
+
+
+def test_f33_el_ejemplo_declara_metricas_e_intervalos_y_un_null_detiene() -> None:
+    configuracion = cargar_configuracion_experimentos(EJEMPLO)
+    assert [m.value for m in configuracion.metricas.metricas] == [
+        "auc_roc",
+        "brier",
+        "brier_escalado",
+        "recall_q",
+    ]
+    assert configuracion.metricas.q == 0.2
+    for clave, decision in (("metricas", "DP-08a"), ("intervalos", "DP-08e")):
+        datos = copy.deepcopy(_datos())
+        datos[clave] = None
+        with pytest.raises(DecisionPendiente, match=decision):
+            configuracion_experimentos_desde_datos(datos)
