@@ -1,11 +1,11 @@
 # EJEMPLO FICTICIO de configuración de los experimentos de desarrollo (F3.1), para
 # probar el programa con el historial sintético. NO es la configuración del
 # proyecto: cada valor es un supuesto inventado, no una decisión (DP-03, DP-06,
-# DP-07, DP-08a, DP-08e, DP-08i, DP-09 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
+# DP-07, DP-08a, DP-08e, DP-08i, DP-09, DP-10 y DP-12 siguen abiertas). La del proyecto irá en config/experimentos.yaml.
 # Todos los campos son obligatorios; un valor null detiene el programa nombrando
 # la decisión pendiente.
 version_experimentos: 1
-nombre: "Experimentos ficticios de prueba (F3.1 a F3.3)"
+nombre: "Experimentos ficticios de prueba (F3.1 a F3.4)"
 ficticio: true
 
 # DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
@@ -109,3 +109,17 @@ intervalos:
   nivel: 0.95
   replicas: 1000
   estratificacion: cohorte_resultado   # cohorte_resultado | resultado | ninguna
+
+# DP-10: selección del modelo representativo de cada escenario (F3.4), solo con las
+# probabilidades de validación. Entre las familias dentro del margen respecto de la
+# mejor, gana la primera de 'orden_familias'. Valores y orden inventados.
+seleccion:
+  metrica: auc_roc            # una de las métricas de probabilidad
+  margen: 0.01
+  orden_familias: [lr, rf, xgboost, lightgbm, svm]
+  reentrenamiento: todo_desarrollo   # ultimo_fold | todo_desarrollo
+
+# DP-06: regla del umbral, con las probabilidades de validación del modelo
+# seleccionado: fijo (con 'valor') | cuantil_q (usa q) | recall_minimo (con 'valor')
+umbral:
+  regla: cuantil_q

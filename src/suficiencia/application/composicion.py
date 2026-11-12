@@ -16,6 +16,7 @@ import pandas as pd
 
 import suficiencia
 from suficiencia.application._base import ServicioCasosDeUso
+from suficiencia.application.demostracion_final import ejecutar_demostracion_final
 from suficiencia.application.servicio_datos import ServicioDatos
 from suficiencia.application.servicio_escenarios import ServicioEscenarios
 from suficiencia.application.servicio_evaluacion_final import ServicioEvaluacionFinal
@@ -29,7 +30,12 @@ from suficiencia.domain.experimentos import PerfilPreprocesamiento, ResultadoFol
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
-from suficiencia.persistence.corridas_archivos import guardar_corrida, leer_predicciones
+from suficiencia.persistence.corridas_archivos import (
+    guardar_corrida,
+    guardar_modelo_final,
+    leer_modelo,
+    leer_predicciones,
+)
 from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario, cargar_diccionario
 from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
@@ -37,7 +43,11 @@ from suficiencia.persistence.experimentos_yaml import cargar_configuracion_exper
 from suficiencia.persistence.exportacion import exportar_tabla
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
 from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
-from suficiencia.persistence.particion_archivos import cargador_de_prueba, guardar_division
+from suficiencia.persistence.particion_archivos import (
+    cargador_de_prueba,
+    guardar_division,
+    leer_manifiesto,
+)
 from suficiencia.persistence.poblaciones_yaml import cargar_configuracion_poblaciones
 from suficiencia.persistence.protocolo_yaml import leer_yaml
 from suficiencia.persistence.repositorio_sqlite import RepositorioSqlite
@@ -113,13 +123,36 @@ def _entrenar_en_folds(*argumentos: Any) -> list[ResultadoFold]:
     return entrenar_en_folds(*argumentos)
 
 
-def crear_servicios(raiz: Path) -> Servicios:
-    """Construye los servicios para el proyecto ubicado en ``raiz``."""
+def _ajustar_final(*argumentos: Any) -> ResultadoFold:
+    from suficiencia.experimentation.modelos import ajustar_final
+
+    return ajustar_final(*argumentos)
+
+
+def _predecir(modelo: object, predictores: pd.DataFrame) -> Any:
+    from suficiencia.experimentation.modelos import predecir
+
+    return predecir(modelo, predictores)
+
+
+def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
+    """Construye los servicios para el proyecto ubicado en ``raiz``.
+
+    Con ``clave_sesion``, la "clave efímera" es la misma en todas las operaciones de
+    estos servicios, sin guardarse en ningún lado: así una demostración puede construir
+    la partición y después evaluarla con los mismos seudónimos (F3.4).
+    """
+
+    def seudonimizador(clave_efimera: bool) -> Seudonimizador:
+        if clave_efimera and clave_sesion is not None:
+            return SeudonimizadorHmac(clave_sesion)
+        return _seudonimizador(clave_efimera)
+
     datos = ServicioDatos(
         raiz=raiz,
         cargar_diccionario=cargar_diccionario,
         leer_tabla=_leer,
-        seudonimizador=_seudonimizador,
+        seudonimizador=seudonimizador,
         huella_de_tabla=_huella_de_tabla,
         escribir_tabla=escribir_csv,
         cargar_definicion=cargar_definicion_objetivo,
@@ -162,8 +195,29 @@ def crear_servicios(raiz: Path) -> Servicios:
         entrenar_familia=_entrenar_en_folds,
         guardar_corrida=guardar_corrida,
         leer_predicciones=leer_predicciones,
+        ajustar_final=_ajustar_final,
+        guardar_modelo_final=guardar_modelo_final,
+        leer_modelo=leer_modelo,
     )
-    evaluacion_final = ServicioEvaluacionFinal(raiz, RepositorioSqlite, archivo_registro, leer_yaml)
+    evaluacion_final = ServicioEvaluacionFinal(
+        raiz,
+        RepositorioSqlite,
+        archivo_registro,
+        leer_yaml,
+        preparar_historial=datos.preparar_historial,
+        cargar_poblaciones=cargar_configuracion_poblaciones,
+        fuente_catalogo=FuenteCatalogoYaml,
+        fuente_diccionario=_fuente_diccionario,
+        cargar_experimentos=cargar_configuracion_experimentos,
+        cargador_de_prueba=cargador_de_prueba,
+        leer_manifiesto=leer_manifiesto,
+        leer_modelo=leer_modelo,
+        predecir=_predecir,
+        capturador=CapturadorEntornoLocal(raiz),
+        demostrar=lambda solicitud: ejecutar_demostracion_final(
+            raiz, solicitud, crear_servicios, leer_yaml
+        ),
+    )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,
         escenarios,

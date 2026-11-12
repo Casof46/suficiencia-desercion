@@ -111,6 +111,10 @@ class ServicioReportes(ServicioCasosDeUso):
     def _configuracion(self) -> ConfiguracionProyecto:
         return self._fuente_configuracion(self._raiz / ARCHIVO_CONFIGURACION).cargar()
 
+    def repositorio(self) -> RepositorioRegistros:
+        """Registro del proyecto (en una demostración, el del proyecto temporal)."""
+        return self._repositorio(self.archivo_registro())
+
     def archivo_registro(self) -> Path:
         return self._configuracion().rutas["espacio_trabajo"] / ARCHIVO_REGISTRO
 

@@ -24,6 +24,12 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia experimentos entrenar ARCHIVO (mismas opciones que preparar)
                                       [--escenario T1|A+F ...] [--familia lr ...]
     suficiencia experimentos metricas [--experimentos RUTA] [--escenario ...] [--familia ...]
+    suficiencia experimentos seleccionar ARCHIVO (mismas opciones que preparar) [--escenario ...]
+    suficiencia evaluacion final ARCHIVO (mismas opciones que preparar) --particion CARPETA
+                                 --configuracion ID [...] --version N [--justificacion T]
+    suficiencia evaluacion demostracion ARCHIVO --diccionario R --definicion R --poblaciones R
+                                        --escenarios R --experimentos R --protocolo R
+                                        --escenario T1|A+F [...]
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver TIPO
@@ -66,25 +72,30 @@ from suficiencia.application.contratos import (
     ResultadoConsultaProtocolo,
     ResultadoConsultaRegistro,
     ResultadoDefinicionObjetivo,
+    ResultadoDemostracionFinal,
     ResultadoDemostracionObjetivo,
     ResultadoDemostracionProtocolo,
     ResultadoDiccionario,
     ResultadoEntrenamiento,
     ResultadoEscenarios,
     ResultadoEstadoDecisiones,
+    ResultadoEvaluacionFinal,
     ResultadoImportacion,
     ResultadoIntegridad,
     ResultadoMetricas,
     ResultadoObjetivo,
     ResultadoPoblaciones,
     ResultadoPreparacionDesarrollo,
+    ResultadoSeleccion,
     ResultadoValidacionConfiguracion,
     SolicitudAprobarProtocolo,
     SolicitudCasoDeUso,
     SolicitudConstruirObjetivo,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
+    SolicitudDemostracionFinal,
     SolicitudEntrenar,
+    SolicitudEvaluacionFinal,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
     SolicitudGuardarBorrador,
@@ -93,6 +104,7 @@ from suficiencia.application.contratos import (
     SolicitudMetricas,
     SolicitudPrepararDesarrollo,
     SolicitudRegistrarDecision,
+    SolicitudSeleccionar,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
     SolicitudValidarObjetivo,
@@ -141,7 +153,7 @@ def _separador(texto: str) -> str:
 
 
 def _opciones_desarrollo(analizador: argparse.ArgumentParser) -> None:
-    """Opciones comunes de `experimentos preparar` y `experimentos entrenar`."""
+    """Opciones comunes de los comandos que leen el historial (desde F3.1)."""
     analizador.add_argument("archivo", type=Path, help="Archivo .csv o .xlsx.")
     analizador.add_argument(
         "--diccionario", type=Path, required=True, help="Diccionario de datos (YAML)."
@@ -175,6 +187,19 @@ def _opciones_desarrollo(analizador: argparse.ArgumentParser) -> None:
     analizador.add_argument(
         "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
     )
+
+
+def _comunes_desarrollo(argumentos: argparse.Namespace) -> dict[str, object]:
+    return {
+        "archivo": argumentos.archivo,
+        "diccionario": argumentos.diccionario,
+        "definicion": argumentos.definicion,
+        "poblaciones": argumentos.poblaciones,
+        "escenarios": argumentos.escenarios,
+        "experimentos": argumentos.experimentos,
+        "clave_efimera": argumentos.clave_efimera,
+        "separador": argumentos.separador,
+    }
 
 
 def construir_analizador() -> argparse.ArgumentParser:
@@ -382,6 +407,52 @@ def construir_analizador() -> argparse.ArgumentParser:
         default=[],
         choices=["lr", "rf", "xgboost", "lightgbm", "svm"],
         help="Solo esa familia; se puede repetir.",
+    )
+    seleccionar_p = acciones_experimentos.add_parser(
+        "seleccionar",
+        help="Modelo y umbral por escenario solo con desarrollo (F3.4).",
+    )
+    _opciones_desarrollo(seleccionar_p)
+    seleccionar_p.add_argument(
+        "--escenario", action="append", default=[], help="Solo ese escenario; se puede repetir."
+    )
+    evaluacion = comandos.add_parser(
+        "evaluacion", help="Evaluación final con la prueba sellada (CU-08; F3.4)."
+    )
+    acciones_evaluacion = evaluacion.add_subparsers(dest="accion", required=True, title="acciones")
+    final_p = acciones_evaluacion.add_parser(
+        "final",
+        help="Abre la prueba una sola vez para las configuraciones congeladas; exige protocolo.",
+    )
+    _opciones_desarrollo(final_p)
+    final_p.add_argument("--particion", type=Path, required=True, help="Carpeta de la partición.")
+    final_p.add_argument(
+        "--configuracion",
+        action="append",
+        required=True,
+        help="Identificador de una configuración congelada; se puede repetir.",
+    )
+    final_p.add_argument("--version", type=int, required=True, help="Versión del protocolo.")
+    final_p.add_argument(
+        "--justificacion", help="Obligatoria para repetir la evaluación final (RF-M4-09)."
+    )
+    demostracion_final_p = acciones_evaluacion.add_parser(
+        "demostracion",
+        help="Selección, congelamiento y evaluación final en un proyecto temporal (FICTICIO).",
+    )
+    demostracion_final_p.add_argument("archivo", type=Path, help="Historial sintético.")
+    for opcion in ("diccionario", "definicion", "poblaciones", "escenarios", "experimentos"):
+        demostracion_final_p.add_argument(
+            f"--{opcion}", type=Path, required=True, help="Archivo marcado como ficticio."
+        )
+    demostracion_final_p.add_argument(
+        "--protocolo",
+        type=Path,
+        required=True,
+        help="Protocolo ficticio, como config/ejemplos/protocolo_evaluacion_final_ficticio.yaml.",
+    )
+    demostracion_final_p.add_argument(
+        "--escenario", action="append", required=True, help="Escenario; se puede repetir."
     )
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
@@ -924,6 +995,81 @@ def _mostrar_metricas(resultado: ResultadoMetricas, salida: TextIO) -> None:
     )
 
 
+def _mostrar_seleccion(resultado: ResultadoSeleccion, salida: TextIO) -> None:
+    print(
+        "DATOS SINTÉTICOS: no provienen de ninguna institución. No usar como resultado.",
+        file=salida,
+    )
+    if resultado.configuraciones_ficticias:
+        print(
+            "CONFIGURACIÓN FICTICIA: la regla de selección y la del umbral son ejemplos, no "
+            "decisiones (DP-06, DP-10).",
+            file=salida,
+        )
+    print(f"\nConfiguración: {resultado.configuracion_experimentos}", file=salida)
+    print("Selección solo con las probabilidades de validación (RF-M4-07, RF-M4-08):", file=salida)
+    for e in resultado.escenarios:
+        valores = ", ".join(f"{f} {v:.3f}" for f, v in e.valores.items())
+        print(
+            f"  {e.escenario:<12} -> {e.familia} (umbral {e.umbral:.3f}; "
+            f"reentrenamiento {e.reentrenamiento})",
+            file=salida,
+        )
+        print(f"      {e.metrica} en validación: {valores}", file=salida)
+        print(f"      Modelo final: {e.carpeta}", file=salida)
+    print(
+        f"\nSelección registrada como {resultado.identificador_registro} (exploratoria). "
+        "Congelar exige un protocolo aprobado.",
+        file=salida,
+    )
+
+
+def _mostrar_evaluacion_final(resultado: ResultadoEvaluacionFinal, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print(
+            "PROTOCOLO O CONFIGURACIONES FICTICIOS: el resultado de la regla no es una "
+            "conclusión sobre el método.",
+            file=salida,
+        )
+    print(f"\nEvaluación final con el protocolo v{resultado.version_protocolo}:", file=salida)
+    for c in resultado.configuraciones:
+        print(
+            f"  {c.identificador} ({c.rol}): {c.escenario}, {c.algoritmo}; n={c.filas} "
+            f"eventos={c.eventos} prevalencia={c.prevalencia:.3f}; umbral {c.umbral:.3f}",
+            file=salida,
+        )
+        for nombre, estimacion in c.metricas.items():
+            print(f"      {nombre:<15} {_formato_estimacion(estimacion)}", file=salida)
+        clasificacion = ", ".join(
+            f"{n} {v:.3f}" if v is not None else f"{n} no definida" for n, v in c.con_umbral.items()
+        )
+        print(f"      Con el umbral: {clasificacion}", file=salida)
+    suficiente = f" ({resultado.escenario_suficiente})" if resultado.escenario_suficiente else ""
+    print(f"\nRegla de suficiencia: {resultado.estado_regla}{suficiente}", file=salida)
+    for linea in resultado.detalle_regla:
+        print(f"  {linea}", file=salida)
+    print(
+        f"Accesos permitidos a la prueba: {resultado.accesos_a_la_prueba}. Registrada como "
+        f"{resultado.identificador_registro}.",
+        file=salida,
+    )
+
+
+def _mostrar_demostracion_final(resultado: ResultadoDemostracionFinal, salida: TextIO) -> None:
+    print(
+        "DEMOSTRACIÓN con datos SINTÉTICOS y protocolo FICTICIO, en un proyecto temporal que "
+        "se borra al terminar. Nada llega al registro del proyecto. Las métricas y el "
+        "resultado de la regla no dicen nada sobre estudiantes reales ni sobre el método.",
+        file=salida,
+    )
+    print(f"Protocolo: {resultado.archivo_protocolo}\n", file=salida)
+    for numero, paso in enumerate(resultado.pasos, start=1):
+        print(f"{numero}. {paso.titulo}", file=salida)
+        print(f"   {paso.resultado}", file=salida)
+    print("", file=salida)
+    _mostrar_evaluacion_final(resultado.evaluacion, salida)
+
+
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
     print("Entorno de ejecución (se guarda con cada corrida):", file=salida)
     print(f"  Python: {entorno.python}", file=salida)
@@ -1036,6 +1182,48 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_objetivo(argumentos, servicios)
     if argumentos.comando == "poblaciones":
         return _ejecutar_poblaciones(argumentos, servicios)
+    if argumentos.comando == "experimentos" and argumentos.accion == "seleccionar":
+        _mostrar_seleccion(
+            servicios.experimentos.seleccionar(
+                SolicitudSeleccionar(
+                    **_comunes_desarrollo(argumentos),
+                    seleccion_escenarios=tuple(argumentos.escenario),
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion" and argumentos.accion == "final":
+        _mostrar_evaluacion_final(
+            servicios.evaluacion_final.evaluar(
+                SolicitudEvaluacionFinal(
+                    **_comunes_desarrollo(argumentos),
+                    particion=argumentos.particion,
+                    configuraciones=tuple(argumentos.configuracion),
+                    version_protocolo=argumentos.version,
+                    justificacion_repeticion=argumentos.justificacion,
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion":
+        _mostrar_demostracion_final(
+            servicios.evaluacion_final.demostracion(
+                SolicitudDemostracionFinal(
+                    archivo=argumentos.archivo,
+                    diccionario=argumentos.diccionario,
+                    definicion=argumentos.definicion,
+                    poblaciones=argumentos.poblaciones,
+                    escenarios=argumentos.escenarios,
+                    experimentos=argumentos.experimentos,
+                    protocolo=argumentos.protocolo,
+                    seleccion_escenarios=tuple(argumentos.escenario),
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
     if argumentos.comando == "experimentos" and argumentos.accion == "metricas":
         _mostrar_metricas(
             servicios.experimentos.metricas(

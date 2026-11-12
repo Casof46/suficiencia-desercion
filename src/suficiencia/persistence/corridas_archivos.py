@@ -85,3 +85,46 @@ def leer_predicciones(carpeta: Path, huella_esperada: str) -> pd.DataFrame:
             "No use predicciones modificadas; vuelva a entrenar la corrida.",
         )
     return pd.read_csv(archivo, dtype={"cohorte": str})
+
+
+def guardar_modelo_final(carpeta: Path, modelo: object, manifiesto: Mapping[str, Any]) -> str:
+    """Guarda el modelo representativo de un escenario y devuelve la huella del archivo (F3.4).
+
+    Raises:
+        ConfiguracionInvalida: si la carpeta ya existe (nunca se sobrescribe).
+    """
+    if carpeta.exists():
+        raise ConfiguracionInvalida(
+            f"La carpeta de la selección ya existe: {carpeta.name}.",
+            "Ya hay una selección igual; no se sobrescribe.",
+        )
+    carpeta.mkdir(parents=True)
+    archivo = carpeta / "modelo_final.joblib"
+    joblib.dump(modelo, archivo)
+    huella = Huella.de_bytes(archivo.read_bytes()).valor
+    (carpeta / "manifiesto.json").write_text(
+        json.dumps(
+            {**manifiesto, "huella_modelo": huella}, ensure_ascii=False, indent=2, sort_keys=True
+        ),
+        encoding="utf-8",
+    )
+    return huella
+
+
+def leer_modelo(archivo: Path, huella_esperada: str) -> object:
+    """Carga un modelo guardado por este programa, después de comprobar su huella.
+
+    Raises:
+        ConfiguracionInvalida: si el archivo no existe o cambió desde que se guardó.
+    """
+    if not archivo.exists():
+        raise ConfiguracionInvalida(
+            f"No se encuentra el modelo {archivo}.",
+            "El archivo se movió o se borró; vuelva a seleccionar y congelar.",
+        )
+    if Huella.de_bytes(archivo.read_bytes()).valor != huella_esperada:
+        raise ConfiguracionInvalida(
+            f"El modelo {archivo} cambió después de guardarse: su huella no coincide.",
+            "No evalúe un modelo modificado; vuelva a seleccionar y congelar.",
+        )
+    return joblib.load(archivo)

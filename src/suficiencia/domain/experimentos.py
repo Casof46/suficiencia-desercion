@@ -18,6 +18,7 @@ como datos obligatorios sin valor por omisión:
 - **Desbalance** (DP-06), **calibración** (DP-09) y **semilla** (RF-M3-06).
 - **Métricas e intervalos** (DP-08a, DP-08i, DP-08e; F3.3): ver
   ``evaluacion.metricas``.
+- **Selección del modelo y umbral** (DP-10, DP-06; F3.4): ver ``evaluacion.seleccion``.
 
 Un valor ``null`` detiene el programa nombrando la decisión pendiente.
 """
@@ -39,6 +40,12 @@ from suficiencia.domain.escenarios.matrices import (
 from suficiencia.domain.evaluacion.metricas import (
     DefinicionMetricas,
     definicion_metricas_desde_datos,
+)
+from suficiencia.domain.evaluacion.seleccion import (
+    DefinicionSeleccion,
+    DefinicionUmbral,
+    definicion_seleccion_desde_datos,
+    definicion_umbral_desde_datos,
 )
 
 
@@ -454,6 +461,8 @@ class ConfiguracionExperimentos:
     calibracion: Calibracion
     semilla: int
     metricas: DefinicionMetricas
+    seleccion: DefinicionSeleccion
+    umbral: DefinicionUmbral
 
 
 _CLAVES = {
@@ -470,6 +479,8 @@ _CLAVES = {
     "semilla",
     "metricas",
     "intervalos",
+    "seleccion",
+    "umbral",
 }
 VERSION_SOPORTADA = 1
 
@@ -514,6 +525,7 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
     semilla = datos["semilla"]
     if isinstance(semilla, bool) or not isinstance(semilla, int) or semilla < 0:
         raise _invalida("'semilla' debe ser un entero mayor o igual que 0 (RF-M3-06).")
+    metricas = definicion_metricas_desde_datos(datos["metricas"], datos["intervalos"])
     if not validacion.cohorte_calibracion:
         busca = any(
             len(combinaciones_a_evaluar(m, busqueda, semilla)) > 1 for m in modelos.values()
@@ -524,6 +536,11 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
                 "de cada fold; active 'cohorte_calibracion' o deje una sola combinación por "
                 "familia y 'calibracion: ninguna'."
             )
+    seleccion = definicion_seleccion_desde_datos(
+        datos["seleccion"], tuple(f.value for f in Familia)
+    )
+    if seleccion.metrica.value == "recall_q" and metricas.q is None:
+        raise DecisionPendiente("DP-08i", "q, que la métrica de selección recall_q necesita")
     return ConfiguracionExperimentos(
         nombre=datos["nombre"].strip(),
         ficticio=datos["ficticio"],
@@ -535,7 +552,9 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
         desbalance=desbalance,
         calibracion=calibracion,
         semilla=semilla,
-        metricas=definicion_metricas_desde_datos(datos["metricas"], datos["intervalos"]),
+        metricas=metricas,
+        seleccion=seleccion,
+        umbral=definicion_umbral_desde_datos(datos["umbral"], metricas.q),
     )
 
 

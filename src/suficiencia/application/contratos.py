@@ -724,3 +724,101 @@ class ResultadoMetricas(Contrato):
     q: float | None
     corridas: tuple[MetricasCorridaResumen, ...]
     identificador_registro: str
+
+
+# --- F3.4: selección, congelamiento y evaluación final -----------------------------
+
+
+class SolicitudSeleccionar(SolicitudPrepararDesarrollo):
+    """Elige modelo y umbral por escenario solo con desarrollo (CU-07, F3.4).
+
+    Usa las corridas exitosas de las cinco familias, entrenadas con la misma
+    configuración y el mismo archivo. Sin ``seleccion_escenarios``, todos los que
+    tengan las cinco corridas.
+    """
+
+    seleccion_escenarios: tuple[str, ...] = ()
+
+
+class SeleccionEscenarioResumen(Contrato):
+    escenario: str
+    familia: str
+    metrica: str
+    valores: dict[str, float]
+    umbral: float
+    reentrenamiento: str
+    carpeta: str
+    configuracion_candidata: dict[str, Any] = Field(
+        description="Todo lo que se congela, salvo identificador, rol y versión del protocolo."
+    )
+
+
+class ResultadoSeleccion(Contrato):
+    configuracion_experimentos: str
+    configuraciones_ficticias: bool
+    escenarios: tuple[SeleccionEscenarioResumen, ...]
+    identificador_registro: str
+
+
+class SolicitudEvaluacionFinal(SolicitudPrepararDesarrollo):
+    """Evalúa una sola vez en la prueba las configuraciones congeladas (CU-08, F3.4).
+
+    Exige un protocolo aprobado vigente. Repetirla sobre la misma partición exige
+    ``justificacion_repeticion`` (RF-M4-09).
+    """
+
+    particion: Path
+    configuraciones: tuple[str, ...] = Field(min_length=1)
+    version_protocolo: int
+    justificacion_repeticion: str | None = None
+
+
+class MetricasPruebaResumen(Contrato):
+    identificador: str
+    rol: str
+    escenario: str
+    algoritmo: str
+    filas: int
+    eventos: int
+    prevalencia: float
+    umbral: float
+    metricas: dict[str, EstimacionResumen]
+    con_umbral: dict[str, float | None]
+
+
+class ResultadoEvaluacionFinal(Contrato):
+    version_protocolo: int
+    ficticio: bool
+    configuraciones: tuple[MetricasPruebaResumen, ...]
+    estado_regla: str
+    escenario_suficiente: str | None
+    detalle_regla: tuple[str, ...]
+    identificador_registro: str
+    accesos_a_la_prueba: int
+
+
+class ResultadoDemostracionFinal(Contrato):
+    """Selección, congelamiento y evaluación final en un proyecto temporal (EJEMPLO FICTICIO)."""
+
+    archivo_protocolo: str
+    seleccion: ResultadoSeleccion
+    evaluacion: ResultadoEvaluacionFinal
+    pasos: tuple[PasoDemostracion, ...]
+
+
+class SolicitudDemostracionFinal(Contrato):
+    """Recorre selección, congelamiento y evaluación final en un proyecto temporal (F3.4).
+
+    Solo con datos sintéticos y configuraciones ficticias; nada llega al registro
+    del proyecto.
+    """
+
+    archivo: Path
+    diccionario: Path
+    definicion: Path
+    poblaciones: Path
+    escenarios: Path
+    experimentos: Path
+    protocolo: Path
+    seleccion_escenarios: tuple[str, ...] = Field(min_length=1)
+    separador: str = Field(default=",", min_length=1, max_length=1)

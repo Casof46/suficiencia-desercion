@@ -51,6 +51,7 @@ DEBEN_IGNORARSE = [
     "workspace/registro_demostracion.sqlite",
     "workspace/experimentos/T1_AF-lr-0123456789ab/modelo_fold_1.joblib",
     "workspace/experimentos/T1_AF-lr-0123456789ab/predicciones.csv",
+    "workspace/seleccion/T1_AF-lr-0123456789ab/modelo_final.joblib",
     "reports/decisiones.xlsx",
     "~$plantilla.xlsx",
 ]
@@ -87,6 +88,9 @@ DEBEN_VERSIONARSE = [
     "src/suficiencia/experimentation/pipelines.py",
     "src/suficiencia/experimentation/modelos.py",
     "src/suficiencia/domain/evaluacion/metricas.py",
+    "src/suficiencia/domain/evaluacion/seleccion.py",
+    "src/suficiencia/application/demostracion_final.py",
+    "config/ejemplos/protocolo_evaluacion_final_ficticio.yaml",
     "src/suficiencia/persistence/corridas_archivos.py",
     "docs/gestion/plan_fase_3.md",
 ]

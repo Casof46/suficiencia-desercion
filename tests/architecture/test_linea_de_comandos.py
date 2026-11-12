@@ -385,6 +385,13 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "      '--escenario', 'T0|A', '--familia', 'lr'])\n"
         "main(['--raiz', proyecto, 'experimentos', 'metricas',\n"
         "      '--experimentos', ejemplos_dir + 'experimentos_ficticio.yaml'])\n"
+        "main(['--raiz', proyecto, 'evaluacion', 'demostracion', proyecto + '/data/ampliado.csv',\n"
+        "      '--diccionario', diccionario, '--definicion', objetivo,\n"
+        "      '--poblaciones', ejemplos_dir + 'poblaciones_ampliado_ficticio.yaml',\n"
+        "      '--escenarios', ejemplos_dir + 'escenarios_ficticio.yaml',\n"
+        "      '--experimentos', ejemplos_dir + 'experimentos_ficticio.yaml',\n"
+        "      '--protocolo', ejemplos_dir + 'protocolo_evaluacion_final_ficticio.yaml',\n"
+        "      '--escenario', 'T0|A'])\n"
     )
     entorno = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}
     proceso = subprocess.run(
@@ -416,3 +423,5 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "Modo: EXPLORATORIO" in salida
     assert "Exitosas: 1; omitidas: 0; fallidas: 0." in salida
     assert "Intervalos percentil al 95% con 1000 réplicas" in salida
+    assert "DEMOSTRACIÓN con datos SINTÉTICOS y protocolo FICTICIO" in salida
+    assert "Regla de suficiencia:" in salida

@@ -1,0 +1,41 @@
+# EJEMPLO FICTICIO: protocolo inventado solo para `suficiencia evaluacion
+# demostracion` (F3.4), que recorre selección, congelamiento y evaluación final
+# con datos sintéticos en un proyecto temporal.
+# No es una propuesta del equipo ni de la asesoría. Las métricas elegidas, los
+# límites, el desempate y el nombre del procedimiento de multiplicidad son
+# invenciones para que la regla pueda aplicarse a métricas reales del motor.
+# DP-08 sigue abierta.
+#
+# No es un valor por defecto: ningún comando lo lee si no se le indica, y el
+# programa se niega a aprobar un protocolo marcado como ficticio en el registro
+# del proyecto. El protocolo real no existe todavía.
+ficticio: true
+
+criterio_suficiencia:
+  metricas:                      # DP-08a (inventado)
+    - nombre: auc_roc
+      sentido: mayor_es_mejor
+    - nombre: brier_escalado
+      sentido: mayor_es_mejor
+  condiciones:                   # DP-08b, DP-08c, DP-08e (inventado)
+    - tipo: umbral
+      metrica: auc_roc
+      estadistico: limite_inferior
+      limite: 0.5
+      inclusivo: false
+      comparador: null
+  multiplicidad: sin_ajuste_ficticio   # DP-08f (inventado; solo existe en la demostración)
+  desempate:                     # DP-08g (inventado)
+    - ventana_mas_temprana
+    - menos_bloques
+
+decisiones:                      # Texto inventado para cada decisión previa a CU-05
+  DP-06: "EJEMPLO FICTICIO: regla de umbral de config/ejemplos/experimentos_ficticio.yaml."
+  DP-07: "EJEMPLO FICTICIO: búsqueda de config/ejemplos/experimentos_ficticio.yaml."
+  DP-08: "EJEMPLO FICTICIO: el criterio de este archivo."
+  DP-09: "EJEMPLO FICTICIO: calibración de config/ejemplos/experimentos_ficticio.yaml."
+  DP-10: "EJEMPLO FICTICIO: selección de config/ejemplos/experimentos_ficticio.yaml."
+  DP-12: "EJEMPLO FICTICIO: perfiles de config/ejemplos/experimentos_ficticio.yaml."
+  DP-17: "EJEMPLO FICTICIO: análisis complementarios inventados."
+  DP-19: "EJEMPLO FICTICIO: regla de la referencia R0 inventada."
+  DP-20: "EJEMPLO FICTICIO: protocolo comparativo inventado."

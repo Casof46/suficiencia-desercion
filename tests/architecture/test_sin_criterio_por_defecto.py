@@ -83,7 +83,7 @@ def test_el_dominio_de_evaluacion_no_contiene_numeros_decimales(raiz: Path) -> N
     assert encontrados == []
 
 
-def test_el_unico_protocolo_en_config_es_el_ejemplo_ficticio(raiz: Path) -> None:
+def test_los_unicos_protocolos_en_config_son_los_ejemplos_ficticios(raiz: Path) -> None:
     protocolos = []
     for archivo in sorted((raiz / "config").rglob("*.yaml")):
         datos = yaml.safe_load(archivo.read_text(encoding="utf-8"))
@@ -91,4 +91,7 @@ def test_el_unico_protocolo_en_config_es_el_ejemplo_ficticio(raiz: Path) -> None
             protocolos.append(archivo.relative_to(raiz).as_posix())
             assert datos["ficticio"] is True, archivo
             assert "EJEMPLO FICTICIO" in archivo.read_text(encoding="utf-8"), archivo
-    assert protocolos == ["config/ejemplos/protocolo_ficticio.yaml"]
+    assert protocolos == [
+        "config/ejemplos/protocolo_evaluacion_final_ficticio.yaml",  # demostración de F3.4
+        "config/ejemplos/protocolo_ficticio.yaml",
+    ]

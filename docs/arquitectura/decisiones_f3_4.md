@@ -1,0 +1,33 @@
+# Decisiones técnicas del hito F3.4 — selección y evaluación final
+
+Son decisiones **técnicas y reversibles**. Ninguna resuelve una decisión metodológica DP-xx: la regla de selección del modelo (DP-10) y la del umbral (DP-06) entran como datos obligatorios, con un ejemplo rotulado "EJEMPLO FICTICIO", y la evaluación final con protocolo solo se ejercita en una demostración con un protocolo ficticio. Continúan la numeración de `decisiones_f3_3.md`.
+
+## Decisiones
+
+| ID | Decisión | Alternativas consideradas | Motivo | Estado |
+| --- | --- | --- | --- | --- |
+| D-155 | Regla de selección (DP-10) como datos: métrica, margen, orden de familias y reentrenamiento. En cada escenario se compara la métrica de las cinco familias sobre sus probabilidades de validación fuera de fold; entre las que quedan dentro del margen respecto de la mejor, gana la primera del orden declarado. Con margen cero gana la mejor | Elegir siempre la mejor | La especificación menciona las dos opciones ("mejor en validación; el más simple dentro de un margen predeclarado"); el margen cero cubre la primera | Aplicada |
+| D-156 | Regla del umbral (DP-06) como datos: `fijo`, `cuantil_q` (el cuantil 1 − q de las probabilidades de validación, con q de DP-08i) o `recall_minimo` (el mayor umbral cuyo Recall en validación alcanza el valor declarado). Siempre con las probabilidades de validación del modelo seleccionado | Optimizar F1 u otra métrica | Son las opciones que nombra DP-06 sin exigir una métrica más; otras se agregan si DP-06 las elige | Aplicada |
+| D-157 | Reentrenamiento (DP-10): `ultimo_fold` usa el modelo ya guardado del último fold; `todo_desarrollo` repite el procedimiento del fold con todas las cohortes de desarrollo, usando la última para la búsqueda y la calibración si hacen falta (si no, ajusta con todas) | Promediar los modelos de los folds | Mantiene el mismo procedimiento que se validó; promediar sería un método nuevo | Aplicada |
+| D-158 | `suficiencia experimentos seleccionar`: exige las cinco corridas del escenario con la misma configuración y el mismo archivo de origen; guarda el modelo final en `workspace/seleccion/` y registra la selección como exploratoria, con la configuración lista para congelar. En `datos_reentrenamiento` (texto, campo de H2.6) guarda en JSON el modo de reentrenamiento, las cohortes, la ruta del modelo y su huella | Agregar campos nuevos a la configuración congelada | Los campos de la configuración congelada son los de RF-M4-12 desde H2.6. Así la huella congelada también cubre el modelo | Aplicada |
+| D-159 | `ServicioEvaluacionFinal.evaluar` (comando `suficiencia evaluacion final`): exige el protocolo aprobado vigente; comprueba las huellas de las configuraciones (PI-09) y de sus modelos; comprueba que los datos sean los de la partición (huella del dataset); abre la prueba **una sola vez** para todas las configuraciones (PI-15); arma la matriz de prueba de cada escenario, predice, calcula las métricas con intervalos y, con el umbral congelado, Accuracy, Precision, Recall y F1; aplica la regla en modo confirmatorio y registra la evaluación | Una apertura por configuración | CU-08 pide "el mismo acceso único" para la seleccionada, R0 y los controles | Aplicada |
+| D-160 | Repetir la evaluación final sobre la misma partición exige `--justificacion`; la justificación queda en el motivo del nuevo acceso a la prueba (RF-M4-09). Sin ella, se rechaza antes de abrir la prueba | Prohibir toda repetición | RF-M4-09: "una repetición exige justificación registrada" | Aplicada |
+| D-161 | En la evaluación final, la regla recibe las métricas de prueba de las configuraciones seleccionadas como `ResultadoEscenario` de H2.6, sin diferencias: las condiciones de no inferioridad necesitan las comparaciones de F3.5 | Calcular diferencias contra otros escenarios | Qué se compara con qué depende de DP-08d y DP-20 | Aplicada |
+| D-162 | Demostración (`suficiencia evaluacion demostracion`): recorre partición, entrenamiento, selección, rechazo sin protocolo, aprobación del protocolo ficticio, congelamiento, rechazo de una configuración cambiada, evaluación final y rechazo de la repetición, en un **proyecto temporal** que se borra al terminar. Solo acepta un protocolo y una configuración de experimentos marcados como ficticios | Ejercitarlo en el registro del proyecto | El registro del proyecto nunca aprueba un protocolo ficticio (H2.6); la demostración muestra el recorrido sin tocarlo | Aplicada |
+| D-163 | Clave de sesión: `crear_servicios(raiz, clave_sesion)` hace que la "clave efímera" sea la misma en todas las operaciones de esos servicios, sin guardarse | Guardar una clave en una variable de entorno durante la demostración | La partición y la evaluación final deben usar los mismos seudónimos; la clave sigue sin guardarse en ningún lado | Aplicada |
+| D-164 | Protocolo ficticio propio de la demostración (`config/ejemplos/protocolo_evaluacion_final_ficticio.yaml`), con nombres de métricas reales del motor y un límite inventado; usa el procedimiento de multiplicidad ficticio de la demostración de H2.6 | Reutilizar el protocolo ficticio de H2.6 | Sus métricas (`metrica_a`, `metrica_b`) no existen en el motor; la regla no podría aplicarse a resultados reales del motor | Aplicada |
+| D-165 | Las rutas de archivos que se guardan en el registro se calculan con las rutas resueltas: relativas a la raíz si están dentro y, si no, absolutas (`ruta_en_registro`) | Comparar las rutas sin resolver y, si no coinciden, guardar solo el nombre de la carpeta | Defecto encontrado al verificar F3.4 en Windows: la carpeta temporal llega con el nombre corto (`JORGE_~1`) y la de trabajo con el largo; sin resolver no parecían la misma carpeta, se guardaba solo el nombre y la demostración no encontraba las predicciones. Afectaba también a F3.2 cuando la raíz llegaba por otro camino. Una prueba con un enlace simbólico lo reproduce en Linux | Aplicada |
+
+## Desviaciones respecto de la documentación anterior
+
+| Documento | Qué preveía | Qué se hizo | Motivo |
+| --- | --- | --- | --- |
+| Prueba de arquitectura de H2.6 | El único protocolo en `config/` es el ejemplo ficticio | Hay dos ejemplos ficticios; la prueba lo comprueba | D-164 |
+| Plan de la Fase 3, F3.4 | "Regla de suficiencia sobre resultados reales del motor" | Se aplica con un protocolo ficticio y solo con condiciones de umbral | Las de no inferioridad necesitan F3.5 (D-161) |
+
+## No implementado en F3.4
+
+- Congelamiento y evaluación final en el registro del proyecto: necesitan un protocolo real aprobado (CU-05), que no existe.
+- R0 y controles (F3.5) y las condiciones de no inferioridad de la regla.
+- Procedimientos de multiplicidad del proyecto (DP-08f).
+- Valores reales de DP-06, DP-10 o DP-08.

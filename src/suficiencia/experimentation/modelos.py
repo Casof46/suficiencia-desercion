@@ -125,6 +125,52 @@ def _positivas(modelo: Any, x: pd.DataFrame) -> np.ndarray:
     return np.asarray(modelo.predict_proba(x)[:, 1], dtype="float64")
 
 
+def _ajustar(
+    familia: Familia,
+    perfil: PerfilPreprocesamiento,
+    tipos: Any,
+    combinaciones: Sequence[Mapping[str, Valor]],
+    busqueda: DefinicionBusqueda,
+    desbalance: Desbalance,
+    calibracion: Calibracion,
+    semilla: int,
+    x_aj: pd.DataFrame,
+    y_aj: np.ndarray,
+    x_cal: pd.DataFrame,
+    y_cal: np.ndarray,
+) -> tuple[float | None, Mapping[str, Valor], Any]:
+    """Búsqueda en la cohorte de calibración y, si corresponde, calibración del elegido."""
+    mejor: tuple[float | None, Mapping[str, Valor], Any] | None = None
+    for combinacion in combinaciones:
+        modelo = Pipeline(
+            [
+                ("preprocesamiento", construir_preprocesador(perfil, tipos)),
+                ("modelo", estimador(familia, combinacion, desbalance, semilla, y_aj)),
+            ]
+        )
+        modelo.fit(x_aj, y_aj)
+        puntaje = (
+            _puntaje(busqueda.metrica, y_cal, _positivas(modelo, x_cal))
+            if len(combinaciones) > 1
+            else None
+        )
+        # Empates: gana la primera combinación en el orden de la malla.
+        if mejor is None or (puntaje is not None and mejor[0] is not None and puntaje > mejor[0]):
+            mejor = (puntaje, combinacion, modelo)
+    assert mejor is not None
+    puntaje, combinacion, modelo = mejor
+    if calibracion is not Calibracion.NINGUNA:
+        metodo = "sigmoid" if calibracion is Calibracion.PLATT else "isotonic"
+        modelo = CalibratedClassifierCV(FrozenEstimator(modelo), method=metodo).fit(x_cal, y_cal)
+    return puntaje, combinacion, modelo
+
+
+def _necesita_calibracion(
+    combinaciones: Sequence[Mapping[str, Valor]], calibracion: Calibracion
+) -> bool:
+    return len(combinaciones) > 1 or calibracion is not Calibracion.NINGUNA
+
+
 def entrenar_en_folds(
     familia: Familia,
     perfil: PerfilPreprocesamiento,
@@ -152,8 +198,7 @@ def entrenar_en_folds(
                 f"El fold {fold.numero} no tiene filas de ajuste o de validación.",
                 "Revise las cohortes de desarrollo y la validación (DP-05, DP-07).",
             )
-        necesita_calibracion = len(combinaciones) > 1 or calibracion is not Calibracion.NINGUNA
-        if necesita_calibracion and not fold.calibracion:
+        if _necesita_calibracion(combinaciones, calibracion) and not fold.calibracion:
             raise ConfiguracionInvalida(
                 f"El fold {fold.numero} no tiene filas en la cohorte de calibración.",
                 "La búsqueda y la calibración la necesitan (DP-07, DP-09).",
@@ -161,33 +206,20 @@ def entrenar_en_folds(
         x_aj, y_aj = predictores.iloc[list(fold.ajuste)], y_total[list(fold.ajuste)]
         x_cal, y_cal = predictores.iloc[list(fold.calibracion)], y_total[list(fold.calibracion)]
         x_val = predictores.iloc[list(fold.validacion)]
-
-        mejor: tuple[float | None, Mapping[str, Valor], Any] | None = None
-        for combinacion in combinaciones:
-            modelo = Pipeline(
-                [
-                    ("preprocesamiento", construir_preprocesador(perfil, tipos)),
-                    ("modelo", estimador(familia, combinacion, desbalance, semilla, y_aj)),
-                ]
-            )
-            modelo.fit(x_aj, y_aj)
-            puntaje = (
-                _puntaje(busqueda.metrica, y_cal, _positivas(modelo, x_cal))
-                if len(combinaciones) > 1
-                else None
-            )
-            # Empates: gana la primera combinación en el orden de la malla.
-            if mejor is None or (
-                puntaje is not None and mejor[0] is not None and puntaje > mejor[0]
-            ):
-                mejor = (puntaje, combinacion, modelo)
-        assert mejor is not None
-        puntaje, combinacion, modelo = mejor
-        if calibracion is not Calibracion.NINGUNA:
-            metodo = "sigmoid" if calibracion is Calibracion.PLATT else "isotonic"
-            modelo = CalibratedClassifierCV(FrozenEstimator(modelo), method=metodo).fit(
-                x_cal, y_cal
-            )
+        puntaje, combinacion, modelo = _ajustar(
+            familia,
+            perfil,
+            tipos,
+            combinaciones,
+            busqueda,
+            desbalance,
+            calibracion,
+            semilla,
+            x_aj,
+            y_aj,
+            x_cal,
+            y_cal,
+        )
         resultados.append(
             ResultadoFold(
                 numero=fold.numero,
@@ -199,3 +231,60 @@ def entrenar_en_folds(
             )
         )
     return resultados
+
+
+def ajustar_final(
+    familia: Familia,
+    perfil: PerfilPreprocesamiento,
+    combinaciones: Sequence[Mapping[str, Valor]],
+    busqueda: DefinicionBusqueda,
+    desbalance: Desbalance,
+    calibracion: Calibracion,
+    semilla: int,
+    predictores: pd.DataFrame,
+    objetivo: pd.Series,
+    ajuste: Sequence[int],
+    calibracion_filas: Sequence[int],
+) -> ResultadoFold:
+    """Ajuste final con todo el desarrollo (DP-10, ``todo_desarrollo``; F3.4).
+
+    Mismo procedimiento que en cada fold, sin filas de validación: las filas de
+    ``calibracion_filas`` (la última cohorte de desarrollo) sirven para la búsqueda y
+    la calibración; si no hacen falta, se ajusta con todas las filas.
+    """
+    y_total = objetivo.to_numpy(dtype="int64")
+    filas_ajuste = list(ajuste)
+    if not _necesita_calibracion(combinaciones, calibracion):
+        filas_ajuste = sorted({*ajuste, *calibracion_filas})
+    elif not calibracion_filas:
+        raise ConfiguracionInvalida(
+            "El ajuste final no tiene filas para la búsqueda o la calibración.",
+            "La búsqueda y la calibración necesitan la última cohorte de desarrollo.",
+        )
+    puntaje, combinacion, modelo = _ajustar(
+        familia,
+        perfil,
+        tipos_de_columnas(predictores),
+        combinaciones,
+        busqueda,
+        desbalance,
+        calibracion,
+        semilla,
+        predictores.iloc[filas_ajuste],
+        y_total[filas_ajuste],
+        predictores.iloc[list(calibracion_filas)],
+        y_total[list(calibracion_filas)],
+    )
+    return ResultadoFold(
+        numero=0,
+        combinacion=dict(combinacion),
+        puntaje_busqueda=puntaje,
+        configuraciones_evaluadas=len(combinaciones),
+        probabilidades=(),
+        modelo=modelo,
+    )
+
+
+def predecir(modelo: Any, predictores: pd.DataFrame) -> np.ndarray:
+    """Probabilidad de la clase positiva con un modelo ya ajustado (evaluación final)."""
+    return _positivas(modelo, predictores)

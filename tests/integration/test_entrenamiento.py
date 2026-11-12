@@ -494,3 +494,24 @@ def test_linea_de_comandos_metricas(proyecto: Path, capsys: pytest.CaptureFixtur
     assert "Intervalos percentil al 95% con 1000 réplicas" in salida
     assert "auc_roc" in salida and "prevalencia=" in salida
     assert "no es una estimación final" in salida
+
+
+def test_rutas_del_registro_con_la_raiz_por_otro_camino(proyecto: Path, tmp_path: Path) -> None:
+    """La raíz puede llegar por otro camino que la carpeta de trabajo (en Windows, el
+    nombre corto de la carpeta temporal); los archivos de la corrida se encuentran igual."""
+    enlace = tmp_path / "enlace"
+    try:
+        enlace.symlink_to(proyecto, target_is_directory=True)
+    except OSError:
+        pytest.skip("El sistema no permite crear enlaces simbólicos.")
+    servicios = crear_servicios(enlace)
+    solicitud = _solicitud(enlace, seleccion_escenarios=("T0|A",), seleccion_familias=("lr",))
+    servicios.experimentos.entrenar(solicitud)
+    resultado = servicios.experimentos.metricas(
+        SolicitudMetricas(
+            experimentos=Path("config/experimentos_rapido.yaml"),
+            seleccion_escenarios=("T0|A",),
+            seleccion_familias=("lr",),
+        )
+    )
+    assert resultado.corridas

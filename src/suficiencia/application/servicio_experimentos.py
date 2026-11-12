@@ -6,8 +6,9 @@ escenario, folds cronológicos y preprocesamiento dentro de cada fold). Desde
 F3.2: entrenar las cinco familias en esos folds, en modo exploratorio, con cada
 corrida registrada (también las fallidas) y sus archivos guardados. Desde F3.3:
 métricas con prevalencia e intervalos bootstrap sobre las probabilidades de
-validación de esas corridas. La selección del modelo representativo (DP-10) llega
-en F3.4.
+validación de esas corridas. Desde F3.4: selección del modelo representativo
+(DP-10) y del umbral (DP-06) de cada escenario, solo con desarrollo, con el modelo
+final guardado y la configuración lista para congelar.
 """
 
 from __future__ import annotations
@@ -32,10 +33,13 @@ from suficiencia.application.contratos import (
     ResultadoEntrenamiento,
     ResultadoMetricas,
     ResultadoPreparacionDesarrollo,
+    ResultadoSeleccion,
+    SeleccionEscenarioResumen,
     SolicitudCongelar,
     SolicitudEntrenar,
     SolicitudMetricas,
     SolicitudPrepararDesarrollo,
+    SolicitudSeleccionar,
     VentanaPreparadaResumen,
 )
 from suficiencia.application.preparacion_desarrollo import (
@@ -55,6 +59,11 @@ from suficiencia.domain.evaluacion.metricas import (
     estimar,
     prevalencia,
     remuestras,
+)
+from suficiencia.domain.evaluacion.seleccion import (
+    Reentrenamiento,
+    elegir_umbral,
+    seleccionar_familia,
 )
 from suficiencia.domain.experimentos import (
     Calibracion,
@@ -103,10 +112,42 @@ EntrenarFamilia = Callable[
     list[ResultadoFold],
 ]
 LeerPredicciones = Callable[[Path, str], pd.DataFrame]
+AjustarFinal = Callable[
+    [
+        Familia,
+        PerfilPreprocesamiento,
+        Sequence[Mapping[str, Valor]],
+        DefinicionBusqueda,
+        Desbalance,
+        Calibracion,
+        int,
+        pd.DataFrame,
+        pd.Series,
+        Sequence[int],
+        Sequence[int],
+    ],
+    ResultadoFold,
+]
+GuardarModeloFinal = Callable[[Path, object, Mapping[str, Any]], str]
+CARPETA_SELECCION = "seleccion"
 GuardarCorrida = Callable[
     [Path, pd.DataFrame, Mapping[int, object], Mapping[str, Any]], dict[str, str]
 ]
 CARPETA_EXPERIMENTOS = "experimentos"
+
+
+def ruta_en_registro(carpeta: Path, raiz: Path) -> str:
+    """Ruta que se guarda en el registro: relativa a la raíz si está dentro, si no absoluta.
+
+    Se comparan las rutas resueltas: en Windows, la carpeta temporal puede llegar con
+    el nombre corto (``JORGE_~1``) y la de trabajo con el largo, y sin resolver no
+    parecerían la misma carpeta (F3.4).
+    """
+    resuelta = carpeta.resolve()
+    try:
+        return resuelta.relative_to(raiz.resolve()).as_posix()
+    except ValueError:
+        return resuelta.as_posix()
 
 
 def configuraciones_congeladas(repositorio: RepositorioRegistros) -> Mapping[str, str]:
@@ -156,6 +197,9 @@ class ServicioExperimentos(ServicioCasosDeUso):
         entrenar_familia: EntrenarFamilia,
         guardar_corrida: GuardarCorrida,
         leer_predicciones: LeerPredicciones,
+        ajustar_final: AjustarFinal,
+        guardar_modelo_final: GuardarModeloFinal,
+        leer_modelo: Callable[[Path, str], object],
     ) -> None:
         self._raiz = raiz
         self._repositorio = repositorio
@@ -172,6 +216,9 @@ class ServicioExperimentos(ServicioCasosDeUso):
         self._entrenar_familia = entrenar_familia
         self._guardar_corrida = guardar_corrida
         self._leer_predicciones = leer_predicciones
+        self._ajustar_final = ajustar_final
+        self._guardar_modelo_final = guardar_modelo_final
+        self._leer_modelo = leer_modelo
 
     def _ruta(self, archivo: Path | None, por_omision: Path) -> Path:
         if archivo is None:
@@ -411,6 +458,192 @@ class ServicioExperimentos(ServicioCasosDeUso):
             identificador_registro=guardado.contenido["identificador"],
         )
 
+    def seleccionar(self, solicitud: SolicitudSeleccionar) -> ResultadoSeleccion:
+        """Modelo representativo y umbral de cada escenario, solo con desarrollo (F3.4).
+
+        Para cada escenario se comparan las cinco familias con la métrica de la regla
+        (DP-10) sobre sus probabilidades de validación; el umbral se elige con las del
+        modelo seleccionado (DP-06; RF-M4-07, RF-M4-08). Nunca se lee la prueba. El
+        modelo final se guarda y la selección queda en el registro (exploratoria), con
+        la configuración lista para congelar.
+
+        Raises:
+            ConfiguracionInvalida: si a algún escenario le falta una corrida de alguna
+                familia con esta configuración y este archivo, o un archivo cambió.
+        """
+        experimentos, historial, preparacion, ficticias = self._preparar(solicitud)
+        matrices = _seleccionar_escenarios(preparacion, solicitud.seleccion_escenarios)
+        repositorio = self._repositorio(self._archivo_registro())
+        regla = experimentos.seleccion
+        funcion = experimentos.metricas.funcion(regla.metrica)
+        escenarios = []
+        for matriz in matrices:
+            corridas = _corridas_por_familia(
+                repositorio, experimentos.nombre, historial.huella_fuente.valor, matriz.escenario
+            )
+            predicciones = {
+                familia: self._leer_predicciones(
+                    self._raiz / c["resultados"]["carpeta"],
+                    c["resultados"]["huellas_archivos"]["predicciones.csv"],
+                )
+                for familia, c in corridas.items()
+            }
+            valores = {
+                familia: funcion(
+                    t["objetivo"].to_numpy(dtype="int64"),
+                    t["probabilidad"].to_numpy(dtype="float64"),
+                )
+                for familia, t in predicciones.items()
+            }
+            elegida = seleccionar_familia(valores, regla)
+            validacion = predicciones[elegida]
+            umbral = elegir_umbral(
+                validacion["objetivo"].to_numpy(dtype="int64"),
+                validacion["probabilidad"].to_numpy(dtype="float64"),
+                experimentos.umbral,
+                experimentos.metricas.q,
+            )
+            escenarios.append(
+                self._modelo_final(
+                    experimentos,
+                    historial,
+                    preparacion,
+                    matriz,
+                    Familia(elegida),
+                    corridas[elegida],
+                    regla.reentrenamiento,
+                    valores,
+                    umbral,
+                )
+            )
+        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
+            lambda: {"escenarios": [e.model_dump() for e in escenarios]},
+            modo=ModoExperimento.EXPLORATORIO,
+            configuracion={
+                "tipo": "seleccion_desarrollo",
+                "configuracion_experimentos": experimentos.nombre,
+                "configuraciones_ficticias": ficticias,
+                "huella_fuente": historial.huella_fuente.valor,
+                "seleccion": {
+                    "metrica": regla.metrica.value,
+                    "margen": regla.margen,
+                    "orden_familias": list(regla.orden_familias),
+                    "reentrenamiento": regla.reentrenamiento.value,
+                },
+                "umbral": {
+                    "regla": experimentos.umbral.regla.value,
+                    "valor": experimentos.umbral.valor,
+                    "q": experimentos.metricas.q,
+                },
+            },
+            semillas={"modelos": experimentos.semilla},
+            huella_datos=historial.huella_dataset.valor,
+            version_protocolo=None,
+        )
+        return ResultadoSeleccion(
+            configuracion_experimentos=experimentos.nombre,
+            configuraciones_ficticias=ficticias,
+            escenarios=tuple(escenarios),
+            identificador_registro=guardado.contenido["identificador"],
+        )
+
+    def _modelo_final(
+        self,
+        experimentos: ConfiguracionExperimentos,
+        historial: HistorialPreparado,
+        preparacion: PreparacionDesarrollo,
+        matriz: MatrizEscenario,
+        familia: Familia,
+        corrida: Mapping[str, Any],
+        reentrenamiento: Reentrenamiento,
+        valores: Mapping[str, float],
+        umbral: float,
+    ) -> SeleccionEscenarioResumen:
+        modelo_familia = experimentos.modelos[familia]
+        perfil = experimentos.perfiles[modelo_familia.perfil]
+        cohortes = preparacion.cohortes_desarrollo
+        if reentrenamiento is Reentrenamiento.TODO_DESARROLLO:
+            ultima = (cohortes[-1],)
+            ajuste = _posiciones(matriz, cohortes[:-1])
+            final = self._ajustar_final(
+                familia,
+                perfil,
+                combinaciones_a_evaluar(
+                    modelo_familia, experimentos.busqueda, experimentos.semilla
+                ),
+                experimentos.busqueda,
+                experimentos.desbalance,
+                experimentos.calibracion,
+                experimentos.semilla,
+                matriz.predictores,
+                matriz.objetivo,
+                ajuste,
+                _posiciones(matriz, ultima),
+            )
+            modelo, combinacion, usadas = final.modelo, dict(final.combinacion), cohortes
+        else:
+            ultimo = corrida["resultados"]["folds"][-1]
+            numero = ultimo["numero"]
+            carpeta_corrida = self._raiz / corrida["resultados"]["carpeta"]
+            nombre = f"modelo_fold_{numero}.joblib"
+            modelo = self._leer_modelo(
+                carpeta_corrida / nombre, corrida["resultados"]["huellas_archivos"][nombre]
+            )
+            combinacion = dict(ultimo["combinacion"])
+            fold = preparacion.folds[-1]
+            usadas = (*fold.ajuste, *fold.calibracion)
+        configuracion = {
+            "escenario": matriz.escenario,
+            "algoritmo": familia.value,
+            "hiperparametros": combinacion,
+            "preprocesamiento": {
+                "perfil": perfil.nombre,
+                "imputacion_numerica": perfil.imputacion_numerica.value,
+                "indicador_faltante": perfil.indicador_faltante,
+                "escalado": perfil.escalado.value,
+                "imputacion_categorica": perfil.imputacion_categorica.value,
+            },
+            "variables": [str(c) for c in matriz.predictores.columns],
+            "umbral": umbral,
+            "calibracion": {"metodo": experimentos.calibracion.value},
+            "semilla": experimentos.semilla,
+        }
+        clave = _huella_json({**configuracion, "huella_fuente": historial.huella_fuente.valor})
+        nombre_carpeta = f"{matriz.escenario.replace('|', '_').replace('+', '')}-{familia.value}"
+        carpeta = self._carpeta_trabajo() / CARPETA_SELECCION / f"{nombre_carpeta}-{clave[:12]}"
+        relativa = ruta_en_registro(carpeta, self._raiz)
+        if carpeta.exists():
+            huella_modelo = json.loads((carpeta / "manifiesto.json").read_text(encoding="utf-8"))[
+                "huella_modelo"
+            ]
+        else:
+            huella_modelo = self._guardar_modelo_final(
+                carpeta,
+                modelo,
+                {"configuracion": configuracion, "corrida": corrida["identificador"]},
+            )
+        configuracion["datos_reentrenamiento"] = json.dumps(
+            {
+                "reentrenamiento": reentrenamiento.value,
+                "cohortes": list(usadas),
+                "huella_fuente": historial.huella_fuente.valor,
+                "modelo": f"{relativa}/modelo_final.joblib",
+                "huella_modelo": huella_modelo,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        return SeleccionEscenarioResumen(
+            escenario=matriz.escenario,
+            familia=familia.value,
+            metrica=experimentos.seleccion.metrica.value,
+            valores=dict(valores),
+            umbral=umbral,
+            reentrenamiento=reentrenamiento.value,
+            carpeta=relativa,
+            configuracion_candidata=configuracion,
+        )
+
     def _corrida(
         self,
         registrador: RegistradorCorridas,
@@ -510,9 +743,7 @@ class ServicioExperimentos(ServicioCasosDeUso):
                     _resumen_fold(matriz, f, r) for f, r in zip(folds, resultados, strict=True)
                 ],
                 "configuraciones_evaluadas": sum(r.configuraciones_evaluadas for r in resultados),
-                "carpeta": carpeta.relative_to(self._raiz).as_posix()
-                if carpeta.is_relative_to(self._raiz)
-                else carpeta.name,
+                "carpeta": ruta_en_registro(carpeta, self._raiz),
                 "huellas_archivos": huellas,
             }
 
@@ -742,3 +973,33 @@ def _corridas_de(
             "Entrene primero con `suficiencia experimentos entrenar` y la misma configuración.",
         )
     return elegidas
+
+
+def _posiciones(matriz: MatrizEscenario, cohortes: tuple[str, ...]) -> tuple[int, ...]:
+    return tuple(int(i) for i in filas_de(matriz, cohortes).to_numpy().nonzero()[0])
+
+
+def _corridas_por_familia(
+    repositorio: RepositorioRegistros, configuracion: str, huella_fuente: str, escenario: str
+) -> dict[str, dict[str, Any]]:
+    """Última corrida exitosa de cada familia del escenario, con esta configuración y archivo."""
+    por_familia: dict[str, dict[str, Any]] = {}
+    for guardado in repositorio.listar(TipoRegistro.EXPERIMENTO):
+        contenido = guardado.contenido
+        datos = contenido.get("configuracion", {})
+        if (
+            contenido.get("estado") == EstadoCorrida.EXITOSA.value
+            and datos.get("tipo") == "entrenamiento_desarrollo"
+            and datos.get("configuracion_experimentos") == configuracion
+            and datos.get("huella_fuente") == huella_fuente
+            and datos.get("escenario") == escenario
+        ):
+            por_familia[datos["familia"]] = contenido
+    faltan = [f.value for f in Familia if f.value not in por_familia]
+    if faltan:
+        raise ConfiguracionInvalida(
+            f"Al escenario {escenario} le faltan corridas exitosas de: {', '.join(faltan)}.",
+            "Entrene las cinco familias con `suficiencia experimentos entrenar` y la misma "
+            "configuración y el mismo archivo antes de seleccionar.",
+        )
+    return por_familia
