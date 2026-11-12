@@ -7,7 +7,7 @@
 | Base | Especificación Fase 1 v0.6 (M4; RF-M4-04, 05, 06, 09, 12 y 13; CU-05, CU-07 y CU-08; PU-04, PU-05, PU-06 y PI-09); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | Jorge pidió construir H2.6 el 4 de noviembre de 2026, después de cerrar H2.D. El equipo aceptó REC-02 el 29 de octubre de 2026; falta la conformidad de la asesoría. Comunicado por Jorge; pendiente de confirmación de Javier |
 | Riesgo aceptado | Si la asesoría pide cambios en REC-02 (protocolo en cuatro etapas), este hito se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; ajuste del 11 de noviembre verificado en Linux, pendiente en Windows; pendiente de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows, con el ajuste del 11 de noviembre; pendiente de aceptación por el equipo** |
 
 ## 1. Qué se construyó
 
@@ -40,7 +40,7 @@ Ninguna.
 | Linux, Python 3.11, instalación limpia desde el bloqueo, sin git | Cinco `OK`; 6 contratos cumplidos; 568 pasan y 1 se omite (sin git) |
 | Windows 11, Python 3.13.0 (4 de noviembre de 2026), sobre el commit `9ae248a` | Cinco `OK`; 6 contratos cumplidos; **569 pasan**. `protocolo demostracion` termina bien y, después, `protocolo ver` confirma que el registro del proyecto no tiene ninguna versión del protocolo |
 | Linux, Python 3.11, con el ajuste del 11 de noviembre (sin git) | Cinco `OK`; 583 pasan y 1 se omite (sin git) |
-| Windows 11, con el ajuste del 11 de noviembre | **Pendiente** |
+| Windows 11, Python 3.13.0, con el ajuste del 11 de noviembre, sobre el commit `05fbed9` | Cinco `OK`; 6 contratos cumplidos; **584 pasan**; la demostración termina bien |
 
 ## 4. Matriz de criterios de aceptación de H2.6
 
@@ -50,7 +50,7 @@ Ninguna.
 | 2 | Un protocolo aprobado no puede editarse | Cumplido | PU-06; control negativo |
 | 3 | La evaluación rechaza una huella distinta | Cumplido | PI-09; control negativo |
 | 4 | Sin criterios reales, métrica primaria ni procedimiento de multiplicidad elegido | Cumplido | Solo el ejemplo ficticio; DP-08f detiene la regla |
-| 5 | Funciona en el sistema de trabajo | Cumplido (versión inicial); **pendiente para el ajuste** | Windows 11: 569 pasan antes del ajuste |
+| 5 | Funciona en el sistema de trabajo | Cumplido | Windows 11: 569 pasan antes del ajuste y 584 después |
 
 ## 5. Limitaciones
 
