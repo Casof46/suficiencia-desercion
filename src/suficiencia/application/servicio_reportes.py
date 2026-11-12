@@ -1,7 +1,8 @@
 """Servicio de trazabilidad y reportes (M6): CU-10.
 
 Desde H2.7: entorno de ejecución, registro de decisiones, consulta, verificación
-de integridad y exportación de los registros (DP-16: SQLite). Los reportes de
+de integridad y exportación de los registros (DP-16: SQLite). Desde H2.8: estado de
+las decisiones DP-01 a DP-20 según el catálogo y el registro. Los reportes de
 experimentos y el reporte comparativo (RF-M6-04, RF-M6-07) llegan cuando existan
 experimentos, en fases posteriores.
 """
@@ -16,10 +17,13 @@ import pandas as pd
 
 from suficiencia.application._base import DefinicionCasoDeUso, ServicioCasosDeUso
 from suficiencia.application.contratos import (
+    DecisionRegistradaResumen,
     EntornoResumen,
+    EstadoDecisionResumen,
     RegistroResumen,
     ResultadoConsultaRegistro,
     ResultadoDemostracion,
+    ResultadoEstadoDecisiones,
     ResultadoExportacion,
     ResultadoIntegridad,
     SolicitudConsultarRegistro,
@@ -31,6 +35,11 @@ from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
 from suficiencia.domain.puertos import CapturadorEntorno, FuenteConfiguracion, RepositorioRegistros
+from suficiencia.domain.trazabilidad.decisiones import (
+    DecisionRegistrada,
+    catalogo_desde_datos,
+    estado_decisiones,
+)
 from suficiencia.domain.trazabilidad.registros import (
     ModoExperimento,
     RegistroAcceso,
@@ -43,6 +52,8 @@ from suficiencia.domain.trazabilidad.registros import (
 ARCHIVO_CONFIGURACION = Path("config") / "proyecto.yaml"
 ARCHIVO_REGISTRO = "registro.sqlite"
 ARCHIVO_DEMOSTRACION = "registro_demostracion.sqlite"
+ARCHIVO_CATALOGO_DECISIONES = Path("config") / "decisiones_metodologicas.yaml"
+CARPETA_FICHAS = Path("docs") / "decisiones"
 
 
 def _resumen(guardado: RegistroGuardado) -> RegistroResumen:
@@ -88,12 +99,14 @@ class ServicioReportes(ServicioCasosDeUso):
         repositorio: Callable[[Path], RepositorioRegistros],
         capturador: Callable[[Path], CapturadorEntorno],
         exportar_tabla: Callable[[pd.DataFrame, Path], Huella],
+        leer_yaml: Callable[[Path], Any],
     ) -> None:
         self._raiz = raiz
         self._fuente_configuracion = fuente_configuracion
         self._repositorio = repositorio
         self._capturador = capturador
         self._exportar_tabla = exportar_tabla
+        self._leer_yaml = leer_yaml
 
     def _configuracion(self) -> ConfiguracionProyecto:
         return self._fuente_configuracion(self._raiz / ARCHIVO_CONFIGURACION).cargar()
@@ -177,6 +190,52 @@ class ServicioReportes(ServicioCasosDeUso):
         tabla = _tabla(registros)
         huella = self._exportar_tabla(tabla, destino)
         return ResultadoExportacion(archivo=str(destino), filas=len(tabla), huella=huella.valor)
+
+    def estado_decisiones(self) -> ResultadoEstadoDecisiones:
+        """Cada decisión DP-01 a DP-20: registrada o abierta, con sus registros y su ficha."""
+        catalogo = catalogo_desde_datos(self._leer_yaml(self._raiz / ARCHIVO_CATALOGO_DECISIONES))
+        archivo = self.archivo_registro()
+        registros = [
+            DecisionRegistrada(
+                codigo=g.contenido["codigo"],
+                fecha=g.fecha,
+                decision=g.contenido["decision"],
+                responsable=g.contenido["responsable"],
+                observaciones=g.contenido.get("observaciones"),
+            )
+            for g in self._repositorio(archivo).listar(TipoRegistro.DECISION)
+        ]
+        estados = estado_decisiones(catalogo, registros)
+        resumenes = []
+        for estado in estados:
+            ficha = self._raiz / CARPETA_FICHAS / f"{estado.catalogada.codigo}.md"
+            resumenes.append(
+                EstadoDecisionResumen(
+                    codigo=estado.catalogada.codigo,
+                    nombre=estado.catalogada.nombre,
+                    decide=estado.catalogada.decide,
+                    resolver_antes_de=estado.catalogada.resolver_antes_de,
+                    registrada=estado.registrada,
+                    registros=tuple(
+                        DecisionRegistradaResumen(
+                            codigo=r.codigo,
+                            fecha=r.fecha,
+                            decision=r.decision,
+                            responsable=r.responsable,
+                            observaciones=r.observaciones,
+                        )
+                        for r in estado.registros
+                    ),
+                    ficha=(CARPETA_FICHAS / ficha.name).as_posix() if ficha.is_file() else None,
+                )
+            )
+        registradas = sum(e.registrada for e in estados)
+        return ResultadoEstadoDecisiones(
+            archivo_registro=str(archivo),
+            decisiones=tuple(resumenes),
+            registradas=registradas,
+            abiertas=len(estados) - registradas,
+        )
 
     def demostracion(self) -> ResultadoDemostracion:
         """Registra dos corridas simuladas, una exitosa y una fallida, en un registro aparte.

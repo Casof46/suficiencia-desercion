@@ -16,4 +16,4 @@ Las pruebas trabajan en una copia temporal del proyecto y no escriben en `worksp
 
 Resultado esperado: cinco `OK`; **486 pasan** (470 anteriores + 16 nuevas).
 
-Primer intento en Windows: 11 pruebas del visor fallaron porque el bloqueo de red impedía a asyncio crear su par de sockets local. Se corrigió con D-99.
+Primer intento en Windows: 11 pruebas del visor fallaron porque el bloqueo de red impedía a asyncio crear su par de sockets local. Se corrigió con D-99; después pasaron los 486 en Windows 11 con Python 3.13.0.

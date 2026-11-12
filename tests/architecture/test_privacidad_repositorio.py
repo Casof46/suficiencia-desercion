@@ -78,6 +78,8 @@ DEBEN_VERSIONARSE = [
     "scripts/verificar.py",
     ".vscode/settings.json",
     ".vscode/tasks.json",
+    "config/decisiones_metodologicas.yaml",
+    "tests/acceptance/test_casos_de_uso_sinteticos.py",
 ]
 
 # Extensiones prohibidas entre los archivos versionados de un repositorio real.

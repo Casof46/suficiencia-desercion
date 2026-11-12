@@ -1,0 +1,108 @@
+Instalación limpia en Linux siguiendo el README (Fase 2, H2.8)
+Fecha: 11 de noviembre de 2026. Clon nuevo del repositorio en una carpeta vacía; comandos de la sección "Instalación rápida" (Linux) tal cual.
+
+== python3.12 -m venv .venv
+== pip install lock
+PIP_LOCK=0
+== pip -e
+== verificar.py
+Python 3.12.3 en <carpeta del clon>/.venv/bin/python
+
+=== Estilo y errores comunes (ruff check) ===
+All checks passed!
+
+=== Formato (ruff format --check) ===
+129 files already formatted
+
+=== Tipos (mypy) ===
+Success: no issues found in 91 source files
+
+=== Contratos de capas (import-linter) ===
+
+╔══╗─────────▶╔╗ ╔╗      ╔╗◀───┐
+╚╣╠╝◀─────┐  ╔╝╚╗║║────▶╔╝╚╗   │
+ ║║   ╔══╦══╦╩╗╔╝║║  ╔╦═╩╗╔╝╔═╦══╗
+ ║║╔══╣╔╗║╔╗║╔╣║ ║║ ╔╬╣╔╗║║ ║│║╔═╝
+╔╣╠╣║║║╚╝║╚╝║║║╚╗║╚═╝║║║║║╚╗║═╣║
+╚══╩╩╩╣╔═╩══╩╝╚═╝╚═══╩╩╝╚╩═╩╩═╩╝
+  └──▶║║                    ▲ 
+      ╚╝────────────────────┘
+
+
+---------
+Contracts
+---------
+
+Analyzed 87 files, 375 dependencies.
+------------------------------------
+
+Capas: ui > application > (experimentation | persistence) > domain KEPT
+La interfaz solo usa la capa de aplicacion (RF-UI-02) KEPT
+El dominio no usa interfaz, aprendizaje automatico ni almacenamiento (RNF-01) KEPT
+Ninguna capa salvo la interfaz importa Streamlit o Plotly (RNF-01) KEPT
+La linea de comandos solo usa la capa de aplicacion (RNF-02, PA-02) KEPT
+Ninguna capa importa la linea de comandos KEPT
+
+Contracts: 6 kept, 0 broken.
+
+=== Pruebas (pytest) ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.7.0
+rootdir: <carpeta del clon>
+configfile: pyproject.toml
+testpaths: tests
+plugins: hypothesis-6.170.13, anyio-4.15.1
+collected 600 items
+
+tests/acceptance/test_casos_de_uso_sinteticos.py ......                  [  1%]
+tests/architecture/test_alcance_h2_0.py .....                            [  1%]
+tests/architecture/test_contratos_capas.py ......................        [  5%]
+tests/architecture/test_entorno_vscode.py ......                         [  6%]
+tests/architecture/test_linea_de_comandos.py ..........................  [ 10%]
+tests/architecture/test_privacidad_repositorio.py ...................... [ 14%]
+...................................                                      [ 20%]
+tests/architecture/test_sin_criterio_por_defecto.py .............        [ 22%]
+tests/integration/test_objetivo_servicio.py .......                      [ 23%]
+tests/integration/test_poblaciones_servicio.py ......                    [ 24%]
+tests/integration/test_protocolo_servicio.py .......                     [ 25%]
+tests/integration/test_registro_trazabilidad.py ..............           [ 28%]
+tests/integration/test_visor.py .............                            [ 30%]
+tests/unit/test_configuracion.py ................                        [ 33%]
+tests/unit/test_datos_sinteticos.py ..........................           [ 37%]
+tests/unit/test_decisiones.py ........                                   [ 38%]
+tests/unit/test_diccionario.py .................................         [ 44%]
+tests/unit/test_errores_y_huella.py ...................                  [ 47%]
+tests/unit/test_escenarios.py ..........................                 [ 51%]
+tests/unit/test_escenarios_yaml.py ...................                   [ 54%]
+tests/unit/test_objetivo.py ............................................ [ 62%]
+........................................................                 [ 71%]
+tests/unit/test_paquete.py .........                                     [ 73%]
+tests/unit/test_poblaciones.py ...............................           [ 78%]
+tests/unit/test_protocolo.py .........................                   [ 82%]
+tests/unit/test_script_generar_sintetico.py ..                           [ 82%]
+tests/unit/test_servicios_aplicacion.py ................................ [ 88%]
+.                                                                        [ 88%]
+tests/unit/test_sin_red.py ....                                          [ 88%]
+tests/unit/test_suficiencia.py ......................................... [ 95%]
+....                                                                     [ 96%]
+tests/unit/test_trazabilidad.py ......................                   [100%]
+
+=============================== warnings summary ===============================
+tests/integration/test_visor.py::test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra
+tests/integration/test_visor.py::test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra
+tests/integration/test_visor.py::test_el_registro_muestra_el_intento_rechazado
+tests/integration/test_visor.py::test_el_registro_muestra_el_intento_rechazado
+  <carpeta del clon>/.venv/lib/python3.12/site-packages/streamlit/elements/lib/built_in_chart_utils.py:620: Pandas4Warning: The inplace keyword in DataFrame.reset_index is deprecated and will be removed in a future version (PDEP-8).
+  See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+    df.reset_index(inplace=True)  # noqa: PD002
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 600 passed, 4 warnings in 29.24s =======================
+
+=== Resumen ===
+OK     Estilo y errores comunes (ruff check)
+OK     Formato (ruff format --check)
+OK     Tipos (mypy)
+OK     Contratos de capas (import-linter)
+OK     Pruebas (pytest)
+VERIFICAR=0

@@ -24,6 +24,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia registro verificar
     suficiencia registro exportar TIPO --salida RUTA
     suficiencia registro demostracion
+    suficiencia decisiones
     suficiencia protocolo borrador ARCHIVO [--version N]
     suficiencia protocolo aprobar VERSION --huella H --responsable T
                                   [--desviacion T --justificacion T]
@@ -62,6 +63,7 @@ from suficiencia.application.contratos import (
     ResultadoDemostracionProtocolo,
     ResultadoDiccionario,
     ResultadoEscenarios,
+    ResultadoEstadoDecisiones,
     ResultadoImportacion,
     ResultadoIntegridad,
     ResultadoObjetivo,
@@ -318,6 +320,10 @@ def construir_analizador() -> argparse.ArgumentParser:
     acciones_registro.add_parser(
         "demostracion",
         help="Registra una corrida simulada exitosa y otra fallida en un registro aparte.",
+    )
+    comandos.add_parser(
+        "decisiones",
+        help="Estado de las decisiones DP-01 a DP-20: registradas o abiertas (H2.8).",
     )
     protocolo = comandos.add_parser(
         "protocolo", help="Protocolo confirmatorio: borradores, aprobación y desviaciones (H2.6)."
@@ -782,6 +788,9 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         return _ejecutar_registro(argumentos, servicios)
     if argumentos.comando == "protocolo":
         return _ejecutar_protocolo(argumentos, servicios)
+    if argumentos.comando == "decisiones":
+        _mostrar_decisiones(servicios.reportes.estado_decisiones(), sys.stdout)
+        return SALIDA_CORRECTA
     solicitud = SolicitudCasoDeUso(codigo=argumentos.caso)
     servicios.servicio_de(solicitud.codigo).ejecutar(solicitud)
 
@@ -870,6 +879,45 @@ def _ejecutar_registro(argumentos: argparse.Namespace, servicios: Servicios) -> 
     for registro in demostracion.registros:
         print(f"  n.º {registro.numero}  {_resumen_registro(registro)}")
     return SALIDA_CORRECTA
+
+
+def _mostrar_decisiones(resultado: ResultadoEstadoDecisiones, salida: TextIO) -> None:
+    print(f"Registro: {resultado.archivo_registro}", file=salida)
+    print(
+        f"Decisiones registradas: {resultado.registradas} de {len(resultado.decisiones)}; "
+        f"abiertas: {resultado.abiertas}.",
+        file=salida,
+    )
+    for decision in resultado.decisiones:
+        estado = "REGISTRADA" if decision.registrada else "abierta   "
+        print(f"\n  {decision.codigo}  {estado}  {decision.nombre}", file=salida)
+        print(
+            f"      Decide: {decision.decide}. Resolver antes de: {decision.resolver_antes_de}",
+            file=salida,
+        )
+        for registro in decision.registros:
+            tipo = (
+                "Registro" if registro.codigo == decision.codigo else f"Subcódigo {registro.codigo}"
+            )
+            texto = (
+                f"      {tipo} ({registro.fecha[:10]}, {registro.responsable}): {registro.decision}"
+            )
+            if registro.observaciones:
+                texto += f" [{registro.observaciones}]"
+            print(texto, file=salida)
+        if decision.ficha:
+            print(f"      Ficha: {decision.ficha}", file=salida)
+            if not decision.registrada:
+                print(
+                    "      Hay ficha pero no está en el registro: regístrela con "
+                    "`suficiencia registro decision`.",
+                    file=salida,
+                )
+    print(
+        "\nUna decisión con subcódigos registrados sigue abierta mientras su código completo "
+        "no esté registrado.",
+        file=salida,
+    )
 
 
 def _mostrar_protocolo(resultado: ResultadoConsultaProtocolo, salida: TextIO) -> None:

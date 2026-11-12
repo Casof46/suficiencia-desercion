@@ -1,0 +1,87 @@
+# Catálogo de las decisiones metodológicas DP-01 a DP-20 (sección 12 de la
+# especificación v0.6). Solo nombra cada decisión, quién decide y antes de qué debe
+# resolverse: NO contiene ninguna decisión ni valor. El estado de cada una (abierta o
+# registrada) sale del registro de decisiones (`suficiencia registro decision`).
+version_catalogo: 1
+fuente: "Especificación Fase 1 v0.6, sección 12"
+decisiones:
+  - codigo: DP-01
+    nombre: "Definición operativa de deserción"
+    decide: "Institución aporta reglas y datos; equipo y asesoría aprueban"
+    resolver_antes_de: "CU-03"
+  - codigo: DP-02
+    nombre: "Fuente, alcance y autorización de uso de los datos"
+    decide: "Institución + asesoría"
+    resolver_antes_de: "CU-01"
+  - codigo: DP-03
+    nombre: "Bloque y ventana mínima de cada variable"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-02"
+  - codigo: DP-04
+    nombre: "Diseño principal de población (D1, D2 o D3)"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-04"
+  - codigo: DP-05
+    nombre: "Partición cronológica y plan de contingencia"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-04"
+  - codigo: DP-06
+    nombre: "Desbalance y regla del umbral"
+    decide: "Equipo"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-07
+    nombre: "Validación interna, búsqueda de hiperparámetros y presupuesto"
+    decide: "Equipo"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-08
+    nombre: "Criterios de suficiencia"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05 (antes de todo experimento confirmatorio); DP-08h, antes de CU-04"
+  - codigo: DP-09
+    nombre: "Brier Score y calibración"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-10
+    nombre: "Selección del modelo representativo"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-11
+    nombre: "Alcance de la interpretabilidad"
+    decide: "Equipo"
+    resolver_antes_de: "CU-09"
+  - codigo: DP-12
+    nombre: "Tratamiento de faltantes"
+    decide: "Equipo"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-13
+    nombre: "Análisis de equidad por subgrupos"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05 si entra en el criterio; si no, los reportes finales"
+  - codigo: DP-14
+    nombre: "Seudonimización o anonimización y custodia"
+    decide: "Institución + equipo"
+    resolver_antes_de: "CU-01"
+  - codigo: DP-15
+    nombre: "Formato de entrada de los datos"
+    decide: "Equipo, según lo que entregue la institución"
+    resolver_antes_de: "Implementación de M1"
+  - codigo: DP-16
+    nombre: "SQLite para el registro de experimentos"
+    decide: "Equipo"
+    resolver_antes_de: "Implementación de M6"
+  - codigo: DP-17
+    nombre: "Análisis complementario de población (D2, D3)"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-18
+    nombre: "Tratamiento de los casos no etiquetables"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-03"
+  - codigo: DP-19
+    nombre: "Configuración de referencia R0 y controles"
+    decide: "Equipo + asesoría; la institución informa si existe una ventana de decisión vigente"
+    resolver_antes_de: "CU-05"
+  - codigo: DP-20
+    nombre: "Protocolo de la evaluación comparativa"
+    decide: "Equipo + asesoría"
+    resolver_antes_de: "CU-05"

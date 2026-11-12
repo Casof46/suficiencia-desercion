@@ -7,7 +7,7 @@
 | Base | Especificación Fase 1 v0.6 (M4; RF-M4-04, 05, 06, 09, 12 y 13; CU-05, CU-07 y CU-08; PU-04, PU-05, PU-06 y PI-09); plan de la Fase 2 (paquete de cierre, sección E) |
 | Autorización | Jorge pidió construir H2.6 el 4 de noviembre de 2026, después de cerrar H2.D. El equipo aceptó REC-02 el 29 de octubre de 2026; falta la conformidad de la asesoría. Comunicado por Jorge; pendiente de confirmación de Javier |
 | Riesgo aceptado | Si la asesoría pide cambios en REC-02 (protocolo en cuatro etapas), este hito se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows, con el ajuste del 11 de noviembre; pendiente de aceptación por el equipo** |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows, con el ajuste del 11 de noviembre; versionado en git y en GitHub (commits `05fbed9` y `b4f3c1e`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). REC-02 sigue pendiente de la conformidad de la asesoría (ver "Riesgo aceptado") |
 
 ## 1. Qué se construyó
 

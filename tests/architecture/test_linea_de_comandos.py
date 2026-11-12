@@ -359,6 +359,7 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
         "main(['--raiz', proyecto, 'poblaciones', 'leer-prueba', str(carpeta), '--motivo', 'm'])\n"
         "protocolo = ejemplos_dir + 'protocolo_ficticio.yaml'\n"
         "main(['--raiz', raiz, 'protocolo', 'demostracion', '--protocolo', protocolo])\n"
+        "main(['--raiz', raiz, 'decisiones'])\n"
         "main(['--raiz', proyecto, 'protocolo', 'borrador', protocolo])\n"
         "main(['--raiz', proyecto, 'protocolo', 'ver'])\n"
         "main(['--raiz', proyecto, 'registro', 'ver', 'protocolos'])\n"
@@ -388,6 +389,7 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "omitida hasta el sellado" in salida
     assert "SELLADA: solo se informa el tamaño" in salida
     assert "DEMOSTRACIÓN: protocolo FICTICIO" in salida
+    assert " de 20; abiertas: " in salida
     assert "empate_sin_resolver" in salida
     assert "[EJEMPLO FICTICIO" in salida
     assert "borrador de la versión 1" in salida

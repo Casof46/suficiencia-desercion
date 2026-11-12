@@ -553,3 +553,31 @@ class ResultadoDemostracionProtocolo(Contrato):
     huella_protocolo: str
     casos: tuple[CasoReglaDemostracion, ...]
     pasos: tuple[PasoDemostracion, ...]
+
+
+# --- H2.8: estado de las decisiones ---------------------------------------------
+
+
+class DecisionRegistradaResumen(Contrato):
+    codigo: str
+    fecha: str
+    decision: str
+    responsable: str
+    observaciones: str | None
+
+
+class EstadoDecisionResumen(Contrato):
+    codigo: str
+    nombre: str
+    decide: str
+    resolver_antes_de: str
+    registrada: bool
+    registros: tuple[DecisionRegistradaResumen, ...]
+    ficha: str | None = Field(description="Ficha en docs/decisiones/, si existe.")
+
+
+class ResultadoEstadoDecisiones(Contrato):
+    archivo_registro: str
+    decisiones: tuple[EstadoDecisionResumen, ...]
+    registradas: int
+    abiertas: int

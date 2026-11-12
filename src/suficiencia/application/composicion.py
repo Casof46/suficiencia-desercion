@@ -107,6 +107,7 @@ def crear_servicios(raiz: Path) -> Servicios:
         repositorio=RepositorioSqlite,
         capturador=CapturadorEntornoLocal,
         exportar_tabla=_exportar,
+        leer_yaml=leer_yaml,
     )
     escenarios = ServicioEscenarios(
         raiz=raiz,
