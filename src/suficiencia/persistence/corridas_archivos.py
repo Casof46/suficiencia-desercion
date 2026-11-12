@@ -159,6 +159,40 @@ def guardar_predicciones_prueba(
     return resultado
 
 
+def guardar_explicaciones(
+    carpeta: Path, tablas: Mapping[str, pd.DataFrame]
+) -> dict[str, dict[str, str]]:
+    """Guarda las tablas de una explicación (F3.6): ``<nombre>.csv`` por cada tabla.
+
+    Devuelve, por nombre, el archivo (relativo a ``carpeta``) y su huella, que quedan
+    en el registro (PI-13).
+
+    Raises:
+        ConfiguracionInvalida: si la carpeta ya existe o un nombre no es válido.
+    """
+    if carpeta.exists():
+        raise ConfiguracionInvalida(
+            f"La carpeta de la explicación ya existe: {carpeta.name}.",
+            "No se sobrescribe; repita la explicación más tarde.",
+        )
+    invalidos = [n for n in tablas if not n or not all(c.isalnum() or c == "_" for c in n)]
+    if invalidos:
+        raise ConfiguracionInvalida(
+            f"Nombres de tabla no válidos: {', '.join(invalidos)}.",
+            "Es un defecto del programa; informe el caso.",
+        )
+    carpeta.mkdir(parents=True)
+    resultado = {}
+    for nombre, tabla in tablas.items():
+        archivo = carpeta / f"{nombre}.csv"
+        tabla.to_csv(archivo, index=False, encoding="utf-8", lineterminator="\n")
+        resultado[nombre] = {
+            "archivo": archivo.name,
+            "huella": Huella.de_bytes(archivo.read_bytes()).valor,
+        }
+    return resultado
+
+
 def leer_csv_verificado(archivo: Path, huella_esperada: str) -> pd.DataFrame:
     """Lee un CSV guardado por el programa después de comprobar su huella (F3.5).
 

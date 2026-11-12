@@ -39,7 +39,7 @@ suficiencia-desercion/
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
 │   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
 │   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5); matrices.py (F3.1)
-│   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6); metricas.py (F3.3); seleccion.py (F3.4); comparacion.py (F3.5)
+│   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6); metricas.py (F3.3); seleccion.py (F3.4); comparacion.py (F3.5); interpretabilidad.py (F3.6)
 │   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1); familias, búsqueda, desbalance y calibración (F3.2)
 │   ├── application/
 │   │   ├── contratos.py        # contratos pydantic de entrada y salida (RNF-14)
@@ -48,10 +48,10 @@ suficiencia-desercion/
 │   │   ├── demostracion_objetivo.py # historiales FICTICIOS para `objetivo demostracion`; H2.4
 │   │   ├── demostracion_protocolo.py # ciclo del protocolo FICTICIO en un registro temporal; H2.6
 │   │   ├── preparacion_desarrollo.py # matrices y folds solo con desarrollo; F3.1
-│   │   ├── demostracion_final.py # selección, congelamiento y evaluación final FICTICIOS en un proyecto temporal; F3.4
+│   │   ├── demostracion_final.py # selección, congelamiento, evaluación final, comparación y explicaciones FICTICIOS en un proyecto temporal; F3.4 a F3.6
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
-│   ├── experimentation/        # pipelines.py: preprocesamiento por fold (F3.1); modelos.py: las cinco familias (F3.2)
+│   ├── experimentation/        # pipelines.py: preprocesamiento por fold (F3.1); modelos.py: las cinco familias (F3.2); explicadores.py: SHAP y LIME (F3.6)
 │   ├── persistence/
 │   │   ├── configuracion.py    # lector de config/proyecto.yaml; implementa FuenteConfiguracion
 │   │   ├── escenarios_yaml.py  # lector de config/escenarios.yaml y de variables; H2.2
@@ -61,7 +61,7 @@ suficiencia-desercion/
 │   │   ├── objetivo_yaml.py    # lector de la definición del objetivo (DP-01, DP-18); H2.4
 │   │   ├── poblaciones_yaml.py # lector de ventanas, diseños y partición (DP-01d, DP-04, DP-05, DP-17); H2.5
 │   │   ├── experimentos_yaml.py # lector de la configuración de experimentos (DP-03, DP-07, DP-12); F3.1
-│   │   ├── corridas_archivos.py # predicciones, modelos y manifiesto de cada corrida en workspace/experimentos/; F3.2
+│   │   ├── corridas_archivos.py # predicciones, modelos y manifiesto de cada corrida en workspace/experimentos/; F3.2; tablas de explicaciones en workspace/explicaciones/; F3.6
 │   │   ├── particion_archivos.py # índices de la partición en workspace/particiones/; H2.5
 │   │   ├── protocolo_yaml.py   # lector YAML del protocolo y de configuraciones para congelar; H2.6
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6

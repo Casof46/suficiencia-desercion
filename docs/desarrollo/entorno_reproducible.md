@@ -117,6 +117,7 @@ uv pip compile pyproject.toml --extra dev --extra ui --universal --generate-hash
 | `py` no se reconoce (Windows) | Python instalado sin el lanzador | Usar la ruta completa de `python.exe` o reinstalar con el lanzador |
 | Una prueba de privacidad aparece como omitida (`SKIPPED`) | git no instalado, o la carpeta aún no es un repositorio | Instalar git, o ejecutar `git init` y volver a probar |
 | `ModuleNotFoundError: suficiencia` | No se ejecutó la instalación editable | Repetir el paso 3 de la sección 2 |
+| La instalación se detiene en `Building wheel for lime` o falla sin conexión | LIME solo se publica como código fuente: pip lo convierte en paquete al instalar y descarga para eso su herramienta de construcción (F3.6, D-174) | Repetir el paso 2 con conexión a internet |
 
 ## 6. Qué no hace este entorno (H2.0)
 

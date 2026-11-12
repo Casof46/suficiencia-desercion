@@ -101,6 +101,32 @@ ARCHIVO_ESCENARIOS = Path("config") / "escenarios.yaml"
 CARPETA_EVALUACION = "evaluacion_final"
 
 
+def evaluacion_final_registrada(
+    repositorio: RepositorioRegistros, identificador: str
+) -> dict[str, Any]:
+    """El contenido de una evaluación final exitosa del registro.
+
+    Raises:
+        ConfiguracionInvalida: si no existe.
+    """
+    evaluacion = next(
+        (
+            g.contenido
+            for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+            if g.contenido["identificador"] == identificador
+            and g.contenido["configuracion"].get("tipo") == "evaluacion_final"
+            and g.contenido["estado"] == "exitosa"
+        ),
+        None,
+    )
+    if evaluacion is None:
+        raise ConfiguracionInvalida(
+            f"No hay una evaluación final exitosa con el identificador {identificador}.",
+            "Indique el identificador que mostró `suficiencia evaluacion final`.",
+        )
+    return evaluacion
+
+
 class EvaluacionFinalRepetida(ErrorSuficiencia):
     """La prueba de esta partición ya se abrió para una evaluación final (RF-M4-09)."""
 
@@ -201,21 +227,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
             ConfiguracionInvalida: si la evaluación no existe o un archivo cambió.
         """
         repositorio = self._repositorio(self._archivo_registro())
-        evaluacion = next(
-            (
-                g.contenido
-                for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
-                if g.contenido["identificador"] == solicitud.evaluacion
-                and g.contenido["configuracion"].get("tipo") == "evaluacion_final"
-                and g.contenido["estado"] == "exitosa"
-            ),
-            None,
-        )
-        if evaluacion is None:
-            raise ConfiguracionInvalida(
-                f"No hay una evaluación final exitosa con el identificador {solicitud.evaluacion}.",
-                "Indique el identificador que mostró `suficiencia evaluacion final`.",
-            )
+        evaluacion = evaluacion_final_registrada(repositorio, solicitud.evaluacion)
         version = int(evaluacion["version_protocolo"])
         exigir_vigente(historial_protocolo(repositorio), str(version), "La evaluación comparativa")
         accesos_antes = len(repositorio.listar(TipoRegistro.ACCESO))

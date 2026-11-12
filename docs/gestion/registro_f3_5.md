@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 3 (sección 2, F3.5); especificación Fase 1 v0.6 (RF-M4-15 a 21; CU-12; CMP-1 a CMP-4; C1 a C8; PU-22 a PU-27; PI-15; DP-19, DP-20) |
 | Autorización | El equipo aceptó F3.4 y pidió empezar F3.5 el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 | Riesgo aceptado | Si la asesoría cambia el diseño comparativo, la comparación se ajusta; todo valor está parametrizado |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows.** Pendiente: commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `a6e1d90`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -57,5 +57,5 @@ Ninguna DP-xx se resolvió. DP-19 y DP-20 entran como datos obligatorios.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 12 de noviembre de 2026 | Acepta F3.5 y pide empezar F3.6 |

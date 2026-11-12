@@ -34,6 +34,8 @@ PAQUETES = (
     "scikit-learn",
     "xgboost-cpu",
     "lightgbm",
+    "shap",
+    "lime",
 )
 
 

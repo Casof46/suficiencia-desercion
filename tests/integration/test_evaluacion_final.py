@@ -10,6 +10,8 @@
 - F3.5: R0 y los controles se construyen, congelan y evalúan en el mismo acceso; la
   comparación usa las predicciones guardadas y no abre la prueba (PI-15); sin R0 la
   comparación no es válida (C7).
+- F3.6 (PI-13): las explicaciones solo se generan sobre configuraciones congeladas, con
+  filas de desarrollo, y registran partición, muestras y semilla; no abren la prueba.
 - Demostración completa en un proyecto temporal, sin tocar el registro del proyecto.
 
 Todo es sintético y ficticio: ningún resultado es una conclusión sobre el método.
@@ -38,6 +40,7 @@ from suficiencia.application.contratos import (
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
     SolicitudEvaluacionFinal,
+    SolicitudExplicar,
     SolicitudSeleccionar,
 )
 from suficiencia.application.demostracion_protocolo import _SinAjusteFicticio
@@ -45,7 +48,7 @@ from suficiencia.application.servicio_evaluacion_final import EvaluacionFinalRep
 from suficiencia.application.servicio_experimentos import configuraciones_congeladas
 from suficiencia.application.servicio_protocolo import historial_protocolo
 from suficiencia.cli import SALIDA_CORRECTA, main
-from suficiencia.domain.errores import ConfiguracionInvalida
+from suficiencia.domain.errores import ConfiguracionInvalida, DecisionPendiente
 from suficiencia.domain.escenarios.particion import OPERACION_EVALUACION_FINAL
 from suficiencia.domain.evaluacion.congelamiento import (
     ConfiguracionCongelable,
@@ -341,6 +344,7 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
     assert comparacion.accesos_a_la_prueba == 1
     with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
         servicios.evaluacion_final.comparar(SolicitudComparar(evaluacion="EXP-inexistente"))
+    _explicaciones(proyecto, servicios, resultado, identificadores)
     # RF-M4-09: repetir sin justificación se rechaza antes de abrir la prueba.
     with pytest.raises(EvaluacionFinalRepetida):
         servicios.evaluacion_final.evaluar(solicitud(identificadores), procedimientos)
@@ -364,8 +368,108 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
         archivo.write_bytes(original + b"0")
         with pytest.raises(ConfiguracionInvalida, match="huella"):
             servicios.evaluacion_final.evaluar(solicitud(identificadores, "otra"), procedimientos)
+        with pytest.raises(ConfiguracionInvalida, match="huella"):
+            servicios.interpretabilidad.explicar(
+                SolicitudExplicar(**_comunes(proyecto), evaluacion=resultado.identificador_registro)
+            )
     finally:
         archivo.write_bytes(original)
+
+
+def _explicaciones(
+    proyecto: Path, servicios: Any, evaluacion: Any, identificadores: tuple[str, ...]
+) -> None:
+    """CU-09 y PI-13 sobre la evaluación final recién hecha."""
+    repositorio = servicios.reportes.repositorio()
+    accesos = len(repositorio.listar(TipoRegistro.ACCESO))
+    explicacion = servicios.interpretabilidad.explicar(
+        SolicitudExplicar(**_comunes(proyecto), evaluacion=evaluacion.identificador_registro)
+    )
+    # El ejemplo de DP-11 pide todas las congeladas, con los tres niveles.
+    assert [c.identificador for c in explicacion.configuraciones] == list(identificadores)
+    assert explicacion.niveles == ("global", "bloque", "local")
+    assert len(repositorio.listar(TipoRegistro.ACCESO)) == accesos  # PI-15
+    explicadores = {"lr": "lineal", "rf": "arboles", "xgboost": "arboles"}
+    explicadores |= {"lightgbm": "arboles", "svm": "kernel"}
+    for c in explicacion.configuraciones:
+        assert c.explicador == explicadores[c.algoritmo]  # PU-21
+        assert c.error_aditividad < 1e-5
+        assert c.filas_fondo == 50 and c.filas_explicadas == 100 < c.filas_particion
+        assert set(c.importancia_variables) == set(
+            configuracion_desde_datos(
+                next(
+                    g.contenido["configuracion"]
+                    for g in repositorio.listar(TipoRegistro.CONGELAMIENTO)
+                    if g.contenido["configuracion"]["identificador"] == c.identificador
+                )
+            ).variables
+        )
+        assert sum(c.importancia_bloques.values()) == pytest.approx(
+            sum(c.importancia_variables.values())
+        )
+        assert len(c.locales) == 3 and all(len(r.shap) <= 5 for r in c.locales)
+    registro = next(
+        g.contenido
+        for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+        if g.contenido["identificador"] == explicacion.identificador_registro
+    )
+    # PI-13: partición, muestras y semilla en el registro; modo exploratorio.
+    assert registro["modo"] == "exploratorio" and registro["estado"] == "exitosa"
+    assert registro["configuracion"]["particion"] == "desarrollo"
+    assert registro["semillas"] == {"explicacion": explicacion.semilla}
+    desarrollo = set(
+        yaml.safe_load(
+            (proyecto / EJEMPLOS / "poblaciones_ampliado_ficticio.yaml").read_text(encoding="utf-8")
+        )["particion"]["cohortes_desarrollo"]
+    )
+    for muestra in registro["configuracion"]["muestras"]:
+        assert set(muestra["cohortes"]) <= desarrollo
+        assert muestra["filas_fondo"] == 50 and muestra["registros_locales"] == 3
+        assert muestra["fondo_en_shap"] is (muestra["explicador"] != "arboles")
+    archivos = registro["resultados"]["archivos"]
+    carpeta = proyecto / archivos["carpeta"]
+    locales = pd.read_csv(carpeta / archivos["configuracion_1_locales"]["archivo"])
+    assert set(locales["metodo"]) == {"shap", "lime"}
+    importancias = pd.read_csv(carpeta / archivos["configuracion_1_importancias"]["archivo"])
+    assert set(importancias["nivel"]) == {"variable", "bloque"}
+    # Con la misma semilla, las mismas importancias.
+    otra = servicios.interpretabilidad.explicar(
+        SolicitudExplicar(**_comunes(proyecto), evaluacion=evaluacion.identificador_registro)
+    )
+    assert [c.importancia_variables for c in otra.configuraciones] == [
+        c.importancia_variables for c in explicacion.configuraciones
+    ]
+    # DP-11: solo el escenario suficiente; un null detiene; otro identificador no sirve.
+    datos = _experimentos(Path(__file__).resolve().parents[2])
+    datos["interpretabilidad"]["alcance"] = "escenario_suficiente"
+    (proyecto / "config" / "experimentos_suficiente.yaml").write_text(
+        yaml.safe_dump(datos, allow_unicode=True), encoding="utf-8"
+    )
+    solicitud = SolicitudExplicar(
+        **_comunes(proyecto, "experimentos_suficiente.yaml"),
+        evaluacion=evaluacion.identificador_registro,
+    )
+    if evaluacion.estado_regla == "escenario_suficiente":
+        solo = servicios.interpretabilidad.explicar(solicitud)
+        assert [c.escenario for c in solo.configuraciones] == [evaluacion.escenario_suficiente]
+    else:
+        with pytest.raises(ConfiguracionInvalida, match="no eligió un escenario suficiente"):
+            servicios.interpretabilidad.explicar(solicitud)
+    datos["interpretabilidad"] = None
+    (proyecto / "config" / "experimentos_sin_dp11.yaml").write_text(
+        yaml.safe_dump(datos, allow_unicode=True), encoding="utf-8"
+    )
+    with pytest.raises(DecisionPendiente, match="DP-11"):
+        servicios.interpretabilidad.explicar(
+            SolicitudExplicar(
+                **_comunes(proyecto, "experimentos_sin_dp11.yaml"),
+                evaluacion=evaluacion.identificador_registro,
+            )
+        )
+    with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
+        servicios.interpretabilidad.explicar(
+            SolicitudExplicar(**_comunes(proyecto), evaluacion=explicacion.identificador_registro)
+        )
 
 
 def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
@@ -406,6 +510,11 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     assert comparacion.accesos_a_la_prueba == 1
     assert comparacion.estado.startswith(("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"))
     assert "Comparar con R0 y los controles sin volver a abrir la prueba" in pasos
+    # F3.6: explicaciones de las configuraciones congeladas, sin abrir la prueba.
+    explicacion = resultado.explicacion
+    assert len(explicacion.configuraciones) == len(resultado.evaluacion.configuraciones)
+    assert explicacion.accesos_a_la_prueba == 1
+    assert explicacion.ficticio
     despues = len(servicios.reportes.repositorio().listar(TipoRegistro.EXPERIMENTO))
     assert despues == antes
     # La línea de comandos de la demostración.
@@ -424,6 +533,7 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     assert "Regla de suficiencia:" in salida
     assert "Evaluación comparativa de" in salida
     assert "No se declara superioridad." in salida
+    assert "Son asociaciones del modelo, no causas." in salida
 
 
 def test_la_demostracion_exige_protocolo_y_configuracion_ficticios(proyecto: Path) -> None:

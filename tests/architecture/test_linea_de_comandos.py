@@ -418,6 +418,7 @@ def test_la_salida_se_puede_escribir_en_cp1252_sin_cargar_bibliotecas_prohibidas
     assert "[EJEMPLO FICTICIO" in salida
     assert "borrador de la versión 1" in salida
     assert "CARGADAS=\r\n" in salida or "CARGADAS=\n" in salida
+    assert "Son asociaciones del modelo, no causas." in salida  # F3.6, en cp1252
     assert "Folds cronológicos (DP-07): 6" in salida
     assert "Escenarios preparados: 28; no factibles (no se entrenan): 4" in salida
     assert "Modo: EXPLORATORIO" in salida

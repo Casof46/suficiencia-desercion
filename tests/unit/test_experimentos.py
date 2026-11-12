@@ -151,6 +151,9 @@ def test_configuraciones_de_validacion_imposibles_se_rechazan() -> None:
         (("preprocesamiento", "perfiles", "lineal"), "DP-12"),
         (("preprocesamiento", "perfiles", "lineal", "escalado"), "DP-12"),
         (("preprocesamiento", "perfiles", "arboles", "indicador_faltante"), "DP-12"),
+        (("interpretabilidad",), "DP-11"),
+        (("interpretabilidad", "alcance"), "DP-11"),
+        (("interpretabilidad", "local", "lime_muestras"), "DP-11"),
     ],
 )
 def test_un_null_detiene_con_la_decision_pendiente(ruta: tuple[str, ...], decision: str) -> None:

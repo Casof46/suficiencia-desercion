@@ -880,6 +880,65 @@ class ResultadoComparacion(Contrato):
     accesos_a_la_prueba: int
 
 
+# --- F3.6: interpretabilidad ---------------------------------------------------------
+
+
+class SolicitudExplicar(SolicitudPrepararDesarrollo):
+    """Explica las configuraciones congeladas de una evaluación final (CU-09, F3.6).
+
+    El alcance, los niveles, la partición y las muestras son los de la sección
+    ``interpretabilidad`` de la configuración de experimentos (DP-11). Solo explica
+    configuraciones congeladas y nunca lee la prueba.
+    """
+
+    evaluacion: str = Field(min_length=1)
+
+
+class ContribucionResumen(Contrato):
+    variable: str
+    valor: float
+
+
+class ExplicacionLocalResumen(Contrato):
+    """Explicación de un registro; su seudónimo queda solo en el archivo de la explicación."""
+
+    registro: int
+    shap: tuple[ContribucionResumen, ...]
+    lime: tuple[ContribucionResumen, ...]
+    lime_ajuste: float
+
+
+class ExplicacionConfiguracionResumen(Contrato):
+    identificador: str
+    rol: str
+    escenario: str
+    algoritmo: str
+    explicador: str
+    escala: str
+    filas_particion: int
+    filas_fondo: int
+    filas_explicadas: int
+    valor_base: float
+    error_aditividad: float
+    importancia_variables: dict[str, float]
+    importancia_bloques: dict[str, float]
+    locales: tuple[ExplicacionLocalResumen, ...]
+
+
+class ResultadoExplicacion(Contrato):
+    evaluacion: str
+    version_protocolo: int
+    ficticio: bool
+    alcance: str
+    niveles: tuple[str, ...]
+    particion: str
+    semilla: int
+    configuraciones: tuple[ExplicacionConfiguracionResumen, ...]
+    carpeta: str
+    identificador_registro: str
+    accesos_a_la_prueba: int
+
+
 class ResultadoDemostracionFinal(Contrato):
     """Selección, congelamiento y evaluación final en un proyecto temporal (EJEMPLO FICTICIO)."""
 
@@ -887,4 +946,5 @@ class ResultadoDemostracionFinal(Contrato):
     seleccion: ResultadoSeleccion
     evaluacion: ResultadoEvaluacionFinal
     comparacion: ResultadoComparacion
+    explicacion: ResultadoExplicacion
     pasos: tuple[PasoDemostracion, ...]

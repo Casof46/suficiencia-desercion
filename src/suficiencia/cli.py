@@ -28,6 +28,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia evaluacion final ARCHIVO (mismas opciones que preparar) --particion CARPETA
                                  --configuracion ID [...] --version N [--justificacion T]
     suficiencia evaluacion comparar --evaluacion ID [--experimentos R] [--poblaciones R]
+    suficiencia evaluacion explicar ARCHIVO (mismas opciones que preparar) --evaluacion ID
     suficiencia evaluacion demostracion ARCHIVO --diccionario R --definicion R --poblaciones R
                                         --escenarios R --experimentos R --protocolo R
                                         --escenario T1|A+F [...]
@@ -66,6 +67,7 @@ from typing import Any, NoReturn, TextIO
 import suficiencia
 from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
+    ContribucionResumen,
     EntornoResumen,
     EstadoProyecto,
     EstimacionResumen,
@@ -82,6 +84,7 @@ from suficiencia.application.contratos import (
     ResultadoEscenarios,
     ResultadoEstadoDecisiones,
     ResultadoEvaluacionFinal,
+    ResultadoExplicacion,
     ResultadoImportacion,
     ResultadoIntegridad,
     ResultadoMetricas,
@@ -99,6 +102,7 @@ from suficiencia.application.contratos import (
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
     SolicitudEvaluacionFinal,
+    SolicitudExplicar,
     SolicitudExportarRegistro,
     SolicitudGenerarEscenarios,
     SolicitudGuardarBorrador,
@@ -455,6 +459,15 @@ def construir_analizador() -> argparse.ArgumentParser:
         "--poblaciones",
         type=Path,
         help="Periodos índice de las ventanas (por omisión, config/poblaciones.yaml).",
+    )
+    explicar_p = acciones_evaluacion.add_parser(
+        "explicar",
+        help="Explicaciones SHAP y LIME de las configuraciones congeladas, con desarrollo "
+        "(CU-09; DP-11).",
+    )
+    _opciones_desarrollo(explicar_p)
+    explicar_p.add_argument(
+        "--evaluacion", required=True, help="Identificador de la evaluación final registrada."
     )
     demostracion_final_p = acciones_evaluacion.add_parser(
         "demostracion",
@@ -1145,6 +1158,68 @@ def _mostrar_demostracion_final(resultado: ResultadoDemostracionFinal, salida: T
     print("", file=salida)
     _mostrar_evaluacion_final(resultado.evaluacion, salida)
     _mostrar_comparacion(resultado.comparacion, salida)
+    _mostrar_explicacion(resultado.explicacion, salida)
+
+
+def _contribuciones_texto(contribuciones: Sequence[ContribucionResumen]) -> str:
+    return "; ".join(f"{c.variable} {c.valor:+.3f}" for c in contribuciones) or "ninguna"
+
+
+def _mostrar_explicacion(resultado: ResultadoExplicacion, salida: TextIO) -> None:
+    if resultado.ficticio:
+        print(
+            "PROTOCOLO O CONFIGURACIONES FICTICIOS: las explicaciones no son una conclusión "
+            "sobre el método.",
+            file=salida,
+        )
+    print(
+        f"\nExplicaciones de {resultado.evaluacion} (protocolo v{resultado.version_protocolo}), "
+        f"solo con la partición de {resultado.particion}; alcance {resultado.alcance}; niveles "
+        f"{', '.join(resultado.niveles)}; semilla {resultado.semilla}:",
+        file=salida,
+    )
+    for c in resultado.configuraciones:
+        print(
+            f"  {c.identificador} ({c.rol}): {c.escenario}, {c.algoritmo}; explicador "
+            f"{c.explicador} (escala {c.escala}); filas: {c.filas_particion} en la partición, "
+            f"{c.filas_fondo} de fondo, {c.filas_explicadas} explicadas; error de aditividad "
+            f"{c.error_aditividad:.1e}",
+            file=salida,
+        )
+        total = sum(c.importancia_bloques.values())
+        if c.importancia_bloques:
+            bloques = "; ".join(
+                f"{b} {v:.3f}" + (f" ({v / total:.0%})" if total > 0 else "")
+                for b, v in c.importancia_bloques.items()
+            )
+            print(f"      Bloques: {bloques}", file=salida)
+        if c.importancia_variables:
+            ordenadas = sorted(c.importancia_variables.items(), key=lambda par: -par[1])
+            print(
+                "      Variables (de mayor a menor): "
+                + "; ".join(f"{v} {i:.3f}" for v, i in ordenadas),
+                file=salida,
+            )
+        for local in c.locales:
+            print(
+                f"      Registro {local.registro}: SHAP {_contribuciones_texto(local.shap)}",
+                file=salida,
+            )
+            print(
+                f"                  LIME (R2 {local.lime_ajuste:.2f}) "
+                f"{_contribuciones_texto(local.lime)}",
+                file=salida,
+            )
+    print(
+        "Son asociaciones del modelo, no causas. Las contribuciones están en la escala del "
+        "modelo antes de la calibración.",
+        file=salida,
+    )
+    print(
+        f"Accesos permitidos a la prueba: {resultado.accesos_a_la_prueba}. Registrada como "
+        f"{resultado.identificador_registro}; tablas en {resultado.carpeta}.",
+        file=salida,
+    )
 
 
 def _mostrar_entorno(entorno: EntornoResumen, salida: TextIO) -> None:
@@ -1291,6 +1366,16 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
                     evaluacion=argumentos.evaluacion,
                     experimentos=argumentos.experimentos,
                     poblaciones=argumentos.poblaciones,
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion" and argumentos.accion == "explicar":
+        _mostrar_explicacion(
+            servicios.interpretabilidad.explicar(
+                SolicitudExplicar(
+                    **_comunes_desarrollo(argumentos), evaluacion=argumentos.evaluacion
                 )
             ),
             sys.stdout,

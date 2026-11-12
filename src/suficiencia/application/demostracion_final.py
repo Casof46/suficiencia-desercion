@@ -1,4 +1,5 @@
-"""Demostración de F3.4 y F3.5: selección, evaluación final y comparación (EJEMPLO FICTICIO).
+"""Demostración de F3.4 a F3.6: selección, evaluación final, comparación y explicaciones
+(EJEMPLO FICTICIO).
 
 Recorre el final del método con datos sintéticos y configuraciones ficticias, en
 un **proyecto temporal** que se borra al terminar: nada llega al registro ni a la
@@ -19,6 +20,8 @@ carpeta de trabajo del proyecto. Usa los mismos servicios que el proyecto real:
 8. Intenta repetirla sin justificación: se rechaza (RF-M4-09).
 9. Compara la seleccionada con R0 y los controles con las predicciones guardadas,
    sin volver a abrir la prueba (CU-12; PI-15), y clasifica el resultado (C1 a C8).
+10. Explica las configuraciones congeladas con el alcance de DP-11 (CU-09; PI-13),
+    solo con filas de desarrollo.
 
 La clave de seudonimización es aleatoria, vive solo durante la demostración y es la
 misma para construir la partición y para evaluarla.
@@ -47,6 +50,7 @@ from suficiencia.application.contratos import (
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
     SolicitudEvaluacionFinal,
+    SolicitudExplicar,
     SolicitudGenerarEscenarios,
     SolicitudSeleccionar,
 )
@@ -315,6 +319,18 @@ def ejecutar_demostracion_final(
                 + f". Accesos permitidos a la prueba: {comparacion.accesos_a_la_prueba}",
             )
         )
+        explicacion = servicios.interpretabilidad.explicar(
+            SolicitudExplicar(**comunes, evaluacion=evaluacion.identificador_registro)
+        )
+        pasos.append(
+            PasoDemostracion(
+                titulo="Explicar las configuraciones congeladas con desarrollo (DP-11)",
+                resultado=f"{len(explicacion.configuraciones)} configuraciones explicadas "
+                f"({explicacion.alcance}; {', '.join(explicacion.niveles)}); explicadores: "
+                + ", ".join(sorted({c.explicador for c in explicacion.configuraciones}))
+                + f". Accesos permitidos a la prueba: {explicacion.accesos_a_la_prueba}",
+            )
+        )
         permitidos = sum(
             1
             for g in repositorio.listar(TipoRegistro.ACCESO)
@@ -331,5 +347,6 @@ def ejecutar_demostracion_final(
         seleccion=seleccion,
         evaluacion=evaluacion,
         comparacion=comparacion,
+        explicacion=explicacion,
         pasos=tuple(pasos),
     )

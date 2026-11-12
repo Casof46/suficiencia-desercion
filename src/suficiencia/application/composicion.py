@@ -32,6 +32,7 @@ from suficiencia.domain.puertos import FuenteVariables, Seudonimizador
 from suficiencia.persistence.configuracion import FuenteConfiguracionYaml
 from suficiencia.persistence.corridas_archivos import (
     guardar_corrida,
+    guardar_explicaciones,
     guardar_modelo_final,
     guardar_predicciones_prueba,
     leer_csv_verificado,
@@ -67,6 +68,7 @@ class Servicios:
     protocolo: ServicioProtocolo
     experimentos: ServicioExperimentos
     evaluacion_final: ServicioEvaluacionFinal
+    interpretabilidad: ServicioInterpretabilidad
     casos_de_uso: tuple[ServicioCasosDeUso, ...]
 
     def servicio_de(self, codigo: str) -> ServicioCasosDeUso:
@@ -135,6 +137,13 @@ def _predecir(modelo: object, predictores: pd.DataFrame) -> Any:
     from suficiencia.experimentation.modelos import predecir
 
     return predecir(modelo, predictores)
+
+
+def _explicar_modelo(*argumentos: Any) -> Any:
+    # SHAP y LIME se importan solo al explicar.
+    from suficiencia.experimentation.explicadores import explicar_modelo
+
+    return explicar_modelo(*argumentos)
 
 
 def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
@@ -223,13 +232,28 @@ def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
         guardar_predicciones=guardar_predicciones_prueba,
         leer_csv=leer_csv_verificado,
     )
+    interpretabilidad = ServicioInterpretabilidad(
+        raiz,
+        RepositorioSqlite,
+        archivo_registro,
+        preparar_historial=datos.preparar_historial,
+        cargar_poblaciones=cargar_configuracion_poblaciones,
+        fuente_catalogo=FuenteCatalogoYaml,
+        fuente_diccionario=_fuente_diccionario,
+        cargar_experimentos=cargar_configuracion_experimentos,
+        leer_modelo=leer_modelo,
+        explicar_modelo=_explicar_modelo,
+        capturador=CapturadorEntornoLocal(raiz),
+        carpeta_trabajo=reportes.carpeta_trabajo,
+        guardar_tablas=guardar_explicaciones,
+    )
     casos_de_uso: tuple[ServicioCasosDeUso, ...] = (
         datos,
         escenarios,
         protocolo,
         experimentos,
         evaluacion_final,
-        ServicioInterpretabilidad(),
+        interpretabilidad,
         reportes,
     )
     proyecto = ServicioProyecto(
@@ -246,5 +270,6 @@ def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
         protocolo=protocolo,
         experimentos=experimentos,
         evaluacion_final=evaluacion_final,
+        interpretabilidad=interpretabilidad,
         casos_de_uso=casos_de_uso,
     )

@@ -25,6 +25,8 @@ dependencies = [
     "scikit-learn>=1.5",  # preprocesamiento dentro de cada fold (RF-M3-02); F3.1
     "xgboost-cpu>=3.0,<3.3",  # XGBoost sin CUDA; misma versión con Python 3.11 y 3.13 (RF-M3-01); F3.2, D-136
     "lightgbm>=4.5",      # LightGBM (RF-M3-01); F3.2
+    "shap>=0.51,<0.52",   # explicaciones SHAP (RF-M5-01, 03); misma versión con Python 3.11 y 3.13; F3.6
+    "lime>=0.2",          # explicaciones locales LIME (RF-M5-02); F3.6
 ]
 
 [project.scripts]
@@ -77,7 +79,7 @@ plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
 mypy_path = ["src", "tests"]
 
-# scikit-learn y joblib no publican tipos (sin py.typed ni stubs oficiales); F3.1 y F3.2, D-131.
+# scikit-learn, joblib, SHAP y LIME no publican tipos (sin py.typed ni stubs oficiales); F3.1, F3.2 y F3.6, D-131.
 [[tool.mypy.overrides]]
-module = ["sklearn", "sklearn.*", "joblib", "joblib.*"]
+module = ["sklearn", "sklearn.*", "joblib", "joblib.*", "shap", "shap.*", "lime", "lime.*"]
 ignore_missing_imports = true

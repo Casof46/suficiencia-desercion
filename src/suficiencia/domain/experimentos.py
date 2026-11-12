@@ -20,6 +20,7 @@ como datos obligatorios sin valor por omisión:
   ``evaluacion.metricas``.
 - **Selección del modelo y umbral** (DP-10, DP-06; F3.4): ver ``evaluacion.seleccion``.
 - **Referencia R0 y comparación** (DP-19, DP-20; F3.5): ver ``evaluacion.comparacion``.
+- **Interpretabilidad** (DP-11; F3.6): ver ``evaluacion.interpretabilidad``.
 
 Un valor ``null`` detiene el programa nombrando la decisión pendiente.
 """
@@ -44,6 +45,10 @@ from suficiencia.domain.evaluacion.comparacion import (
     DefinicionReferencia,
     definicion_comparacion_desde_datos,
     definicion_referencia_desde_datos,
+)
+from suficiencia.domain.evaluacion.interpretabilidad import (
+    DefinicionInterpretabilidad,
+    definicion_interpretabilidad_desde_datos,
 )
 from suficiencia.domain.evaluacion.metricas import (
     DefinicionMetricas,
@@ -473,6 +478,7 @@ class ConfiguracionExperimentos:
     umbral: DefinicionUmbral
     referencia: DefinicionReferencia
     comparacion: DefinicionComparacion
+    interpretabilidad: DefinicionInterpretabilidad
 
 
 _CLAVES = {
@@ -493,6 +499,7 @@ _CLAVES = {
     "umbral",
     "referencia",
     "comparacion",
+    "interpretabilidad",
 }
 VERSION_SOPORTADA = 1
 
@@ -574,6 +581,7 @@ def configuracion_experimentos_desde_datos(datos: Any) -> ConfiguracionExperimen
         umbral=definicion_umbral_desde_datos(datos["umbral"], metricas.q),
         referencia=referencia,
         comparacion=comparacion,
+        interpretabilidad=definicion_interpretabilidad_desde_datos(datos["interpretabilidad"]),
     )
 
 
