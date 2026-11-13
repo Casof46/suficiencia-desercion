@@ -1080,3 +1080,62 @@ class ResultadosRegistrados(Contrato):
     evaluacion: ResultadoEvaluacionFinal
     comparacion: ResultadoComparacion | None
     explicacion: ResultadoExplicacion | None
+
+
+# --- F4.4: funciones según las decisiones e historial de experimentos ---------------
+
+
+class FuncionDisponibilidadResumen(Contrato):
+    """Una función del visor y las decisiones abiertas que la desactivan con datos del
+    proyecto (RF-UI-04)."""
+
+    codigo: str
+    nombre: str
+    decisiones: tuple[str, ...]
+    abiertas: tuple[str, ...]
+    con_datos_del_proyecto: bool
+
+
+class ResultadoDisponibilidadFunciones(Contrato):
+    funciones: tuple[FuncionDisponibilidadResumen, ...]
+
+
+class ExperimentoHistorialResumen(Contrato):
+    """Una fila del historial de experimentos (RF-M6-02)."""
+
+    numero: int
+    fecha: str
+    identificador: str
+    tipo: str
+    modo: str
+    estado: str
+    escenario: str | None
+    familia: str | None
+    origen_datos: str
+    error: str | None
+
+
+class ResultadoHistorialExperimentos(Contrato):
+    archivo: str
+    experimentos: tuple[ExperimentoHistorialResumen, ...]
+
+
+class SolicitudCompararExperimentos(Contrato):
+    """Compara dos experimentos registrados campo por campo, sin recalcular nada."""
+
+    a: str = Field(min_length=1)
+    b: str = Field(min_length=1)
+
+
+class DiferenciaCampoResumen(Contrato):
+    campo: str
+    valor_a: str
+    valor_b: str
+    igual: bool
+
+
+class ResultadoComparacionExperimentos(Contrato):
+    a: str
+    b: str
+    campos: tuple[DiferenciaCampoResumen, ...]
+    diferentes: int

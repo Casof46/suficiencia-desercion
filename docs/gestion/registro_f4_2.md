@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 4 (sección 3, F4.2); especificación Fase 1 v0.6 (RF-M4-22, RF-M5-06, RF-M4-16 con R-max; CMP-5; DP-19d; DP-20g) |
 | Autorización | El equipo pidió empezar F4.2 el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría no se ha pronunciado sobre el plan de la Fase 4 |
 | Riesgo aceptado | RF-M4-22 y R-max dependen de DP-20 y DP-19d: entran como datos opcionales, apagados por omisión |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows.** Pendiente: commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `00ede20`); aceptado por el equipo** el 13 de noviembre de 2026, con la desviación de comparar las explicaciones solo entre folds (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -56,5 +56,5 @@ Ninguna DP-xx se resolvió. DP-19d y DP-20g siguen abiertas: las funciones que d
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 13 de noviembre de 2026 | Acepta F4.2, con la estabilidad de las explicaciones solo entre folds, y pide empezar F4.4 |

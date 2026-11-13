@@ -15,8 +15,12 @@ from suficiencia.application.contratos import (
     CasoDemostracionObjetivo,
     EstadoProyecto,
     RegistroResumen,
+    ResultadoComparacionExperimentos,
+    ResultadoDisponibilidadFunciones,
     ResultadoEscenarios,
+    ResultadoEstadoDecisiones,
     ResultadoExplicacion,
+    ResultadoHistorialExperimentos,
     ResultadoImportacion,
     ResultadoPoblaciones,
 )
@@ -237,3 +241,92 @@ def tabla_locales(explicacion: ResultadoExplicacion) -> pd.DataFrame:
         "R² de LIME",
     ]
     return pd.DataFrame(filas, columns=columnas)
+
+
+def tabla_decisiones(estado: ResultadoEstadoDecisiones) -> pd.DataFrame:
+    """Estado de DP-01 a DP-20 con su última decisión registrada, si existe (RF-UI-04)."""
+    filas = [
+        {
+            "Código": d.codigo,
+            "Decisión": d.nombre,
+            "Quién decide": d.decide,
+            "Resolver antes de": d.resolver_antes_de,
+            "Estado": "REGISTRADA" if d.registrada else "ABIERTA",
+            "Registros": "; ".join(f"{r.codigo} ({r.fecha[:10]})" for r in d.registros) or "—",
+        }
+        for d in estado.decisiones
+    ]
+    columnas = ["Código", "Decisión", "Quién decide", "Resolver antes de", "Estado", "Registros"]
+    return pd.DataFrame(filas, columns=columnas)
+
+
+def tabla_funciones(resultado: ResultadoDisponibilidadFunciones) -> pd.DataFrame:
+    """Cada función del visor, sus decisiones y si queda desactivada con datos del proyecto."""
+    filas = [
+        {
+            "Función": f.nombre,
+            "Depende de": ", ".join(f.decisiones),
+            "Abiertas": ", ".join(f.abiertas) or "—",
+            "Con datos del proyecto": "Disponible" if f.con_datos_del_proyecto else "DESACTIVADA",
+            "Con el ejemplo ficticio": "Disponible",
+        }
+        for f in resultado.funciones
+    ]
+    columnas = [
+        "Función",
+        "Depende de",
+        "Abiertas",
+        "Con datos del proyecto",
+        "Con el ejemplo ficticio",
+    ]
+    return pd.DataFrame(filas, columns=columnas)
+
+
+def tabla_historial(resultado: ResultadoHistorialExperimentos) -> pd.DataFrame:
+    """Experimentos del registro, del más reciente al más antiguo (RF-M6-02)."""
+    filas = [
+        {
+            "N.º": e.numero,
+            "Fecha (UTC)": e.fecha,
+            "Identificador": e.identificador,
+            "Tipo": e.tipo,
+            "Modo": e.modo,
+            "Estado": e.estado,
+            "Escenario": e.escenario or "—",
+            "Familia": e.familia or "—",
+            "Origen de los datos": e.origen_datos,
+            "Error": e.error or "",
+        }
+        for e in resultado.experimentos
+    ]
+    columnas = [
+        "N.º",
+        "Fecha (UTC)",
+        "Identificador",
+        "Tipo",
+        "Modo",
+        "Estado",
+        "Escenario",
+        "Familia",
+        "Origen de los datos",
+        "Error",
+    ]
+    return pd.DataFrame(filas, columns=columnas).iloc[::-1].reset_index(drop=True)
+
+
+def tabla_comparacion_experimentos(
+    comparacion: ResultadoComparacionExperimentos, solo_diferencias: bool
+) -> pd.DataFrame:
+    """Campos de dos experimentos lado a lado; opcionalmente, solo los distintos."""
+    columna_a, columna_b = f"A ({comparacion.a})", f"B ({comparacion.b})"
+    filas = [
+        {
+            "Campo": c.campo,
+            columna_a: c.valor_a,
+            columna_b: c.valor_b,
+            "Igual": "sí" if c.igual else "no",
+        }
+        for c in comparacion.campos
+        if not (solo_diferencias and c.igual)
+    ]
+    return pd.DataFrame(filas, columns=["Campo", columna_a, columna_b, "Igual"])

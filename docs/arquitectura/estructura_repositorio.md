@@ -40,7 +40,7 @@ suficiencia-desercion/
 │   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
-│   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7; rotulo.py (F3.7)
+│   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7; rotulo.py (F3.7); historial.py (F4.4)
 │   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5); matrices.py (F3.1)
 │   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6); metricas.py (F3.3); seleccion.py (F3.4); comparacion.py (F3.5; R-max en F4.2); interpretabilidad.py (F3.6); estabilidad.py (F4.2)
 │   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1); familias, búsqueda, desbalance y calibración (F3.2)
@@ -71,7 +71,7 @@ suficiencia-desercion/
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7; archivos del reporte de resultados; F3.7
-│   └── ui/                     # visor de demostración (H2.D); graficos.py: gráficos Plotly de resultados (F3.7) y de escenarios en validación (F4.1)
+│   └── ui/                     # visor de demostración (H2.D); graficos.py: gráficos Plotly de resultados (F3.7) y de escenarios en validación (F4.1); páginas de decisiones e historial (F4.4)
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (H2.3); ayudas del protocolo FICTICIO (H2.6); solo pruebas

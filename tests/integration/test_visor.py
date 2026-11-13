@@ -10,13 +10,18 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
 from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial
 from suficiencia.application.composicion import crear_servicios
-from suficiencia.application.contratos import SolicitudConsultarRegistro, SolicitudEntrenar
+from suficiencia.application.contratos import (
+    SolicitudConsultarRegistro,
+    SolicitudEntrenar,
+    SolicitudRegistrarDecision,
+)
 from suficiencia.ui import presentacion
 
 PAGINAS = (
@@ -28,6 +33,8 @@ PAGINAS = (
     "pagina_validacion",
     "pagina_resultados",
     "pagina_registro",
+    "pagina_historial",
+    "pagina_decisiones",
 )
 
 
@@ -45,6 +52,11 @@ def proyecto(tmp_path: Path, raiz: Path, monkeypatch: pytest.MonkeyPatch) -> Pat
     generar_historial(300, semilla=1).to_excel(archivo, index=False)
     monkeypatch.chdir(tmp_path)
     return tmp_path
+
+
+def _boton(app: AppTest, etiqueta: str) -> Any:
+    """El botón con esa etiqueta (F4.4 agrega a cada página un botón desactivado)."""
+    return next(b for b in app.button if b.label == etiqueta)
 
 
 def _app(nombre: str) -> AppTest:
@@ -86,7 +98,7 @@ def test_la_matriz_de_escenarios_tiene_4_ventanas_y_8_conjuntos(proyecto: Path) 
 
 def test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra(proyecto: Path) -> None:
     app = _app("pagina_poblaciones").run()
-    app.button[0].click().run()
+    _boton(app, "Construir poblaciones y partición").click().run()
     assert not app.exception and not app.error
     etiquetas = {m.label: m.value for m in app.metric}
     assert etiquetas["Prueba (SELLADA)"] == "42"
@@ -95,7 +107,7 @@ def test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra(proyecto: Path
     poblaciones = app.dataframe[1].value
     assert set(poblaciones["Diseño"]) == {"D1", "D2", "D3"}
 
-    app.button[1].click().run()
+    _boton(app, "Intentar leer la prueba").click().run()
     assert "sellada" in app.error[0].value
 
     accesos = (
@@ -110,8 +122,8 @@ def test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra(proyecto: Path
 
 def test_el_registro_muestra_el_intento_rechazado(proyecto: Path) -> None:
     app = _app("pagina_poblaciones").run()
-    app.button[0].click().run()
-    app.button[1].click().run()
+    _boton(app, "Construir poblaciones y partición").click().run()
+    _boton(app, "Intentar leer la prueba").click().run()
     registro = _app("pagina_registro").run()
     tabla = registro.dataframe[0].value
     assert list(tabla["Resultado"]) == ["RECHAZADO"]
@@ -143,7 +155,7 @@ def test_sin_historial_ampliado_la_pagina_de_resultados_explica_como_generarlo(
     app = _app("pagina_resultados").run()
     assert not app.exception
     assert "--ampliado" in app.warning[0].value
-    assert not app.button or app.button[0].label != "Ejecutar la demostración"
+    assert "Ejecutar la demostración" not in [b.label for b in app.button]
 
 
 def test_la_pagina_de_resultados_muestra_graficos_rotulados_y_descargas(proyecto: Path) -> None:
@@ -152,7 +164,7 @@ def test_la_pagina_de_resultados_muestra_graficos_rotulados_y_descargas(proyecto
     generar_historial(700, semilla=11, cohortes=COHORTES_AMPLIADAS).to_csv(archivo, index=False)
     app = AppTest.from_function(_pagina, args=("pagina_resultados",), default_timeout=300).run()
     assert not app.exception, app.exception
-    app.button[0].click().run()
+    _boton(app, "Ejecutar la demostración").click().run()
     assert not app.exception, app.exception
     assert not app.error, [e.value for e in app.error]
     graficos = app.get("plotly_chart")
@@ -193,7 +205,7 @@ def test_la_pagina_de_validacion_compara_escenarios_con_graficos_rotulados(
     )
     app = AppTest.from_function(_pagina, args=("pagina_validacion",), default_timeout=120).run()
     assert not app.exception, app.exception
-    app.button[0].click().run()
+    _boton(app, "Calcular las métricas de las corridas registradas").click().run()
     assert not app.exception, app.exception
     assert not app.error, [e.value for e in app.error]
     graficos = app.get("plotly_chart")
@@ -206,3 +218,97 @@ def test_la_pagina_de_validacion_compara_escenarios_con_graficos_rotulados(
         "Descargar resultados.xlsx",
     ]
     assert "4 corridas de 2 escenarios" in " ".join(str(m.value) for m in app.markdown)
+
+
+# --- F4.4: decisiones abiertas e historial de experimentos ------------------------------
+
+PAGINAS_CON_DEPENDENCIAS = {
+    "pagina_datos": "datos",
+    "pagina_escenarios": "escenarios",
+    "pagina_objetivo": "objetivo",
+    "pagina_poblaciones": "poblaciones",
+    "pagina_validacion": "validacion",
+    "pagina_resultados": "resultados",
+}
+
+
+@pytest.mark.parametrize(("nombre", "funcion"), PAGINAS_CON_DEPENDENCIAS.items())
+def test_rf_ui_04_cada_pagina_desactiva_su_version_con_datos_del_proyecto(
+    proyecto: Path, nombre: str, funcion: str
+) -> None:
+    app = _app(nombre).run()
+    assert not app.exception, app.exception
+    boton = _boton(app, "Ejecutar con los datos y la configuración del proyecto")
+    assert boton.disabled
+    assert boton.key == f"proyecto_{funcion}"
+    textos = " ".join(str(c.value) for c in app.caption)
+    assert "desactivada mientras sigan abiertas" in textos
+
+
+def test_rf_ui_04_con_sus_decisiones_registradas_la_funcion_deja_de_estar_desactivada(
+    proyecto: Path,
+) -> None:
+    servicios = crear_servicios(proyecto)
+    for codigo in ("DP-01", "DP-18"):
+        servicios.reportes.registrar_decision(
+            SolicitudRegistrarDecision(
+                codigo=codigo,
+                decision="EJEMPLO FICTICIO para la prueba del visor",
+                justificacion="Prueba automática de F4.4",
+                responsable="Prueba",
+            )
+        )
+    app = _app("pagina_objetivo").run()
+    assert not app.exception, app.exception
+    etiquetas = [b.label for b in app.button]
+    assert "Ejecutar con los datos y la configuración del proyecto" not in etiquetas
+    assert "Todas sus decisiones están registradas" in " ".join(str(c.value) for c in app.caption)
+    # Las demás siguen desactivadas: dependen de otras decisiones abiertas.
+    app = _app("pagina_poblaciones").run()
+    assert _boton(app, "Ejecutar con los datos y la configuración del proyecto").disabled
+
+
+def test_la_pagina_de_decisiones_muestra_el_estado_y_las_funciones(proyecto: Path) -> None:
+    app = _app("pagina_decisiones").run()
+    assert not app.exception, app.exception
+    metricas = {m.label: m.value for m in app.metric}
+    assert metricas == {"Registradas": "0", "Abiertas": "20"}
+    decisiones, funciones = app.dataframe[0].value, app.dataframe[1].value
+    assert len(decisiones) == 20 and set(decisiones["Estado"]) == {"ABIERTA"}
+    assert set(funciones["Con datos del proyecto"]) == {"DESACTIVADA"}
+    assert set(funciones["Con el ejemplo ficticio"]) == {"Disponible"}
+
+
+def test_rf_m6_02_el_historial_lista_y_compara_experimentos(proyecto: Path) -> None:
+    vacio = _app("pagina_historial").run()
+    assert not vacio.exception
+    assert "no tiene experimentos" in vacio.info[0].value
+    archivo = proyecto / "data" / "sintetico" / "ampliado.csv"
+    generar_historial(700, semilla=11, cohortes=COHORTES_AMPLIADAS).to_csv(archivo, index=False)
+    ejemplos = proyecto / "config" / "ejemplos"
+    crear_servicios(proyecto).experimentos.entrenar(
+        SolicitudEntrenar(
+            archivo=archivo,
+            diccionario=ejemplos / "diccionario_sintetico.yaml",
+            definicion=ejemplos / "objetivo_ficticio.yaml",
+            poblaciones=ejemplos / "poblaciones_ampliado_ficticio.yaml",
+            escenarios=ejemplos / "escenarios_ficticio.yaml",
+            experimentos=ejemplos / "experimentos_ficticio.yaml",
+            clave_efimera=True,
+            seleccion_escenarios=("T0|A",),
+            seleccion_familias=("lr", "rf"),
+        )
+    )
+    app = AppTest.from_function(_pagina, args=("pagina_historial",), default_timeout=120).run()
+    assert not app.exception, app.exception
+    tabla = app.dataframe[0].value
+    assert len(tabla) == 2 and set(tabla["Familia"]) == {"lr", "rf"}
+    assert set(tabla["Origen de los datos"]) == {"SINTÉTICO"}
+    comparacion = app.dataframe[1].value
+    campos = set(comparacion["Campo"])
+    assert "configuracion.familia" in campos
+    assert set(comparacion["Igual"]) == {"no"}
+    app.toggle[0].set_value(False).run()
+    completa = app.dataframe[1].value
+    assert len(completa) > len(comparacion)
+    assert "sí" in set(completa["Igual"])

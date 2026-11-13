@@ -21,21 +21,28 @@ import pandas as pd
 from suficiencia.application._base import DefinicionCasoDeUso, ServicioCasosDeUso
 from suficiencia.application.contratos import (
     DecisionRegistradaResumen,
+    DiferenciaCampoResumen,
     EntornoResumen,
     EstadoDecisionResumen,
+    ExperimentoHistorialResumen,
+    FuncionDisponibilidadResumen,
     RegistroResumen,
     ReporteResultados,
     ResultadoComparacion,
+    ResultadoComparacionExperimentos,
     ResultadoConsultaRegistro,
     ResultadoDemostracion,
+    ResultadoDisponibilidadFunciones,
     ResultadoEstabilidad,
     ResultadoEstadoDecisiones,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
     ResultadoExportacion,
     ResultadoExportacionResultados,
+    ResultadoHistorialExperimentos,
     ResultadoIntegridad,
     ResultadoMetricas,
+    SolicitudCompararExperimentos,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
     SolicitudExportarResultados,
@@ -55,6 +62,11 @@ from suficiencia.domain.trazabilidad.decisiones import (
     DecisionRegistrada,
     catalogo_desde_datos,
     estado_decisiones,
+)
+from suficiencia.domain.trazabilidad.historial import (
+    FUNCIONES_VISOR,
+    comparar_registros,
+    disponibilidad,
 )
 from suficiencia.domain.trazabilidad.registros import (
     ModoExperimento,
@@ -332,6 +344,78 @@ class ServicioReportes(ServicioCasosDeUso):
             decisiones=tuple(resumenes),
             registradas=registradas,
             abiertas=len(estados) - registradas,
+        )
+
+    def disponibilidad_funciones(self) -> ResultadoDisponibilidadFunciones:
+        """Funciones del visor y las decisiones abiertas que las desactivan con datos del
+        proyecto (RF-UI-04; F4.4). Con los ejemplos ficticios siguen disponibles."""
+        estado = self.estado_decisiones()
+        registradas = {d.codigo: d.registrada for d in estado.decisiones}
+        return ResultadoDisponibilidadFunciones(
+            funciones=tuple(
+                FuncionDisponibilidadResumen(
+                    codigo=d.funcion.codigo,
+                    nombre=d.funcion.nombre,
+                    decisiones=d.funcion.decisiones,
+                    abiertas=d.abiertas,
+                    con_datos_del_proyecto=d.con_datos_del_proyecto,
+                )
+                for d in disponibilidad(FUNCIONES_VISOR, registradas)
+            )
+        )
+
+    def historial_experimentos(self) -> ResultadoHistorialExperimentos:
+        """Los experimentos registrados, con su tipo, modo, estado y origen (RF-M6-02)."""
+        archivo = self.archivo_registro()
+        filas = []
+        for g in self._repositorio(archivo).listar(TipoRegistro.EXPERIMENTO):
+            contenido = g.contenido
+            configuracion = contenido.get("configuracion") or {}
+            filas.append(
+                ExperimentoHistorialResumen(
+                    numero=g.numero,
+                    fecha=g.fecha,
+                    identificador=str(contenido.get("identificador", "")),
+                    tipo=str(configuracion.get("tipo", "—")),
+                    modo=str(contenido.get("modo", "—")),
+                    estado=str(contenido.get("estado", "—")),
+                    escenario=configuracion.get("escenario"),
+                    familia=configuracion.get("familia"),
+                    origen_datos=valor_rotulo(origen_de_registro(configuracion)),
+                    error=contenido.get("error"),
+                )
+            )
+        return ResultadoHistorialExperimentos(archivo=str(archivo), experimentos=tuple(filas))
+
+    def comparar_experimentos(
+        self, solicitud: SolicitudCompararExperimentos
+    ) -> ResultadoComparacionExperimentos:
+        """Dos experimentos registrados, campo por campo, sin recalcular nada (RF-M6-02).
+
+        Raises:
+            ConfiguracionInvalida: si alguno de los dos no está en el registro.
+        """
+        por_identificador = {
+            g.contenido.get("identificador"): g.contenido
+            for g in self._repositorio(self.archivo_registro()).listar(TipoRegistro.EXPERIMENTO)
+        }
+        for identificador in (solicitud.a, solicitud.b):
+            if identificador not in por_identificador:
+                raise ConfiguracionInvalida(
+                    f"El experimento {identificador} no está en el registro.",
+                    "Elija dos identificadores del historial de experimentos.",
+                )
+        campos = comparar_registros(por_identificador[solicitud.a], por_identificador[solicitud.b])
+        return ResultadoComparacionExperimentos(
+            a=solicitud.a,
+            b=solicitud.b,
+            campos=tuple(
+                DiferenciaCampoResumen(
+                    campo=c.campo, valor_a=c.valor_a, valor_b=c.valor_b, igual=c.igual
+                )
+                for c in campos
+            ),
+            diferentes=sum(not c.igual for c in campos),
         )
 
     def demostracion(self) -> ResultadoDemostracion:

@@ -30,6 +30,7 @@ from suficiencia.application.contratos import (
     ResultadoEscenarios,
     ResultadoImportacion,
     ResultadoMetricas,
+    SolicitudCompararExperimentos,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
     SolicitudDemostracionFinal,
@@ -106,6 +107,36 @@ def _encabezado(titulo: str, descripcion: str) -> None:
     st.write(descripcion)
 
 
+def _dependencias(funcion: str) -> None:
+    """Decisiones de las que depende la función con datos del proyecto (RF-UI-04; F4.4).
+
+    Mientras alguna siga abierta, la versión con datos y configuración del proyecto queda
+    desactivada; la página usa el ejemplo ficticio.
+    """
+    servicios = _servicios(str(_raiz()))
+    resultado = _ejecutar(servicios.reportes.disponibilidad_funciones)
+    if resultado is None:
+        return
+    disponibilidad = next(f for f in resultado.funciones if f.codigo == funcion)
+    if disponibilidad.abiertas:
+        abiertas = ", ".join(disponibilidad.abiertas)
+        st.button(
+            "Ejecutar con los datos y la configuración del proyecto",
+            key=f"proyecto_{funcion}",
+            disabled=True,
+            help=f"Desactivada: dependen de decisiones abiertas ({abiertas}).",
+        )
+        st.caption(
+            f"Con datos del proyecto, desactivada mientras sigan abiertas: {abiertas}. "
+            "Esta página usa el ejemplo ficticio (página Decisiones)."
+        )
+    else:
+        st.caption(
+            "Todas sus decisiones están registradas. La ejecución con los datos del "
+            "proyecto se hace con la línea de comandos."
+        )
+
+
 def _falta_historial() -> bool:
     if (_raiz() / HISTORIAL).exists():
         return False
@@ -152,6 +183,7 @@ def pagina_datos() -> None:
         "la marca de datos sintéticos (DP-02) y no muestra la distribución de la clase "
         "antes de sellar la prueba (RF-M1-03).",
     )
+    _dependencias("datos")
     if _falta_historial():
         return
     servicios = _servicios(str(_raiz()))
@@ -193,6 +225,7 @@ def pagina_escenarios() -> None:
         "(ventana mínima del diccionario) y verifica que no haya fuga temporal "
         "(RF-M2-04). Un escenario es no factible si algún bloque no tiene variables.",
     )
+    _dependencias("escenarios")
     servicios = _servicios(str(_raiz()))
 
     def generar() -> ResultadoEscenarios:
@@ -232,6 +265,7 @@ def pagina_objetivo() -> None:
         "cada punto de DP-01. Aquí se aplican las reglas del ejemplo ficticio a diez "
         "historiales escritos a mano.",
     )
+    _dependencias("objetivo")
     servicios = _servicios(str(_raiz()))
 
     def demostrar() -> ResultadoDemostracionObjetivo:
@@ -278,6 +312,7 @@ def pagina_poblaciones() -> None:
         "siempre es posterior. La prueba queda **sellada**: solo la evaluación final, "
         "que todavía no existe, podrá leerla. De ella solo se informa el tamaño.",
     )
+    _dependencias("poblaciones")
     if _falta_historial():
         return
     servicios = _servicios(str(_raiz()))
@@ -391,6 +426,7 @@ def pagina_validacion() -> None:
         "para cada familia y las cinco familias de cada escenario (RF-M4-10, RF-M4-14). No "
         "elige ningún escenario: eso lo hace la regla de selección.",
     )
+    _dependencias("validacion")
     servicios = _servicios(str(_raiz()))
     st.caption(
         "Calcular guarda un registro de métricas exploratorias. Para tener corridas, "
@@ -439,6 +475,7 @@ def pagina_resultados() -> None:
         "explica las configuraciones congeladas. Ninguna cifra es un resultado de la "
         "investigación.",
     )
+    _dependencias("resultados")
     if not (_raiz() / AMPLIADO).exists():
         st.warning(
             f"No existe {AMPLIADO}. Genérelo desde la raíz del repositorio con:\n\n"
@@ -515,6 +552,76 @@ def pagina_resultados() -> None:
         st.download_button(f"Descargar {nombre}", archivos[nombre], file_name=nombre)
 
 
+def pagina_decisiones() -> None:
+    _encabezado(
+        "Decisiones metodológicas y funciones que dependen de ellas",
+        "Estado de las decisiones DP-01 a DP-20 según el registro de decisiones, y qué "
+        "funciones del visor quedan desactivadas con datos del proyecto mientras alguna de "
+        "sus decisiones siga abierta (RF-UI-04). Con los ejemplos ficticios, todas están "
+        "disponibles. El visor no registra decisiones: eso se hace con "
+        "`suficiencia registro decision`.",
+    )
+    servicios = _servicios(str(_raiz()))
+    estado = _ejecutar(servicios.reportes.estado_decisiones)
+    funciones = _ejecutar(servicios.reportes.disponibilidad_funciones)
+    if estado is None or funciones is None:
+        return
+    col1, col2 = st.columns(2)
+    col1.metric("Registradas", estado.registradas)
+    col2.metric("Abiertas", estado.abiertas)
+    st.dataframe(p.tabla_decisiones(estado), hide_index=True, width="stretch")
+    st.subheader("Funciones del visor con datos del proyecto")
+    st.dataframe(p.tabla_funciones(funciones), hide_index=True, width="stretch")
+
+
+def pagina_historial() -> None:
+    _encabezado(
+        "Historial de experimentos",
+        "Los experimentos del registro de este proyecto, con su tipo, modo y estado, y la "
+        "comparación de dos de ellos campo por campo (RF-M6-02). Solo muestra lo que el "
+        "registro guardó; no recalcula nada.",
+    )
+    servicios = _servicios(str(_raiz()))
+    historial = _ejecutar(servicios.reportes.historial_experimentos)
+    if historial is None:
+        return
+    if not historial.experimentos:
+        st.info(
+            "El registro no tiene experimentos. Entrene con `suficiencia experimentos "
+            "entrenar` y vuelva a abrir esta página."
+        )
+        return
+    tabla = p.tabla_historial(historial)
+    izquierda, derecha = st.columns(2)
+    estados = izquierda.multiselect("Estado", sorted(tabla["Estado"].unique()), placeholder="Todos")
+    tipos = derecha.multiselect("Tipo", sorted(tabla["Tipo"].unique()), placeholder="Todos")
+    if estados:
+        tabla = tabla[tabla["Estado"].isin(estados)]
+    if tipos:
+        tabla = tabla[tabla["Tipo"].isin(tipos)]
+    st.dataframe(tabla, hide_index=True, width="stretch")
+    st.caption(f"Archivo: {historial.archivo}")
+    identificadores = [e.identificador for e in historial.experimentos]
+    if len(identificadores) < 2:
+        return
+    st.subheader("Comparar dos experimentos")
+    izquierda, derecha = st.columns(2)
+    a = izquierda.selectbox("Experimento A", identificadores, index=0)
+    b = derecha.selectbox("Experimento B", identificadores, index=1)
+    solo_diferencias = st.toggle("Mostrar solo los campos distintos", value=True)
+    comparacion = _ejecutar(
+        lambda: servicios.reportes.comparar_experimentos(SolicitudCompararExperimentos(a=a, b=b))
+    )
+    if comparacion is None:
+        return
+    st.write(f"{comparacion.diferentes} campos distintos de {len(comparacion.campos)}.")
+    st.dataframe(
+        p.tabla_comparacion_experimentos(comparacion, solo_diferencias),
+        hide_index=True,
+        width="stretch",
+    )
+
+
 def main() -> None:
     st.set_page_config(page_title="Suficiencia · visor de demostración", layout="wide")
     paginas = [
@@ -526,6 +633,8 @@ def main() -> None:
         st.Page(pagina_validacion, title="Escenarios en validación", url_path="validacion"),
         st.Page(pagina_resultados, title="Resultados (Fase 3)", url_path="resultados"),
         st.Page(pagina_registro, title="Registro", url_path="registro"),
+        st.Page(pagina_historial, title="Historial de experimentos", url_path="historial"),
+        st.Page(pagina_decisiones, title="Decisiones", url_path="decisiones"),
     ]
     st.navigation(paginas).run()
 
