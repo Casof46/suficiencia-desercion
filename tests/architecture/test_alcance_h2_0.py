@@ -8,7 +8,8 @@ dependencia transitiva, para el visor de demostración (decisión D-91). F3.1 in
 scikit-learn, y con él joblib como dependencia transitiva (decisión D-127). F3.2
 incorporó XGBoost (paquete ``xgboost-cpu``) y LightGBM (decisión D-136). F3.6
 incorporó SHAP y LIME, y con ellos numba, matplotlib y scikit-image como dependencias
-transitivas (decisión D-174).
+transitivas (decisión D-174). F3.7 incorporó Plotly, en el grupo opcional del visor
+(decisión D-186).
 """
 
 from __future__ import annotations
@@ -20,7 +21,6 @@ from pathlib import Path
 
 # Bibliotecas que ningún hito construido usa todavía (decisión D-04 de H2.0).
 POSTERGADAS = {
-    "plotly",
     "imbalanced-learn",
     "optuna",
     "sqlalchemy",

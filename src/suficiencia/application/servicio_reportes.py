@@ -4,12 +4,15 @@ Desde H2.7: entorno de ejecución, registro de decisiones, consulta, verificaci�
 de integridad y exportación de los registros (DP-16: SQLite). Desde H2.8: estado de
 las decisiones DP-01 a DP-20 según el catálogo y el registro. Los reportes de
 experimentos y el reporte comparativo (RF-M6-04, RF-M6-07) llegan cuando existan
-experimentos, en fases posteriores.
+experimentos, en fases posteriores. Desde F3.7: el reporte de resultados de una
+evaluación final, con su comparación y su interpretabilidad (RF-M6-04, RF-M6-07), que
+solo se exporta con el rótulo de datos sintéticos (RNF-19, PI-16); la exportación de
+experimentos del registro lleva también la columna de rótulo.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -21,16 +24,23 @@ from suficiencia.application.contratos import (
     EntornoResumen,
     EstadoDecisionResumen,
     RegistroResumen,
+    ReporteResultados,
+    ResultadoComparacion,
     ResultadoConsultaRegistro,
     ResultadoDemostracion,
     ResultadoEstadoDecisiones,
+    ResultadoEvaluacionFinal,
+    ResultadoExplicacion,
     ResultadoExportacion,
+    ResultadoExportacionResultados,
     ResultadoIntegridad,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
+    SolicitudExportarResultados,
     SolicitudRegistrarDecision,
 )
 from suficiencia.application.registro_corridas import RegistradorCorridas
+from suficiencia.application.reporte_resultados import construir_reporte, exigir_rotulos
 from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
@@ -47,6 +57,13 @@ from suficiencia.domain.trazabilidad.registros import (
     RegistroGuardado,
     TipoRegistro,
     verificar_cadena,
+)
+from suficiencia.domain.trazabilidad.rotulo import (
+    CAMPO_ORIGEN,
+    OrigenDatos,
+    exigir_rotulo_tabla,
+    origen_de_registro,
+    valor_rotulo,
 )
 
 ARCHIVO_CONFIGURACION = Path("config") / "proyecto.yaml"
@@ -70,6 +87,12 @@ def _tabla(registros: list[RegistroGuardado]) -> pd.DataFrame:
     filas: list[dict[str, Any]] = [
         {"numero": r.numero, "fecha": r.fecha, "huella": r.huella, **r.contenido} for r in registros
     ]
+    if filas and registros[0].tipo is TipoRegistro.EXPERIMENTO:
+        # Resultados de experimentos: rótulo de origen en cada fila (RNF-19).
+        for fila, registro in zip(filas, registros, strict=True):
+            fila[CAMPO_ORIGEN] = valor_rotulo(
+                origen_de_registro(registro.contenido.get("configuracion", {}))
+            )
     return (
         pd.json_normalize(filas, sep=".")
         if filas
@@ -86,9 +109,9 @@ class ServicioReportes(ServicioCasosDeUso):
         DefinicionCasoDeUso(
             "CU-10",
             "Consultar trazabilidad y exportar reporte",
-            "los reportes de experimentos, cuando existan experimentos (fase posterior)",
+            "los reportes de experimentos del proyecto, cuando exista un protocolo aprobado",
             avance="registro de decisiones, consulta, verificación y exportación (H2.7): "
-            "`suficiencia registro`",
+            "`suficiencia registro`; reporte de resultados rotulado de la demostración (F3.7)",
         ),
     )
 
@@ -100,6 +123,8 @@ class ServicioReportes(ServicioCasosDeUso):
         capturador: Callable[[Path], CapturadorEntorno],
         exportar_tabla: Callable[[pd.DataFrame, Path], Huella],
         leer_yaml: Callable[[Path], Any],
+        archivos_resultados: Callable[[str, Mapping[str, pd.DataFrame]], dict[str, bytes]],
+        escribir_archivos: Callable[[Path, Mapping[str, bytes]], dict[str, str]],
     ) -> None:
         self._raiz = raiz
         self._fuente_configuracion = fuente_configuracion
@@ -107,6 +132,8 @@ class ServicioReportes(ServicioCasosDeUso):
         self._capturador = capturador
         self._exportar_tabla = exportar_tabla
         self._leer_yaml = leer_yaml
+        self._archivos_resultados = archivos_resultados
+        self._escribir_archivos = escribir_archivos
 
     def _configuracion(self) -> ConfiguracionProyecto:
         return self._fuente_configuracion(self._raiz / ARCHIVO_CONFIGURACION).cargar()
@@ -192,8 +219,62 @@ class ServicioReportes(ServicioCasosDeUso):
             )
         registros = self._repositorio(self.archivo_registro()).listar(TipoRegistro(solicitud.tipo))
         tabla = _tabla(registros)
+        if registros and registros[0].tipo is TipoRegistro.EXPERIMENTO:
+            sinteticas = [
+                origen_de_registro(r.contenido.get("configuracion", {})) is OrigenDatos.SINTETICO
+                for r in registros
+            ]
+            columnas = [str(c) for c in tabla.columns]
+            valores: list[Any] = (
+                list(tabla.loc[sinteticas, CAMPO_ORIGEN]) if CAMPO_ORIGEN in columnas else []
+            )
+            exigir_rotulo_tabla(solicitud.tipo, columnas, valores, OrigenDatos.SINTETICO)
         huella = self._exportar_tabla(tabla, destino)
         return ResultadoExportacion(archivo=str(destino), filas=len(tabla), huella=huella.valor)
+
+    def reporte_resultados(
+        self,
+        evaluacion: ResultadoEvaluacionFinal,
+        comparacion: ResultadoComparacion,
+        explicacion: ResultadoExplicacion | None,
+    ) -> ReporteResultados:
+        """Reporte de una evaluación final con su comparación y su explicación (F3.7)."""
+        return construir_reporte(evaluacion, comparacion, explicacion)
+
+    def contenido_resultados(self, reporte: ReporteResultados) -> dict[str, bytes]:
+        """Archivos del reporte en memoria (texto, CSV y Excel), para descargarlos.
+
+        Raises:
+            RotuloFaltante: si el reporte de datos sintéticos no lleva el rótulo (PI-16).
+            IdentificadorEnExportacion: si alguna tabla tiene identificadores (RNF-05).
+        """
+        exigir_rotulos(reporte)
+        tablas = {
+            t.nombre: pd.DataFrame(list(t.filas), columns=list(t.columnas)) for t in reporte.tablas
+        }
+        return self._archivos_resultados(reporte.texto, tablas)
+
+    def exportar_resultados(
+        self, solicitud: SolicitudExportarResultados
+    ) -> ResultadoExportacionResultados:
+        """Escribe el reporte en una carpeta nueva dentro de ``reports/`` (RF-M6-03).
+
+        Raises:
+            RotuloFaltante: si el reporte de datos sintéticos no lleva el rótulo (PI-16).
+            ConfiguracionInvalida: si la carpeta está fuera de ``reports/`` o ya existe.
+        """
+        reportes = self._configuracion().rutas["reportes"]
+        destino = (
+            solicitud.carpeta if solicitud.carpeta.is_absolute() else self._raiz / solicitud.carpeta
+        )
+        if not destino.resolve().is_relative_to(reportes.resolve()):
+            raise ConfiguracionInvalida(
+                f"La carpeta {solicitud.carpeta} está fuera de la carpeta de reportes.",
+                f"Guárdela dentro de {reportes.name}/, que git no versiona.",
+            )
+        archivos = self.contenido_resultados(solicitud.reporte)
+        huellas = self._escribir_archivos(destino, archivos)
+        return ResultadoExportacionResultados(carpeta=str(destino), archivos=huellas)
 
     def estado_decisiones(self) -> ResultadoEstadoDecisiones:
         """Cada decisión DP-01 a DP-20: registrada o abierta, con sus registros y su ficha."""

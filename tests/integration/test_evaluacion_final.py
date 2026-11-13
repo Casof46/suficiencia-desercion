@@ -12,6 +12,8 @@
   comparación no es válida (C7).
 - F3.6 (PI-13): las explicaciones solo se generan sobre configuraciones congeladas, con
   filas de desarrollo, y registran partición, muestras y semilla; no abren la prueba.
+- F3.7 (PI-16): la evaluación, la comparación y la explicación declaran en el registro
+  que los datos son sintéticos; la demostración exporta su reporte rotulado.
 - Demostración completa en un proyecto temporal, sin tocar el registro del proyecto.
 
 Todo es sintético y ficticio: ningún resultado es una conclusión sobre el método.
@@ -331,6 +333,8 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
     )
     assert registro["modo"] == "confirmatorio"
     assert registro["version_protocolo"] == "1"
+    assert registro["configuracion"]["origen_datos"] == "sintetico"  # PI-16
+    assert resultado.origen_datos == "sintetico"
     # CU-12 sin R0 congelada: la comparación no es válida (C7) y no abre la prueba.
     comparacion = servicios.evaluacion_final.comparar(
         SolicitudComparar(
@@ -340,6 +344,7 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
         )
     )
     assert comparacion.estado == "C7_comparacion_no_valida"
+    assert comparacion.origen_datos == "sintetico"
     assert "R0 no es evaluable" in comparacion.motivos_no_validez
     assert comparacion.accesos_a_la_prueba == 1
     with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
@@ -415,6 +420,7 @@ def _explicaciones(
     )
     # PI-13: partición, muestras y semilla en el registro; modo exploratorio.
     assert registro["modo"] == "exploratorio" and registro["estado"] == "exitosa"
+    assert registro["configuracion"]["origen_datos"] == "sintetico"  # PI-16
     assert registro["configuracion"]["particion"] == "desarrollo"
     assert registro["semillas"] == {"explicacion": explicacion.semilla}
     desarrollo = set(
@@ -534,6 +540,12 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     assert "Evaluación comparativa de" in salida
     assert "No se declara superioridad." in salida
     assert "Son asociaciones del modelo, no causas." in salida
+    # F3.7 (PI-16): el reporte de la demostración se exporta rotulado.
+    assert main([*argumentos, "--reporte", "reports/demostracion"]) == SALIDA_CORRECTA
+    assert "Reporte rotulado en" in capsys.readouterr().out
+    texto = (proyecto / "reports" / "demostracion" / "reporte.md").read_text(encoding="utf-8")
+    assert texto.startswith("> **DATOS SINTÉTICOS")
+    assert "## Comparación con la referencia R0" in texto and "## Limitaciones" in texto
 
 
 def test_la_demostracion_exige_protocolo_y_configuracion_ficticios(proyecto: Path) -> None:

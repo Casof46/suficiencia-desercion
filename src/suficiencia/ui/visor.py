@@ -5,9 +5,11 @@ Se ejecuta desde la raíz del repositorio:
     .venv\\Scripts\\python -m streamlit run src\\suficiencia\\ui\\visor.py
 
 Muestra, en el navegador y solo en ``localhost``, lo que el motor ya hace con los
-datos sintéticos y los ejemplos ficticios (H2.2 a H2.5 y H2.7). No es la interfaz
-definitiva del proyecto: no elige escenarios, no entrena modelos y no lee datos
-reales (el motor rechaza cualquier archivo sin la marca sintética, DP-02).
+datos sintéticos y los ejemplos ficticios (H2.2 a H2.5 y H2.7). Desde F3.7, una página
+de resultados ejecuta la demostración de la Fase 3 (selección, evaluación final,
+comparación con R0 y explicaciones) y la muestra con gráficos Plotly rotulados. No es
+la interfaz definitiva del proyecto y no lee datos reales (el motor rechaza cualquier
+archivo sin la marca sintética, DP-02).
 
 Solo usa la capa de aplicación (RF-UI-02, contrato ``ui-solo-aplicacion``).
 """
@@ -23,17 +25,20 @@ import streamlit as st
 from suficiencia.application.composicion import Servicios, crear_servicios
 from suficiencia.application.contratos import (
     ResultadoDefinicionObjetivo,
+    ResultadoDemostracionFinal,
     ResultadoDemostracionObjetivo,
     ResultadoEscenarios,
     ResultadoImportacion,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
+    SolicitudDemostracionFinal,
     SolicitudGenerarEscenarios,
     SolicitudImportarDataset,
     SolicitudLeerPrueba,
     SolicitudValidarObjetivo,
 )
 from suficiencia.application.errores import AccesoPruebaDenegado, ErrorSuficiencia
+from suficiencia.ui import graficos as g
 from suficiencia.ui import presentacion as p
 
 HISTORIAL = Path("data/sintetico/historial.xlsx")
@@ -41,6 +46,11 @@ DICCIONARIO = Path("config/ejemplos/diccionario_sintetico.yaml")
 OBJETIVO = Path("config/ejemplos/objetivo_ficticio.yaml")
 ESCENARIOS = Path("config/ejemplos/escenarios_ficticio.yaml")
 POBLACIONES = Path("config/ejemplos/poblaciones_ficticio.yaml")
+AMPLIADO = Path("data/sintetico/ampliado.csv")
+POBLACIONES_AMPLIADO = Path("config/ejemplos/poblaciones_ampliado_ficticio.yaml")
+EXPERIMENTOS = Path("config/ejemplos/experimentos_ficticio.yaml")
+PROTOCOLO_FINAL = Path("config/ejemplos/protocolo_evaluacion_final_ficticio.yaml")
+ESCENARIO_DEMOSTRACION = "T1|A+F"
 
 R = TypeVar("R")
 
@@ -371,6 +381,91 @@ def pagina_registro() -> None:
         st.caption(f"Archivo: {accesos.archivo}")
 
 
+def pagina_resultados() -> None:
+    _encabezado(
+        "Resultados: evaluación final, comparación con R0 y explicaciones",
+        "Ejecuta la demostración de la Fase 3 en un proyecto temporal que se borra al "
+        "terminar: entrena las cinco familias, selecciona con desarrollo, congela con un "
+        "protocolo ficticio, abre la prueba una sola vez, compara con la referencia R0 y "
+        "explica las configuraciones congeladas. Ninguna cifra es un resultado de la "
+        "investigación.",
+    )
+    if not (_raiz() / AMPLIADO).exists():
+        st.warning(
+            f"No existe {AMPLIADO}. Genérelo desde la raíz del repositorio con:\n\n"
+            "`.venv\\Scripts\\python scripts\\generar_sintetico.py --semilla 7 "
+            "--estudiantes 1200 --ampliado --salida data\\sintetico\\ampliado.csv`"
+        )
+        return
+    servicios = _servicios(str(_raiz()))
+    st.caption(
+        f"Escenario pedido: {ESCENARIO_DEMOSTRACION}. Entrenar los modelos tarda alrededor "
+        "de un minuto. Nada llega al registro del proyecto."
+    )
+    if st.button("Ejecutar la demostración", type="primary"):
+        with st.spinner("Entrenando, evaluando, comparando y explicando…"):
+            resultado = _ejecutar(
+                lambda: servicios.evaluacion_final.demostracion(
+                    SolicitudDemostracionFinal(
+                        archivo=_raiz() / AMPLIADO,
+                        diccionario=_raiz() / DICCIONARIO,
+                        definicion=_raiz() / OBJETIVO,
+                        poblaciones=_raiz() / POBLACIONES_AMPLIADO,
+                        escenarios=_raiz() / ESCENARIOS,
+                        experimentos=_raiz() / EXPERIMENTOS,
+                        protocolo=_raiz() / PROTOCOLO_FINAL,
+                        seleccion_escenarios=(ESCENARIO_DEMOSTRACION,),
+                    )
+                )
+            )
+        if resultado is not None:
+            st.session_state["resultados"] = resultado
+    demostracion: ResultadoDemostracionFinal | None = st.session_state.get("resultados")
+    if demostracion is None:
+        return
+    evaluacion, comparacion = demostracion.evaluacion, demostracion.comparacion
+    explicacion = demostracion.explicacion
+    st.write(
+        f"Regla de suficiencia: **{evaluacion.estado_regla}**"
+        + (f" ({evaluacion.escenario_suficiente})" if evaluacion.escenario_suficiente else "")
+        + f". Estado de la comparación con R0: **{comparacion.estado}**. Accesos permitidos "
+        f"a la prueba: **{evaluacion.accesos_a_la_prueba}**."
+    )
+    with st.expander("Pasos de la demostración"):
+        for numero, paso in enumerate(demostracion.pasos, start=1):
+            st.write(f"**{numero}. {paso.titulo}.** {paso.resultado}")
+
+    st.subheader("Evaluación final")
+    for metrica in ("auc_roc", "brier_escalado"):
+        st.plotly_chart(g.figura_metricas(evaluacion, metrica), width="stretch")
+
+    st.subheader("Comparación con la referencia R0")
+    st.write(
+        f"Seleccionada: **{comparacion.seleccionada}** ({comparacion.escenario_seleccionado}); "
+        f"R0: **{comparacion.referencia}** ({comparacion.escenario_referencia}). "
+        f"Estado: **{comparacion.estado}**. No se declara superioridad."
+    )
+    st.plotly_chart(g.figura_no_inferioridad(comparacion), width="stretch")
+    if comparacion.anticipacion_ventanas is not None:
+        st.write(
+            f"Anticipación: {comparacion.anticipacion_ventanas} ventanas, "
+            f"{comparacion.anticipacion_ciclos} ciclos. Bloques evitados: "
+            f"{', '.join(comparacion.bloques_evitados) or 'ninguno'}."
+        )
+
+    st.subheader("Interpretabilidad")
+    st.plotly_chart(g.figura_bloques(explicacion), width="stretch")
+    st.dataframe(p.tabla_locales(explicacion), hide_index=True, width="stretch")
+
+    st.subheader("Reporte rotulado")
+    reporte = servicios.reportes.reporte_resultados(evaluacion, comparacion, explicacion)
+    archivos = _ejecutar(lambda: servicios.reportes.contenido_resultados(reporte))
+    if archivos is None:
+        return
+    for nombre in ("reporte.md", "resultados.xlsx"):
+        st.download_button(f"Descargar {nombre}", archivos[nombre], file_name=nombre)
+
+
 def main() -> None:
     st.set_page_config(page_title="Suficiencia · visor de demostración", layout="wide")
     paginas = [
@@ -379,6 +474,7 @@ def main() -> None:
         st.Page(pagina_escenarios, title="Escenarios", url_path="escenarios"),
         st.Page(pagina_objetivo, title="Objetivo de deserción", url_path="objetivo"),
         st.Page(pagina_poblaciones, title="Poblaciones y partición", url_path="poblaciones"),
+        st.Page(pagina_resultados, title="Resultados (Fase 3)", url_path="resultados"),
         st.Page(pagina_registro, title="Registro", url_path="registro"),
     ]
     st.navigation(paginas).run()

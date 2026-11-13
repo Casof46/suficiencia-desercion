@@ -7,13 +7,14 @@ copia temporal del proyecto, para no escribir en workspace/ del repositorio.
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from fixtures.generador_sintetico import generar_historial
+from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial
 from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import SolicitudConsultarRegistro
 from suficiencia.ui import presentacion
@@ -24,6 +25,7 @@ PAGINAS = (
     "pagina_escenarios",
     "pagina_objetivo",
     "pagina_poblaciones",
+    "pagina_resultados",
     "pagina_registro",
 )
 
@@ -132,3 +134,37 @@ def test_el_resultado_de_un_caso_se_redacta_en_espanol(proyecto: Path) -> None:
     textos = {presentacion.resultado_caso(c) for c in demostracion.casos}
     assert "Deserta (evento en el periodo 3)" in textos
     assert "No etiquetable: seguimiento incompleto" in textos
+
+
+def test_sin_historial_ampliado_la_pagina_de_resultados_explica_como_generarlo(
+    proyecto: Path,
+) -> None:
+    app = _app("pagina_resultados").run()
+    assert not app.exception
+    assert "--ampliado" in app.warning[0].value
+    assert not app.button or app.button[0].label != "Ejecutar la demostración"
+
+
+def test_la_pagina_de_resultados_muestra_graficos_rotulados_y_descargas(proyecto: Path) -> None:
+    """F3.7: demostración completa desde el visor, con gráficos Plotly y el reporte (PI-16)."""
+    archivo = proyecto / "data" / "sintetico" / "ampliado.csv"
+    generar_historial(700, semilla=11, cohortes=COHORTES_AMPLIADAS).to_csv(archivo, index=False)
+    app = AppTest.from_function(_pagina, args=("pagina_resultados",), default_timeout=300).run()
+    assert not app.exception, app.exception
+    app.button[0].click().run()
+    assert not app.exception, app.exception
+    assert not app.error, [e.value for e in app.error]
+    graficos = app.get("plotly_chart")
+    assert len(graficos) == 4
+    for grafico in graficos:
+        figura = json.loads(grafico.proto.spec)["layout"]
+        assert figura["title"]["text"].startswith("DATOS SINTÉTICOS · ")
+    descargas = [d.proto.label for d in app.get("download_button")]
+    assert descargas == ["Descargar reporte.md", "Descargar resultados.xlsx"]
+    textos = " ".join(str(m.value) for m in app.markdown)
+    assert "No se declara superioridad" in textos
+    # Nada llegó al registro del proyecto: la demostración usa un proyecto temporal.
+    registro = crear_servicios(proyecto).reportes.consultar(
+        SolicitudConsultarRegistro(tipo="experimentos")
+    )
+    assert registro.registros == ()

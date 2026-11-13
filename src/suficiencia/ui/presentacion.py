@@ -16,6 +16,7 @@ from suficiencia.application.contratos import (
     EstadoProyecto,
     RegistroResumen,
     ResultadoEscenarios,
+    ResultadoExplicacion,
     ResultadoImportacion,
     ResultadoPoblaciones,
 )
@@ -213,3 +214,26 @@ def tabla_accesos(registros: tuple[RegistroResumen, ...]) -> pd.DataFrame:
     ]
     columnas = ["N.º", "Fecha (UTC)", "Operación", "Resultado", "Motivo"]
     return pd.DataFrame(filas, columns=columnas).iloc[::-1].reset_index(drop=True)
+
+
+def tabla_locales(explicacion: ResultadoExplicacion) -> pd.DataFrame:
+    """Explicaciones locales por registro numerado; sin seudónimos (F3.7)."""
+    filas = [
+        {
+            "Configuración": c.identificador,
+            "Registro": r.registro,
+            "SHAP (principales)": "; ".join(f"{x.variable} {x.valor:+.3f}" for x in r.shap),
+            "LIME (principales)": "; ".join(f"{x.variable} {x.valor:+.3f}" for x in r.lime),
+            "R² de LIME": round(r.lime_ajuste, 2),
+        }
+        for c in explicacion.configuraciones
+        for r in c.locales
+    ]
+    columnas = [
+        "Configuración",
+        "Registro",
+        "SHAP (principales)",
+        "LIME (principales)",
+        "R² de LIME",
+    ]
+    return pd.DataFrame(filas, columns=columnas)

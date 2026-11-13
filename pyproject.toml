@@ -34,9 +34,11 @@ dependencies = [
 suficiencia = "suficiencia.cli:main"
 
 [project.optional-dependencies]
-# Visor de demostración local (H2.D). Streamlit trae pyarrow como dependencia propia.
+# Visor de demostración local (H2.D) y sus gráficos (F3.7). Streamlit trae pyarrow
+# como dependencia propia.
 ui = [
     "streamlit>=1.40",  # visor web local de solo lectura (RF-UI-02); H2.D
+    "plotly>=6.0",      # gráficos del visor (RF-UI-03); F3.7
 ]
 dev = [
     "pytest>=8.0",          # ejecución de pruebas
@@ -79,7 +81,7 @@ plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
 mypy_path = ["src", "tests"]
 
-# scikit-learn, joblib, SHAP y LIME no publican tipos (sin py.typed ni stubs oficiales); F3.1, F3.2 y F3.6, D-131.
+# scikit-learn, joblib, SHAP, LIME y Plotly no publican tipos completos; F3.1, F3.2, F3.6 y F3.7, D-131.
 [[tool.mypy.overrides]]
-module = ["sklearn", "sklearn.*", "joblib", "joblib.*", "shap", "shap.*", "lime", "lime.*"]
+module = ["sklearn", "sklearn.*", "joblib", "joblib.*", "shap", "shap.*", "lime", "lime.*", "plotly", "plotly.*"]
 ignore_missing_imports = true

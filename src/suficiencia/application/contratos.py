@@ -799,6 +799,7 @@ class MetricasPruebaResumen(Contrato):
 class ResultadoEvaluacionFinal(Contrato):
     version_protocolo: int
     ficticio: bool
+    origen_datos: str
     configuraciones: tuple[MetricasPruebaResumen, ...]
     estado_regla: str
     escenario_suficiente: str | None
@@ -862,6 +863,7 @@ class ResultadoComparacion(Contrato):
     evaluacion: str
     version_protocolo: int
     ficticio: bool
+    origen_datos: str
     estado: str
     motivos_no_validez: tuple[str, ...]
     seleccionada: str | None
@@ -929,6 +931,7 @@ class ResultadoExplicacion(Contrato):
     evaluacion: str
     version_protocolo: int
     ficticio: bool
+    origen_datos: str
     alcance: str
     niveles: tuple[str, ...]
     particion: str
@@ -948,3 +951,38 @@ class ResultadoDemostracionFinal(Contrato):
     comparacion: ResultadoComparacion
     explicacion: ResultadoExplicacion
     pasos: tuple[PasoDemostracion, ...]
+
+
+# --- F3.7: reporte de resultados ------------------------------------------------------
+
+
+class TablaReporte(Contrato):
+    """Tabla del reporte; cada fila lleva la columna de rótulo (RNF-19)."""
+
+    nombre: str = Field(pattern=r"^[a-z0-9_]+$")
+    titulo: str
+    columnas: tuple[str, ...]
+    filas: tuple[tuple[str | int | float | None, ...], ...]
+
+
+class ReporteResultados(Contrato):
+    """Reporte de evaluación final, comparación e interpretabilidad (RF-M6-04, RF-M6-07)."""
+
+    origen_datos: str
+    ficticio: bool
+    leyenda: str
+    texto: str
+    tablas: tuple[TablaReporte, ...]
+
+
+class SolicitudExportarResultados(Contrato):
+    """Exporta un reporte a una carpeta dentro de ``reports/``, que git no versiona."""
+
+    reporte: ReporteResultados
+    carpeta: Path
+
+
+class ResultadoExportacionResultados(Contrato):
+    carpeta: str
+    archivos: dict[str, str]
+    """Nombre de cada archivo y su huella."""

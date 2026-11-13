@@ -94,6 +94,11 @@ from suficiencia.domain.trazabilidad.registros import (
     ModoExperimento,
     TipoRegistro,
 )
+from suficiencia.domain.trazabilidad.rotulo import (
+    CAMPO_ORIGEN,
+    origen_de_historial,
+    origen_de_registro,
+)
 
 ARCHIVO_EXPERIMENTOS = Path("config") / "experimentos.yaml"
 ARCHIVO_POBLACIONES = Path("config") / "poblaciones.yaml"
@@ -263,6 +268,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         ficticio = any(c.ficticio for c in configuraciones) or bool(
             evaluacion["configuracion"].get("ficticio")
         )
+        origen = origen_de_registro(evaluacion["configuracion"])
         validez = Validez(True, True, True, True, r0 is not None)
         no_inferioridad: list[NoInferioridadResumen] = []
         controles: list[ControlResumen] = []
@@ -336,6 +342,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                     "nivel": experimentos.comparacion.nivel,
                 },
                 "ficticio": ficticio,
+                CAMPO_ORIGEN: origen.value,
             },
             semillas={"bootstrap": experimentos.semilla},
             huella_datos=evaluacion["huella_datos"],
@@ -351,6 +358,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
             evaluacion=solicitud.evaluacion,
             version_protocolo=version,
             ficticio=ficticio,
+            origen_datos=origen.value,
             estado=estado.value,
             motivos_no_validez=validez.motivos(),
             seleccionada=seleccionada.identificador if seleccionada else None,
@@ -712,6 +720,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                 "huella_particion_prueba": huella_prueba,
                 "repeticion": solicitud.justificacion_repeticion,
                 "ficticio": evaluacion.ficticio,
+                CAMPO_ORIGEN: origen_de_historial(historial.sintetico).value,
             },
             semillas={"bootstrap": experimentos.semilla},
             huella_datos=historial.huella_dataset.valor,
@@ -725,6 +734,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         return ResultadoEvaluacionFinal(
             version_protocolo=vigente.numero,
             ficticio=evaluacion.ficticio or any(c.ficticio for c in configuraciones),
+            origen_datos=origen_de_historial(historial.sintetico).value,
             configuraciones=tuple(filas),
             estado_regla=resultado.estado.value,
             escenario_suficiente=resultado.escenario,

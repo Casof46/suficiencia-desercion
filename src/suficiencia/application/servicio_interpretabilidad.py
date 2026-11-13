@@ -60,6 +60,7 @@ from suficiencia.domain.puertos import (
     RepositorioRegistros,
 )
 from suficiencia.domain.trazabilidad.registros import ModoExperimento, TipoRegistro
+from suficiencia.domain.trazabilidad.rotulo import CAMPO_ORIGEN, origen_de_historial
 
 ARCHIVO_EXPERIMENTOS = Path("config") / "experimentos.yaml"
 ARCHIVO_POBLACIONES = Path("config") / "poblaciones.yaml"
@@ -338,6 +339,7 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
                 },
                 "muestras": muestras_registro,
                 "ficticio": ficticio,
+                CAMPO_ORIGEN: origen_de_historial(historial.sintetico).value,
             },
             semillas={"explicacion": semilla},
             huella_datos=historial.huella_dataset.valor,
@@ -358,6 +360,7 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
             evaluacion=solicitud.evaluacion,
             version_protocolo=version,
             ficticio=ficticio,
+            origen_datos=origen_de_historial(historial.sintetico).value,
             alcance=definicion.alcance.value,
             niveles=tuple(n.value for n in definicion.niveles),
             particion=definicion.particion.value,

@@ -43,7 +43,11 @@ from suficiencia.persistence.diccionario_yaml import FuenteVariablesDiccionario,
 from suficiencia.persistence.entorno import CapturadorEntornoLocal
 from suficiencia.persistence.escenarios_yaml import FuenteCatalogoYaml, FuenteVariablesYaml
 from suficiencia.persistence.experimentos_yaml import cargar_configuracion_experimentos
-from suficiencia.persistence.exportacion import exportar_tabla
+from suficiencia.persistence.exportacion import (
+    archivos_resultados,
+    escribir_archivos,
+    exportar_tabla,
+)
 from suficiencia.persistence.lectores import contenido_canonico, escribir_csv, leer_tabla
 from suficiencia.persistence.objetivo_yaml import cargar_definicion_objetivo
 from suficiencia.persistence.particion_archivos import (
@@ -175,6 +179,8 @@ def crear_servicios(raiz: Path, clave_sesion: bytes | None = None) -> Servicios:
         capturador=CapturadorEntornoLocal,
         exportar_tabla=_exportar,
         leer_yaml=leer_yaml,
+        archivos_resultados=archivos_resultados,
+        escribir_archivos=escribir_archivos,
     )
     escenarios = ServicioEscenarios(
         raiz=raiz,

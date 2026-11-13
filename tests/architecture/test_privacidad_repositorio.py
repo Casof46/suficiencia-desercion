@@ -55,6 +55,9 @@ DEBEN_IGNORARSE = [
     "workspace/evaluacion_final/2026-11-12T00-00-00-000000/configuracion_1.csv",
     "workspace/explicaciones/2026-11-12T00-00-00-000000/configuracion_1_locales.csv",
     "reports/decisiones.xlsx",
+    "reports/demostracion/reporte.md",
+    "reports/demostracion/resultados.xlsx",
+    "data/sintetico/ampliado.csv",
     "~$plantilla.xlsx",
 ]
 
@@ -94,6 +97,10 @@ DEBEN_VERSIONARSE = [
     "src/suficiencia/domain/evaluacion/comparacion.py",
     "src/suficiencia/domain/evaluacion/interpretabilidad.py",
     "src/suficiencia/experimentation/explicadores.py",
+    "src/suficiencia/domain/trazabilidad/rotulo.py",
+    "src/suficiencia/application/reporte_resultados.py",
+    "src/suficiencia/ui/graficos.py",
+    "tests/fixtures/resultados_ficticios.py",
     "src/suficiencia/application/demostracion_final.py",
     "config/ejemplos/protocolo_evaluacion_final_ficticio.yaml",
     "src/suficiencia/persistence/corridas_archivos.py",

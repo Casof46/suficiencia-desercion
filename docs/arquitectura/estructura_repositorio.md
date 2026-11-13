@@ -37,7 +37,7 @@ suficiencia-desercion/
 │   │   ├── proyecto.py         # configuración del proyecto como objeto del dominio
 │   │   ├── puertos.py          # FuenteConfiguracion, AlmacenArtefactos, FuenteCatalogoVentanas, FuenteVariables
 │   │   ├── datos/              # M1: diccionario.py y auditoria.py (H2.3); objetivo.py (H2.4)
-│   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7
+│   │   ├── trazabilidad/       # M6: registros.py (registros y cadena de huellas) y filtro.py; H2.7; rotulo.py (F3.7)
 │   │   ├── escenarios/         # M2: modelo.py y construccion.py (H2.2); poblaciones.py y particion.py con el sello (H2.5); matrices.py (F3.1)
 │   │   ├── evaluacion/         # M4: protocolo.py, congelamiento.py y suficiencia.py (H2.6); metricas.py (F3.3); seleccion.py (F3.4); comparacion.py (F3.5); interpretabilidad.py (F3.6)
 │   │   └── experimentos.py     # M3: validación cronológica y perfiles de preprocesamiento (F3.1); familias, búsqueda, desbalance y calibración (F3.2)
@@ -49,6 +49,7 @@ suficiencia-desercion/
 │   │   ├── demostracion_protocolo.py # ciclo del protocolo FICTICIO en un registro temporal; H2.6
 │   │   ├── preparacion_desarrollo.py # matrices y folds solo con desarrollo; F3.1
 │   │   ├── demostracion_final.py # selección, congelamiento, evaluación final, comparación y explicaciones FICTICIOS en un proyecto temporal; F3.4 a F3.6
+│   │   ├── reporte_resultados.py # reporte rotulado de evaluación, comparación e interpretabilidad; F3.7
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
 │   ├── experimentation/        # pipelines.py: preprocesamiento por fold (F3.1); modelos.py: las cinco familias (F3.2); explicadores.py: SHAP y LIME (F3.6)
@@ -66,8 +67,8 @@ suficiencia-desercion/
 │   │   ├── protocolo_yaml.py   # lector YAML del protocolo y de configuraciones para congelar; H2.6
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
-│   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7
-│   └── ui/                     # visor de demostración (H2.D)
+│   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7; archivos del reporte de resultados; F3.7
+│   └── ui/                     # visor de demostración (H2.D); graficos.py: gráficos Plotly de resultados (F3.7)
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (H2.3); ayudas del protocolo FICTICIO (H2.6); solo pruebas

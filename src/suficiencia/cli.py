@@ -31,7 +31,7 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia evaluacion explicar ARCHIVO (mismas opciones que preparar) --evaluacion ID
     suficiencia evaluacion demostracion ARCHIVO --diccionario R --definicion R --poblaciones R
                                         --escenarios R --experimentos R --protocolo R
-                                        --escenario T1|A+F [...]
+                                        --escenario T1|A+F [...] [--reporte CARPETA]
     suficiencia entorno
     suficiencia registro decision --codigo DP-xx --decision T --justificacion T --responsable T
     suficiencia registro ver TIPO
@@ -104,6 +104,7 @@ from suficiencia.application.contratos import (
     SolicitudEvaluacionFinal,
     SolicitudExplicar,
     SolicitudExportarRegistro,
+    SolicitudExportarResultados,
     SolicitudGenerarEscenarios,
     SolicitudGuardarBorrador,
     SolicitudImportarDataset,
@@ -486,6 +487,11 @@ def construir_analizador() -> argparse.ArgumentParser:
     )
     demostracion_final_p.add_argument(
         "--escenario", action="append", required=True, help="Escenario; se puede repetir."
+    )
+    demostracion_final_p.add_argument(
+        "--reporte",
+        type=Path,
+        help="Carpeta nueva dentro de reports/ para el reporte rotulado (F3.7).",
     )
     comandos.add_parser("entorno", help="Muestra el entorno que se registra con cada corrida.")
     registro = comandos.add_parser(
@@ -1382,21 +1388,31 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         )
         return SALIDA_CORRECTA
     if argumentos.comando == "evaluacion":
-        _mostrar_demostracion_final(
-            servicios.evaluacion_final.demostracion(
-                SolicitudDemostracionFinal(
-                    archivo=argumentos.archivo,
-                    diccionario=argumentos.diccionario,
-                    definicion=argumentos.definicion,
-                    poblaciones=argumentos.poblaciones,
-                    escenarios=argumentos.escenarios,
-                    experimentos=argumentos.experimentos,
-                    protocolo=argumentos.protocolo,
-                    seleccion_escenarios=tuple(argumentos.escenario),
-                )
-            ),
-            sys.stdout,
+        demostracion = servicios.evaluacion_final.demostracion(
+            SolicitudDemostracionFinal(
+                archivo=argumentos.archivo,
+                diccionario=argumentos.diccionario,
+                definicion=argumentos.definicion,
+                poblaciones=argumentos.poblaciones,
+                escenarios=argumentos.escenarios,
+                experimentos=argumentos.experimentos,
+                protocolo=argumentos.protocolo,
+                seleccion_escenarios=tuple(argumentos.escenario),
+            )
         )
+        _mostrar_demostracion_final(demostracion, sys.stdout)
+        if argumentos.reporte is not None:
+            exportado = servicios.reportes.exportar_resultados(
+                SolicitudExportarResultados(
+                    reporte=servicios.reportes.reporte_resultados(
+                        demostracion.evaluacion, demostracion.comparacion, demostracion.explicacion
+                    ),
+                    carpeta=argumentos.reporte,
+                )
+            )
+            print(f"\nReporte rotulado en {exportado.carpeta}:")
+            for nombre, huella in exportado.archivos.items():
+                print(f"  {nombre}  {huella[:16]}...")
         return SALIDA_CORRECTA
     if argumentos.comando == "experimentos" and argumentos.accion == "metricas":
         _mostrar_metricas(
