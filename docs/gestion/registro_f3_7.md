@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 3 (sección 2, F3.7); especificación Fase 1 v0.6 (RF-M6-03, RF-M6-04, RF-M6-07; RF-UI-02, RF-UI-03; RNF-19; PI-16) |
 | Autorización | El equipo aceptó F3.6, pidió empezar F3.7 y aprobó agregar Plotly el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 | Riesgo aceptado | La página de resultados y el reporte usan la demostración con protocolo ficticio; cuando exista un protocolo aprobado se agregará el reporte leído del registro |
-| Estado del hito | **Ejecutado y verificado en Linux.** Pendiente: verificación en Windows, commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `6769282`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -37,7 +37,7 @@ Fijada en `requirements.lock` con hashes y publicada antes del 28 de octubre de 
 | Entorno | Resultado |
 | --- | --- |
 | Linux, Python 3.11 (entorno de desarrollo, sin git) | Cinco `OK`; 6 contratos cumplidos; 902 pasan y 1 se omite (sin git) |
-| Windows 11 | Pendiente |
+| Windows 11, Python 3.13.0 (12 de noviembre de 2026) | Plotly 7.1.0 instalado desde `requirements.lock`; cinco `OK`; 6 contratos cumplidos; 902 pasan y 1 se omite (el sistema no permite crear enlaces simbólicos); la demostración exportó su reporte rotulado a `reports\demostracion_f37` (texto, cinco CSV y Excel), que empieza con la leyenda de datos sintéticos. Evidencia: `workspace\tareas\verificar_f37.log` |
 
 La página de resultados se revisó en Linux con Chromium: aviso, cuatro gráficos con el rótulo en el título y la leyenda al pie, tabla de explicaciones locales numeradas y dos descargas. Las cifras dependen del generador sintético y de valores inventados.
 
@@ -45,11 +45,11 @@ La página de resultados se revisó en Linux con Chromium: aviso, cuatro gráfic
 
 | # | Criterio | Estado | Evidencia |
 | --- | --- | --- | --- |
-| 1 | Páginas de resultados con rótulo sintético | Cumplido en Linux | `test_visor.py`; PI-16 |
-| 2 | Exportación rotulada; sin rótulo se rechaza | Cumplido en Linux | PI-16 |
-| 3 | Rótulo en los registros | Cumplido en Linux | PI-16 |
-| 4 | Gráficos con Plotly | Cumplido en Linux | RF-UI-03 |
-| 5 | Verificación en Windows antes del commit | Pendiente | — |
+| 1 | Páginas de resultados con rótulo sintético | Cumplido en Linux y Windows | `test_visor.py`; PI-16 |
+| 2 | Exportación rotulada; sin rótulo se rechaza | Cumplido en Linux y Windows | PI-16 |
+| 3 | Rótulo en los registros | Cumplido en Linux y Windows | PI-16 |
+| 4 | Gráficos con Plotly | Cumplido en Linux y Windows | RF-UI-03 |
+| 5 | Verificación en Windows antes del commit | Cumplido | `verificar_f37.log` |
 
 ## 5. Decisiones metodológicas
 
@@ -59,5 +59,5 @@ Ninguna DP-xx se resolvió.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 12 de noviembre de 2026 | Acepta F3.7 y pide preparar el informe de cierre de la Fase 3 |

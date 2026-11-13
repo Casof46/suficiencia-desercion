@@ -1,0 +1,136 @@
+Instalacion limpia de la Fase 3 en Linux (12 de noviembre de 2026)
+
+Clon nuevo de Casof46/suficiencia-desercion (rama main, commit 6769282) en un entorno nuevo con Python 3.12.3, siguiendo el README:
+  python3.12 -m venv .venv
+  .venv/bin/python -m pip install --require-hashes -r requirements.lock
+  .venv/bin/python -m pip install --no-deps --no-build-isolation -e .
+  .venv/bin/python scripts/verificar.py
+
+Datos sinteticos y configuraciones ficticias. Salida de verificar.py:
+
+Python 3.12.3 en <clon>/.venv/bin/python
+
+=== Estilo y errores comunes (ruff check) ===
+All checks passed!
+
+=== Formato (ruff format --check) ===
+184 files already formatted
+
+=== Tipos (mypy) ===
+Success: no issues found in 120 source files
+
+=== Contratos de capas (import-linter) ===
+
+╔══╗─────────▶╔╗ ╔╗      ╔╗◀───┐
+╚╣╠╝◀─────┐  ╔╝╚╗║║────▶╔╝╚╗   │
+ ║║   ╔══╦══╦╩╗╔╝║║  ╔╦═╩╗╔╝╔═╦══╗
+ ║║╔══╣╔╗║╔╗║╔╣║ ║║ ╔╬╣╔╗║║ ║│║╔═╝
+╔╣╠╣║║║╚╝║╚╝║║║╚╗║╚═╝║║║║║╚╗║═╣║
+╚══╩╩╩╣╔═╩══╩╝╚═╝╚═══╩╩╝╚╩═╩╩═╩╝
+  └──▶║║                    ▲ 
+      ╚╝────────────────────┘
+
+
+---------
+Contracts
+---------
+
+Analyzed 114 files, 589 dependencies.
+-------------------------------------
+
+Capas: ui > application > (experimentation | persistence) > domain KEPT
+La interfaz solo usa la capa de aplicacion (RF-UI-02) KEPT
+El dominio no usa interfaz, aprendizaje automatico ni almacenamiento (RNF-01) KEPT
+Ninguna capa salvo la interfaz importa Streamlit o Plotly (RNF-01) KEPT
+La linea de comandos solo usa la capa de aplicacion (RNF-02, PA-02) KEPT
+Ninguna capa importa la linea de comandos KEPT
+
+Contracts: 6 kept, 0 broken.
+
+=== Pruebas (pytest) ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.7.0
+rootdir: <clon>
+configfile: pyproject.toml
+testpaths: tests
+plugins: hypothesis-6.170.13, anyio-4.15.1
+collected 903 items
+
+tests/acceptance/test_casos_de_uso_sinteticos.py ......                  [  0%]
+tests/architecture/test_alcance_h2_0.py .....                            [  1%]
+tests/architecture/test_contratos_capas.py ......................        [  3%]
+tests/architecture/test_entorno_vscode.py ......                         [  4%]
+tests/architecture/test_linea_de_comandos.py ..........................  [  7%]
+tests/architecture/test_privacidad_repositorio.py ...................... [  9%]
+............................................................             [ 16%]
+tests/architecture/test_sin_criterio_por_defecto.py .............        [ 17%]
+tests/integration/test_entrenamiento.py .......................          [ 20%]
+tests/integration/test_evaluacion_final.py ......                        [ 20%]
+tests/integration/test_explicadores.py ...................               [ 23%]
+tests/integration/test_exportacion_resultados.py ....                    [ 23%]
+tests/integration/test_objetivo_servicio.py .......                      [ 24%]
+tests/integration/test_poblaciones_servicio.py ......                    [ 24%]
+tests/integration/test_preparacion_desarrollo.py .......                 [ 25%]
+tests/integration/test_protocolo_servicio.py .......                     [ 26%]
+tests/integration/test_registro_trazabilidad.py ..............           [ 28%]
+tests/integration/test_visor.py ................                         [ 29%]
+tests/unit/test_comparacion.py ......................................... [ 34%]
+.                                                                        [ 34%]
+tests/unit/test_configuracion.py ................                        [ 36%]
+tests/unit/test_datos_sinteticos.py ...........................          [ 39%]
+tests/unit/test_decisiones.py ........                                   [ 40%]
+tests/unit/test_diccionario.py .................................         [ 43%]
+tests/unit/test_errores_y_huella.py ...................                  [ 45%]
+tests/unit/test_escenarios.py ..........................                 [ 48%]
+tests/unit/test_escenarios_yaml.py ...................                   [ 50%]
+tests/unit/test_experimentos.py ........................................ [ 55%]
+..................                                                       [ 57%]
+tests/unit/test_interpretabilidad.py ................................... [ 61%]
+...                                                                      [ 61%]
+tests/unit/test_matrices.py .........                                    [ 62%]
+tests/unit/test_metricas.py ..............................               [ 65%]
+tests/unit/test_objetivo.py ............................................ [ 70%]
+........................................................                 [ 76%]
+tests/unit/test_paquete.py .........                                     [ 77%]
+tests/unit/test_poblaciones.py ...............................           [ 81%]
+tests/unit/test_protocolo.py .........................                   [ 84%]
+tests/unit/test_reporte_resultados.py .............                      [ 85%]
+tests/unit/test_script_generar_sintetico.py ..                           [ 85%]
+tests/unit/test_seleccion.py .........................                   [ 88%]
+tests/unit/test_servicios_aplicacion.py ................................ [ 92%]
+.                                                                        [ 92%]
+tests/unit/test_sin_red.py ....                                          [ 92%]
+tests/unit/test_suficiencia.py ......................................... [ 97%]
+....                                                                     [ 97%]
+tests/unit/test_trazabilidad.py ......................                   [100%]
+
+=============================== warnings summary ===============================
+tests/integration/test_evaluacion_final.py::test_evaluacion_final_unica_con_huellas_y_repeticion_justificada
+  <clon>/.venv/lib/python3.12/site-packages/shap/plots/colors/_colors.py:47: PendingDeprecationWarning: The set_bad function will be deprecated in a future version. Use cmap.with_extremes(bad=...) or Colormap(bad=...) instead.
+    red_blue.set_bad(gray_rgb.tolist(), 1.0)
+
+tests/integration/test_evaluacion_final.py::test_evaluacion_final_unica_con_huellas_y_repeticion_justificada
+  <clon>/.venv/lib/python3.12/site-packages/shap/plots/colors/_colors.py:48: PendingDeprecationWarning: The set_over function will be deprecated in a future version. Use cmap.with_extremes(over=...) or Colormap(over=...) instead.
+    red_blue.set_over(gray_rgb.tolist(), 1.0)
+
+tests/integration/test_evaluacion_final.py::test_evaluacion_final_unica_con_huellas_y_repeticion_justificada
+  <clon>/.venv/lib/python3.12/site-packages/shap/plots/colors/_colors.py:49: PendingDeprecationWarning: The set_under function will be deprecated in a future version. Use cmap.with_extremes(under=...) or Colormap(under=...) instead.
+    red_blue.set_under(gray_rgb.tolist(), 1.0)  # "under" is incorrectly used instead of "bad" in the scatter plot
+
+tests/integration/test_visor.py::test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra
+tests/integration/test_visor.py::test_el_sello_rechaza_la_lectura_desde_el_visor_y_la_registra
+tests/integration/test_visor.py::test_el_registro_muestra_el_intento_rechazado
+tests/integration/test_visor.py::test_el_registro_muestra_el_intento_rechazado
+  <clon>/.venv/lib/python3.12/site-packages/streamlit/elements/lib/built_in_chart_utils.py:620: Pandas4Warning: The inplace keyword in DataFrame.reset_index is deprecated and will be removed in a future version (PDEP-8).
+  See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+    df.reset_index(inplace=True)  # noqa: PD002
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 903 passed, 7 warnings in 262.75s (0:04:22) ==================
+
+=== Resumen ===
+OK     Estilo y errores comunes (ruff check)
+OK     Formato (ruff format --check)
+OK     Tipos (mypy)
+OK     Contratos de capas (import-linter)
+OK     Pruebas (pytest)
