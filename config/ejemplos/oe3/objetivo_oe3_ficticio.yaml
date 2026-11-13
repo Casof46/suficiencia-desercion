@@ -1,0 +1,58 @@
+# EJEMPLO FICTICIO de definición del objetivo para el ensayo de F4.3 con el dataset
+# sintético del OE3. NO es la definición de deserción del proyecto: DP-01 y DP-18
+# siguen abiertas. Los valores imitan las reglas que usó el generador del dataset
+# para su propia etiqueta (README del dataset, secciones 5 y 7), para comparar la
+# etiqueta del motor con la del generador; no son una propuesta.
+version_objetivo: 1
+nombre: "Objetivo ficticio del ensayo con el dataset del OE3 (F4.3)"
+ficticio: true
+
+evento:
+  periodos_sin_matricula: 2   # generador: dos ciclos consecutivos sin matrícula
+
+unidad:
+  tipo: estudiante
+  columna_carrera: null
+
+poblacion:
+  inicial: admitidos         # todos están matriculados en el ciclo 1 (R(T0) del generador); ver decisiones_f4_3.md
+  cohortes: todas
+
+horizonte:
+  periodos: 4                 # generador: H = 4 ciclos regulares
+  desde: ingreso
+
+fechado_evento: primer_periodo_sin_matricula   # generador: e_i es el primer ciclo sin matrícula
+
+pausas:
+  tratamiento: neutral        # generador: las reservas se omiten al evaluar la consecutividad
+  limite_periodos: 2          # el generador no admite tres reservas seguidas
+
+retiro_en_periodo: matricula  # generador: lectura literal (README, supuesto 1)
+
+traslados:                    # el dataset no tiene traslados; valores sin efecto
+  interno: matricula
+  externo: no_observable
+
+reingreso: no_anula           # generador: un retorno posterior al evento no cambia Y
+
+periodos_extraordinarios:
+  tratamiento: ignorar
+  periodos: []
+
+desenlaces_excluidos: desenlace_excluido   # generador: se excluye el episodio si hay fallecimiento
+
+seguimiento:
+  exigir: fin_horizonte_y_confirmacion   # generador: etiqueta confirmada con el ciclo H+1
+  periodo_sin_registro: no_observable
+
+catalogo_estados:
+  matriculado: matricula
+  no_matriculado: ausencia
+  reserva_aprobada: pausa
+  retiro_total: retiro_en_periodo
+  baja_por_fallecimiento: desenlace_excluido
+
+no_etiquetables:
+  tratamiento: excluir_y_contar
+  nivel_analisis_sensibilidad: 0.2   # valor inventado: lo fija la asesoría

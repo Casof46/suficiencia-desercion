@@ -1,0 +1,18 @@
+# EJEMPLO FICTICIO para el ensayo de F4.3. NO es la decisión DP-01d: las fechas
+# índice son las que supone el generador del dataset sintético del OE3.
+version_escenarios: 1
+ficticio: true
+
+bloques:
+  A: Académico
+  F: Financiero
+  S: Socioeconómico
+  B: Conductual
+
+conjuntos: [A, A+F, A+S, A+B, A+F+S, A+F+B, A+S+B, A+F+S+B]
+
+fechas_indice:
+  T0: "FICTICIA - cierre de matrícula del ciclo 1 (generador del OE3)"
+  T1: "FICTICIA - cierre de notas del ciclo 1 (generador del OE3)"
+  T2: "FICTICIA - cierre de notas del ciclo 2 (generador del OE3)"
+  T3: "FICTICIA - cierre de notas del ciclo 3 (generador del OE3)"

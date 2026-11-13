@@ -1,0 +1,72 @@
+# EJEMPLO FICTICIO de diccionario para el ensayo general de F4.3 con el dataset
+# sintético del OE3 (generado por scripts/oe3/generar_dataset_sintetico.py, semilla
+# 20261023). NO es el diccionario del proyecto (DP-03, DP-15): los nombres, tipos,
+# rangos, bloques y ventanas mínimas son los del diccionario del propio generador,
+# que los declara como supuestos sintéticos pendientes de verificación institucional.
+#
+# Formato: una fila por estudiante y ciclo, que arma scripts/preparar_ensayo_oe3.py
+# con los archivos longitudinal y ancho del generador (D-202 en
+# docs/arquitectura/decisiones_f4_3.md). En la fila del ciclo k, cada variable
+# disponible desde T1 lleva su valor a o(Tk) del archivo ancho; las disponibles desde
+# T0 llevan su valor a o(T0) en todas las filas.
+version_diccionario: 1
+nombre: "Diccionario del ensayo con el dataset sintético del OE3 (F4.3)"
+ficticio: true
+
+clave: [codigo_estudiante, ciclo]
+
+variables:
+  - {nombre: codigo_estudiante, tipo: codigo, rol: identificador, obligatoria: true, patron: "SYN-[A-Z0-9]{8}"}
+  - {nombre: origen_datos, tipo: categoria, rol: origen, obligatoria: true, valores: [SINTETICO]}
+  - {nombre: cohorte, tipo: codigo, rol: cohorte, obligatoria: true, patron: "20[0-9]{2}-[12]"}
+  - {nombre: ciclo, tipo: entero, rol: periodo, obligatoria: true, minimo: 1, maximo: 8}
+  - {nombre: fecha_registro, tipo: fecha, rol: fecha, obligatoria: true}
+  # Estado de matrícula del ciclo en el archivo longitudinal. 'retiro_total' lo
+  # agrega la conversión: es un ciclo 'matriculado' con retiro_total = 1.
+  - nombre: estado_matricula
+    tipo: categoria
+    rol: objetivo
+    obligatoria: true
+    valores: [matriculado, no_matriculado, reserva_aprobada, retiro_total, baja_por_fallecimiento]
+  # Las 40 variables predictoras del generador (A 15, F 9, S 9, B 7). La ventana
+  # mínima es su "primera ventana admisible" (α) en el generador.
+  - {nombre: puntaje_admision, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, minimo: 0, maximo: 100}
+  - {nombre: promedio_secundaria, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, minimo: 11, maximo: 20}
+  - {nombre: modalidad_admision, tipo: categoria, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, valores: [examen_admision, evaluacion_preferente, admision_por_merito]}
+  - {nombre: area_programa, tipo: categoria, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, valores: [ingenieria, negocios, salud, comunicaciones_humanidades, arquitectura_diseno]}
+  - {nombre: creditos_matriculados_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, minimo: 9, maximo: 35}
+  - {nombre: cursos_matriculados_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T0, minimo: 3, maximo: 7}
+  - {nombre: promedio_ultimo_ciclo, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 20}
+  - {nombre: promedio_ponderado_acum, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 20}
+  - {nombre: variacion_promedio_ultimo_ciclo, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T2, minimo: -20, maximo: 20}
+  - {nombre: creditos_aprobados_acum, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 110}
+  - {nombre: tasa_aprobacion_creditos_acum, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: cursos_desaprobados_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 7}
+  - {nombre: cursos_desaprobados_acum, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 28}
+  - {nombre: cursos_retirados_acum, tipo: entero, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 28}
+  - {nombre: pct_inasistencia_ultimo_ciclo, tipo: decimal, rol: rasgo, obligatoria: false, bloque: A, ventana_minima: T1, minimo: 0, maximo: 100}
+  - {nombre: escala_pension, tipo: entero, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T0, minimo: 1, maximo: 5}
+  - {nombre: tipo_financiamiento, tipo: categoria, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T0, valores: [ninguno, beca_parcial, beca_integral, credito_educativo]}
+  - {nombre: pct_beca, tipo: entero, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T0, minimo: 0, maximo: 100}
+  - {nombre: saldo_pendiente_soles, tipo: decimal, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 60000}
+  - {nombre: cuotas_vencidas_impagas, tipo: entero, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 20}
+  - {nombre: pct_obligaciones_vencidas_impagas, tipo: decimal, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: dias_atraso_promedio_pagos, tipo: decimal, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 400}
+  - {nombre: max_dias_atraso_vigente, tipo: entero, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 500}
+  - {nombre: cuotas_pagadas_con_atraso_acum, tipo: entero, rol: rasgo, obligatoria: false, bloque: F, ventana_minima: T1, minimo: 0, maximo: 20}
+  - {nombre: edad_ingreso, tipo: entero, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T0, minimo: 16, maximo: 35}
+  - {nombre: tipo_colegio, tipo: categoria, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T0, valores: [publico, privado]}
+  - {nombre: region_procedencia, tipo: categoria, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T0, valores: [capital, otra_region]}
+  - {nombre: encuesta_respondida, tipo: entero, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: ingreso_hogar_rango, tipo: categoria, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, valores: [R1_hasta_1500, R2_1501_3000, R3_3001_5000, R4_5001_8000, R5_mas_de_8000]}
+  - {nombre: trabaja, tipo: entero, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: horas_trabajo_semana, tipo: entero, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, minimo: 0, maximo: 60}
+  - {nombre: apoyo_economico_familiar, tipo: categoria, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, valores: [total, parcial, ninguno]}
+  - {nombre: primera_generacion_universitaria, tipo: entero, rol: rasgo, obligatoria: false, bloque: S, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: accesos_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 2000}
+  - {nombre: dias_activos_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 112}
+  - {nombre: actividades_entregadas_ultimo_ciclo, tipo: entero, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 32}
+  - {nombre: pct_actividades_entregadas_ultimo_ciclo, tipo: decimal, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 1}
+  - {nombre: dias_desde_ultima_actividad, tipo: entero, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 900}
+  - {nombre: tendencia_accesos_ultimo_ciclo, tipo: decimal, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 1000}
+  - {nombre: accesos_acum, tipo: entero, rol: rasgo, obligatoria: false, bloque: B, ventana_minima: T1, minimo: 0, maximo: 6000}

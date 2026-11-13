@@ -70,6 +70,10 @@ markers = [
 line-length = 100
 target-version = "py311"
 src = ["src", "tests", "scripts"]
+# Generador del dataset sintético del OE3: se versiona sin cambios para que sus huellas
+# coincidan con las del README del dataset (F4.3, D-201). El generador se copia a sí mismo
+# en su carpeta de salida, dentro de data/, que no tiene código del proyecto.
+extend-exclude = ["scripts/oe3/generar_dataset_sintetico.py", "data"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "PTH"]
@@ -80,6 +84,8 @@ strict = true
 plugins = ["pydantic.mypy"]
 files = ["src", "tests", "scripts"]
 mypy_path = ["src", "tests"]
+# Generador del dataset del OE3, sin cambios (F4.3, D-201).
+exclude = ["^scripts/oe3/generar_dataset_sintetico\\.py$"]
 
 # scikit-learn, joblib, SHAP, LIME y Plotly no publican tipos completos; F3.1, F3.2, F3.6 y F3.7, D-131.
 [[tool.mypy.overrides]]

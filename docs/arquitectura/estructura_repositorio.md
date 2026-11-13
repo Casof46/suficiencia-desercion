@@ -17,6 +17,7 @@ suficiencia-desercion/
 │   ├── proyecto.yaml           # rutas y parámetros de reproducibilidad sin valores pendientes
 │   ├── escenarios.yaml         # bloques, conjuntos y fechas índice (pendientes, DP-01d); H2.2
 │   └── ejemplos/               # catálogo, variables, diccionario, objetivo, poblaciones, partición y protocolo FICTICIOS; H2.2 a H2.6
+│       └── oe3/                # configuraciones FICTICIAS del ensayo con el dataset sintético del OE3; F4.3
 ├── data/
 │   └── README.md               # única pieza versionada de data/
 ├── docs/
@@ -27,7 +28,9 @@ suficiencia-desercion/
 │   └── gestion/                # acta, registro_h2_0.md, registro_h2_1.md
 ├── scripts/
 │   ├── verificar.py            # ejecuta todas las comprobaciones
-│   └── generar_sintetico.py    # genera archivos SINTÉTICOS dentro de data/; H2.3
+│   ├── generar_sintetico.py    # genera archivos SINTÉTICOS dentro de data/; H2.3
+│   ├── preparar_ensayo_oe3.py  # comprueba las huellas del dataset del OE3 y lo pasa al formato del motor; F4.3
+│   └── oe3/generar_dataset_sintetico.py  # generador del dataset SINTÉTICO del OE3, sin cambios (D-201); F4.3
 ├── src/suficiencia/
 │   ├── __init__.py             # versión y descripción de las capas
 │   ├── cli.py                  # línea de comandos `suficiencia` (H2.1); solo usa application

@@ -18,3 +18,7 @@ Desde H2.3 también se usan:
 - `interim/`: datasets sintéticos ya seudonimizados y auditados con `suficiencia datos importar --salida`.
 
 El comando `suficiencia datos importar` rechaza cualquier archivo que no esté marcado como sintético en todas sus filas.
+
+Desde F4.3 también se usa:
+
+- `oe3/`: dataset **sintético** del OE3, generado con `scripts/oe3/generar_dataset_sintetico.py --semilla 20261023`. `scripts/preparar_ensayo_oe3.py` comprueba sus huellas y escribe `sintetico/oe3_ensayo.csv` en el formato del motor.

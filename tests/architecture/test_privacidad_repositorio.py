@@ -59,6 +59,11 @@ DEBEN_IGNORARSE = [
     "reports/demostracion/resultados.xlsx",
     "data/sintetico/ampliado.csv",
     "~$plantilla.xlsx",
+    "data/oe3/dataset_sintetico_wide.csv",
+    "data/oe3/fuentes_crudas/pagos_cuotas.csv",
+    "data/oe3/generar_dataset_sintetico.py",
+    "data/sintetico/oe3_ensayo.csv",
+    "reports/ensayo_oe3/reporte.md",
 ]
 
 # Archivos del repositorio que SÍ deben versionarse.
@@ -105,6 +110,10 @@ DEBEN_VERSIONARSE = [
     "config/ejemplos/protocolo_evaluacion_final_ficticio.yaml",
     "src/suficiencia/persistence/corridas_archivos.py",
     "docs/gestion/plan_fase_3.md",
+    "scripts/preparar_ensayo_oe3.py",
+    "scripts/oe3/generar_dataset_sintetico.py",
+    "config/ejemplos/oe3/diccionario_oe3_ficticio.yaml",
+    "config/ejemplos/oe3/experimentos_oe3_ficticio.yaml",
 ]
 
 # Extensiones prohibidas entre los archivos versionados de un repositorio real.

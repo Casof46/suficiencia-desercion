@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 4 (sección 3, F4.1); especificación Fase 1 v0.6 (RF-M6-07, RF-M4-10, RF-M4-14; RNF-19; PI-16) |
 | Autorización | El equipo aprobó el plan de la Fase 4 y pidió empezar por F4.1 el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría no se ha pronunciado sobre ese plan |
 | Riesgo aceptado | Si la asesoría cambia el formato del reporte comparativo, se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux.** Pendiente: verificación en Windows, commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `028606c`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -29,7 +29,7 @@ Ninguna.
 | Entorno | Resultado |
 | --- | --- |
 | Linux, Python 3.11 (entorno de desarrollo, sin git) | Cinco `OK`; 6 contratos cumplidos; 908 pasan y 1 se omite (sin git) |
-| Windows 11 | Pendiente |
+| Windows 11, Python 3.13.0 (12 de noviembre de 2026) | Cinco `OK`; 6 contratos cumplidos; 908 pasan y 1 se omite (el sistema no permite crear enlaces simbólicos); `experimentos entrenar` con T0\|A y T1\|A (lr y rf): 4 corridas exitosas; `experimentos metricas --reporte` exportó el reporte rotulado a `reports\validacion_f41`. Evidencia: `workspace\tareas\verificar_f41.log` |
 
 La página de validación se revisó en Linux con Chromium, con 25 corridas de 5 escenarios entrenadas en un proyecto temporal.
 
@@ -37,10 +37,10 @@ La página de validación se revisó en Linux con Chromium, con 25 corridas de 5
 
 | # | Criterio | Estado | Evidencia |
 | --- | --- | --- | --- |
-| 1 | Reporte comparativo de una evaluación registrada | Cumplido en Linux | `test_evaluacion_final.py`, `test_exportacion_resultados.py` |
-| 2 | Escenarios por ventana y conjunto (tabla y gráfico) | Cumplido en Linux | `test_reporte_resultados.py`, `test_visor.py` |
-| 3 | Los cinco modelos de cada escenario en el reporte y en el visor | Cumplido en Linux | `test_reporte_resultados.py`, `test_visor.py` |
-| 4 | Verificación en Windows antes del commit | Pendiente | — |
+| 1 | Reporte comparativo de una evaluación registrada | Cumplido en Linux y Windows | `test_evaluacion_final.py`, `test_exportacion_resultados.py` |
+| 2 | Escenarios por ventana y conjunto (tabla y gráfico) | Cumplido en Linux y Windows | `test_reporte_resultados.py`, `test_visor.py` |
+| 3 | Los cinco modelos de cada escenario en el reporte y en el visor | Cumplido en Linux y Windows | `test_reporte_resultados.py`, `test_visor.py` |
+| 4 | Verificación en Windows antes del commit | Cumplido | `verificar_f41.log` |
 
 ## 5. Decisiones metodológicas
 
@@ -50,5 +50,5 @@ Ninguna DP-xx se resolvió.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 12 de noviembre de 2026 | Acepta F4.1 y pide empezar F4.3, recuperando el generador del dataset del OE3 de la conversación en que se hizo |

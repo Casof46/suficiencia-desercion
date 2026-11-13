@@ -48,7 +48,7 @@ def proyecto(tmp_path_factory: pytest.TempPathFactory) -> Path:
     raiz = Path(__file__).resolve().parents[2]
     destino = tmp_path_factory.mktemp("proyecto")
     (destino / EJEMPLOS).mkdir(parents=True)
-    for archivo in (raiz / EJEMPLOS).iterdir():
+    for archivo in (raiz / EJEMPLOS).glob("*.yaml"):  # sin la subcarpeta oe3/ (F4.3)
         (destino / EJEMPLOS / archivo.name).write_bytes(archivo.read_bytes())
     (destino / "config" / "proyecto.yaml").write_bytes((raiz / "config/proyecto.yaml").read_bytes())
     datos = destino / "data" / "sintetico" / "ampliado.csv"

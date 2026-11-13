@@ -62,14 +62,21 @@ class _ATiposSklearn:
     tipos: TiposColumnas
 
     def __call__(self, tabla: pd.DataFrame) -> pd.DataFrame:
-        salida = pd.DataFrame(index=tabla.index)
-        for columna in self.tipos.numericas:
-            salida[columna] = pd.to_numeric(
-                tabla[columna].astype("Float64"), errors="raise"
-            ).to_numpy(dtype="float64", na_value=np.nan)
-        for columna in self.tipos.categoricas:
-            salida[columna] = tabla[columna].astype("object").where(tabla[columna].notna(), np.nan)
-        return salida
+        # Las columnas salen en el orden de entrada: el nombre de cada salida es el de
+        # su entrada ("one-to-one") y scikit-learn exige que coincidan (F4.3, D-203).
+        numericas = set(self.tipos.numericas)
+        categoricas = set(self.tipos.categoricas)
+        columnas: dict[str, object] = {}
+        for columna in tabla.columns:
+            if columna in numericas:
+                columnas[columna] = pd.to_numeric(
+                    tabla[columna].astype("Float64"), errors="raise"
+                ).to_numpy(dtype="float64", na_value=np.nan)
+            elif columna in categoricas:
+                columnas[columna] = (
+                    tabla[columna].astype("object").where(tabla[columna].notna(), np.nan)
+                )
+        return pd.DataFrame(columnas, index=tabla.index)
 
 
 def _a_tipos_sklearn(tipos: TiposColumnas) -> FunctionTransformer:
