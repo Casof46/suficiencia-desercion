@@ -22,6 +22,9 @@ carpeta de trabajo del proyecto. Usa los mismos servicios que el proyecto real:
    sin volver a abrir la prueba (CU-12; PI-15), y clasifica el resultado (C1 a C8).
 10. Explica las configuraciones congeladas con el alcance de DP-11 (CU-09; PI-13),
     solo con filas de desarrollo.
+11. Si la configuración lo habilita (DP-20g), describe la estabilidad de la selección por
+    fold de desarrollo y las métricas de prueba por cohorte, sin volver a abrir la prueba
+    (CMP-5; F4.2).
 
 La clave de seudonimización es aleatoria, vive solo durante la demostración y es la
 misma para construir la partición y para evaluarla.
@@ -49,6 +52,7 @@ from suficiencia.application.contratos import (
     SolicitudConstruirPoblaciones,
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
+    SolicitudEstabilidad,
     SolicitudEvaluacionFinal,
     SolicitudExplicar,
     SolicitudGenerarEscenarios,
@@ -158,7 +162,8 @@ def ejecutar_demostracion_final(
             ).escenarios
             if e.factible
         }
-        referencia = configuracion_experimentos_desde_datos(datos_experimentos).referencia
+        configuracion_exp = configuracion_experimentos_desde_datos(datos_experimentos)
+        referencia = configuracion_exp.referencia
         necesarios = tuple(
             dict.fromkeys(
                 [
@@ -331,6 +336,26 @@ def ejecutar_demostracion_final(
                 + f". Accesos permitidos a la prueba: {explicacion.accesos_a_la_prueba}",
             )
         )
+        estabilidad = None
+        if configuracion_exp.comparacion.estabilidad:
+            estabilidad = servicios.evaluacion_final.estabilidad(
+                SolicitudEstabilidad(
+                    evaluacion=evaluacion.identificador_registro,
+                    experimentos=comunes["experimentos"],
+                ),
+                procedimientos,
+            )
+            pasos.append(
+                PasoDemostracion(
+                    titulo="Estabilidad de la selección por fold y métricas por cohorte (CMP-5)",
+                    resultado="; ".join(
+                        f"{f.escenario}: cumple en {f.cumple} de {f.folds} folds, elegido en "
+                        f"{f.elegido}"
+                        for f in estabilidad.frecuencias
+                    )
+                    + f". Accesos permitidos a la prueba: {estabilidad.accesos_a_la_prueba}",
+                )
+            )
         permitidos = sum(
             1
             for g in repositorio.listar(TipoRegistro.ACCESO)
@@ -348,5 +373,6 @@ def ejecutar_demostracion_final(
         evaluacion=evaluacion,
         comparacion=comparacion,
         explicacion=explicacion,
+        estabilidad=estabilidad,
         pasos=tuple(pasos),
     )

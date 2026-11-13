@@ -564,6 +564,10 @@ def test_demostracion_completa_sin_tocar_el_registro_del_proyecto(
     assert explicacion.ficticio
     despues = len(servicios.reportes.repositorio().listar(TipoRegistro.EXPERIMENTO))
     assert despues == antes
+    # F4.2: con la configuración de ejemplo, las funciones opcionales están apagadas.
+    assert resultado.estabilidad is None
+    assert "R-max" not in {c.identificador for c in resultado.evaluacion.configuraciones}
+    assert all(c.estabilidad is None for c in explicacion.configuraciones)
     # La línea de comandos de la demostración.
     argumentos = ["--raiz", str(proyecto), "evaluacion", "demostracion", str(comunes["archivo"])]
     for opcion in ("diccionario", "definicion", "poblaciones", "escenarios", "experimentos"):

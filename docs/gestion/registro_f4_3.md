@@ -7,7 +7,7 @@
 | Base | Plan de la Fase 4 (sección 3, F4.3); README del dataset sintético del OE3 (proyecto TP1) |
 | Autorización | El equipo pidió empezar F4.3 el 12 de noviembre de 2026, recuperando el generador del dataset de la conversación en que se hizo (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría no se ha pronunciado sobre el plan de la Fase 4 |
 | Riesgo aceptado | Las definiciones del generador difieren en parte de las del motor; se documentan como supuestos del ejemplo ficticio (DP-01 sigue abierta) |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows.** Pendiente: commit del equipo y aceptación |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `3f7e8e5`); aceptado por el equipo** el 13 de noviembre de 2026, con la corrección D-203 y la desviación D-202 (comunicado por Jorge; pendiente de confirmación de Javier) |
 
 ## 1. Qué se construyó
 
@@ -48,7 +48,9 @@ Salidas de la demostración (no son conclusiones): con el criterio ficticio de F
 
 1. **Error del motor corregido** (D-203). El entrenamiento fallaba en las cinco familias cuando una variable categórica quedaba entre numéricas. El historial de prueba anterior no lo mostraba.
 2. **Diferencias de reglas entre el motor y el generador**, documentadas para la discusión de DP-01 y DP-04 (apartado «Diferencias entre el motor y el generador» de `decisiones_f4_3.md`). La principal: cómo se confirma el evento cuando hay reservas al final del horizonte o en el ciclo H+1. No se cambió el motor.
-3. **Desviación del plan:** se usan el archivo ancho y el longitudinal, no solo el ancho (D-202). Queda a decisión del equipo.
+3. **Desviación del plan:** se usan el archivo ancho y el longitudinal, no solo el ancho (D-202). El equipo la aceptó el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier).
+
+El equipo decidió dejar las diferencias del punto 2 solo documentadas, sin llevarlas como pregunta aparte a la asesoría (13 de noviembre de 2026; comunicado por Jorge; pendiente de confirmación de Javier).
 
 ## 6. Decisiones metodológicas
 
@@ -58,5 +60,5 @@ Ninguna DP-xx se resolvió.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente | |
-| Jorge | Pendiente | |
+| Javier | Pendiente de confirmación | |
+| Jorge | 13 de noviembre de 2026 | Acepta F4.3, la corrección del preprocesamiento (D-203) y la desviación del plan (D-202); pide empezar F4.2. Las diferencias entre el motor y el generador quedan solo documentadas |

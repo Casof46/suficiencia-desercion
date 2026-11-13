@@ -890,6 +890,60 @@ class ResultadoComparacion(ResumenComparacion):
     accesos_a_la_prueba: int
 
 
+# --- F4.2: estabilidad (CMP-5) ------------------------------------------------------
+
+
+class SolicitudEstabilidad(Contrato):
+    """Estabilidad descriptiva de la selección (CMP-5; RF-M4-22; F4.2).
+
+    Aplica el criterio del protocolo de la evaluación en cada fold de desarrollo y
+    describe las métricas de prueba por cohorte con las predicciones ya guardadas: no
+    vuelve a abrir la prueba. Sin ``experimentos``, el archivo del proyecto.
+    """
+
+    evaluacion: str = Field(min_length=1)
+    experimentos: Path | None = None
+
+
+class FrecuenciaEscenarioResumen(Contrato):
+    escenario: str
+    algoritmo: str
+    folds: int
+    evaluables: int
+    cumple: int
+    elegido: int
+
+
+class ReglaFoldResumen(Contrato):
+    fold: int
+    cohorte: str
+    estado: str
+    escenario: str | None
+
+
+class MetricasCohorteResumen(Contrato):
+    identificador: str
+    rol: str
+    escenario: str
+    algoritmo: str
+    cohorte: str
+    filas: int
+    eventos: int
+    metricas: dict[str, EstimacionResumen]
+
+
+class ResultadoEstabilidad(Contrato):
+    evaluacion: str
+    version_protocolo: int
+    ficticio: bool
+    origen_datos: str
+    frecuencias: tuple[FrecuenciaEscenarioResumen, ...]
+    reglas: tuple[ReglaFoldResumen, ...]
+    por_cohorte: tuple[MetricasCohorteResumen, ...]
+    identificador_registro: str
+    accesos_a_la_prueba: int
+
+
 # --- F3.6: interpretabilidad ---------------------------------------------------------
 
 
@@ -918,6 +972,17 @@ class ExplicacionLocalResumen(Contrato):
     lime_ajuste: float
 
 
+class EstabilidadExplicacionResumen(Contrato):
+    """Importancia de los modelos de cada fold frente al congelado (RF-M5-06; F4.2)."""
+
+    folds: int
+    bloques_por_fold: dict[int, dict[str, float]]
+    bloques_congelado: dict[str, float]
+    correlaciones: dict[int, float | None]
+    correlacion_media: float | None
+    correlacion_minima: float | None
+
+
 class ExplicacionConfiguracionResumen(Contrato):
     identificador: str
     rol: str
@@ -933,6 +998,8 @@ class ExplicacionConfiguracionResumen(Contrato):
     importancia_variables: dict[str, float]
     importancia_bloques: dict[str, float]
     locales: tuple[ExplicacionLocalResumen, ...]
+    estabilidad: EstabilidadExplicacionResumen | None = None
+    """Comparación con los modelos de cada fold (RF-M5-06; F4.2), si se pidió."""
 
 
 class ResultadoExplicacion(Contrato):
@@ -958,6 +1025,8 @@ class ResultadoDemostracionFinal(Contrato):
     evaluacion: ResultadoEvaluacionFinal
     comparacion: ResultadoComparacion
     explicacion: ResultadoExplicacion
+    estabilidad: ResultadoEstabilidad | None = None
+    """Solo si 'comparacion.estabilidad' está habilitada (DP-20g; F4.2)."""
     pasos: tuple[PasoDemostracion, ...]
 
 

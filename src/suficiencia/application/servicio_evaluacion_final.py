@@ -25,10 +25,14 @@ from suficiencia.application._base import DefinicionCasoDeUso, ServicioCasosDeUs
 from suficiencia.application.contratos import (
     ControlResumen,
     EstimacionResumen,
+    FrecuenciaEscenarioResumen,
+    MetricasCohorteResumen,
     MetricasPruebaResumen,
     NoInferioridadResumen,
+    ReglaFoldResumen,
     ResultadoComparacion,
     ResultadoDemostracionFinal,
+    ResultadoEstabilidad,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
     ResultadosRegistrados,
@@ -36,6 +40,7 @@ from suficiencia.application.contratos import (
     ResumenComparacion,
     SolicitudComparar,
     SolicitudDemostracionFinal,
+    SolicitudEstabilidad,
     SolicitudEvaluacionFinal,
     SolicitudResultadosRegistrados,
     SolicitudVerificarEvaluacionFinal,
@@ -71,6 +76,7 @@ from suficiencia.domain.evaluacion.congelamiento import (
     configuracion_desde_datos,
     preparar_evaluacion_final,
 )
+from suficiencia.domain.evaluacion.estabilidad import estabilidad_seleccion
 from suficiencia.domain.evaluacion.metricas import (
     MAYOR_ES_MEJOR,
     MatrizConfusion,
@@ -498,6 +504,190 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
             explicacion=explicacion,
         )
 
+    def estabilidad(
+        self,
+        solicitud: SolicitudEstabilidad,
+        procedimientos: Mapping[str, ProcedimientoMultiplicidad] = PROCEDIMIENTOS_IMPLEMENTADOS,
+    ) -> ResultadoEstabilidad:
+        """Estabilidad descriptiva de la selección (CMP-5; RF-M4-22; F4.2).
+
+        1. En cada fold de desarrollo aplica el criterio del protocolo de la evaluación
+           a las probabilidades de validación del modelo seleccionado de cada escenario,
+           con intervalos bootstrap dentro del fold (DP-08e), y cuenta en cuántos folds
+           cada escenario cumple y en cuántos la regla lo elegiría.
+        2. Describe las métricas de prueba de cada configuración por cohorte, con las
+           predicciones guardadas por la evaluación final: no abre la prueba.
+
+        Es descriptiva y exploratoria; no hay inferencia entre cohortes (DP-20g).
+
+        Raises:
+            ConfiguracionInvalida: si la evaluación no existe o un archivo cambió.
+            DecisionPendiente: si el procedimiento de multiplicidad no existe (DP-08f).
+        """
+        experimentos = self._cargar_experimentos(
+            self._ruta(solicitud.experimentos, ARCHIVO_EXPERIMENTOS)
+        )
+        if not experimentos.comparacion.estabilidad:
+            raise ConfiguracionInvalida(
+                "La estabilidad de la selección (CMP-5) no está habilitada en la configuración.",
+                "Es descriptiva y opcional (DP-20g): declare 'comparacion.estabilidad: true'.",
+            )
+        repositorio = self._repositorio(self._archivo_registro())
+        evaluacion = evaluacion_final_registrada(repositorio, solicitud.evaluacion)
+        version = int(evaluacion["version_protocolo"])
+        criterio = historial_protocolo(repositorio).version(version).contenido.criterio
+        definicion = experimentos.metricas
+        congeladas = {
+            g.contenido["configuracion"]["identificador"]: configuracion_desde_datos(
+                g.contenido["configuracion"]
+            )
+            for g in repositorio.listar(TipoRegistro.CONGELAMIENTO)
+        }
+        configuraciones = [congeladas[i] for i in evaluacion["configuracion"]["configuraciones"]]
+        corridas = {
+            g.contenido["identificador"]: g.contenido
+            for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+        }
+
+        def estimaciones(y: np.ndarray, p: np.ndarray, cohorte: list[str]) -> dict[str, Any]:
+            indices = remuestras(
+                y, cohorte, definicion.estratificacion, definicion.replicas, experimentos.semilla
+            )
+            return {
+                m.value: estimar(definicion.funcion(m), y, p, indices, definicion.nivel)
+                for m in definicion.metricas
+            }
+
+        # 1. La regla en cada fold de desarrollo.
+        por_fold: dict[int, list[ResultadoEscenario]] = {}
+        cohorte_fold: dict[int, str] = {}
+        algoritmos: dict[str, str] = {}
+        for configuracion in configuraciones:
+            if configuracion.rol.value != "seleccionada":
+                continue
+            datos = json.loads(configuracion.datos_reentrenamiento)
+            seleccion = json.loads(
+                (self._raiz / Path(datos["modelo"]).parent / "manifiesto.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            corrida = corridas[seleccion["corrida"]]
+            resultados = corrida["resultados"]
+            validacion = self._leer_csv(
+                self._raiz / resultados["carpeta"] / "predicciones.csv",
+                resultados["huellas_archivos"]["predicciones.csv"],
+            )
+            ventana, conjunto = configuracion.escenario.split("|", 1)
+            algoritmos[configuracion.escenario] = configuracion.algoritmo
+            for fold in sorted(int(f) for f in validacion["fold"].unique()):
+                filas = validacion[validacion["fold"].astype(int) == fold]
+                y = filas["objetivo"].to_numpy(dtype="int64")
+                p = filas["probabilidad"].to_numpy(dtype="float64")
+                cohortes = filas["cohorte"].astype(str).tolist()
+                cohorte_fold[fold] = ", ".join(sorted(set(cohortes)))
+                por_fold.setdefault(fold, []).append(
+                    ResultadoEscenario(
+                        configuracion.escenario,
+                        conjunto,
+                        orden_ventana(ventana),
+                        len(conjunto.split("+")),
+                        {
+                            n: Estimacion(
+                                e.puntual, _numero(e.limite_inferior), _numero(e.limite_superior)
+                            )
+                            for n, e in estimaciones(y, p, cohortes).items()
+                            if _numero(e.puntual) is not None
+                        },
+                        {},
+                    )
+                )
+        frecuencias, reglas = estabilidad_seleccion(criterio, por_fold, procedimientos)
+
+        # 2. Métricas de prueba por cohorte, con las predicciones guardadas.
+        guardadas = evaluacion["resultados"]["predicciones"]
+        carpeta = self._raiz / guardadas["carpeta"]
+        por_cohorte: list[MetricasCohorteResumen] = []
+        for configuracion in configuraciones:
+            datos_archivo = guardadas["archivos"][configuracion.identificador]
+            tabla = self._leer_csv(carpeta / datos_archivo["archivo"], datos_archivo["huella"])
+            for cohorte, filas in tabla.groupby(tabla["cohorte"].astype(str), sort=True):
+                y = filas["objetivo"].to_numpy(dtype="int64")
+                p = filas["probabilidad"].to_numpy(dtype="float64")
+                por_cohorte.append(
+                    MetricasCohorteResumen(
+                        identificador=configuracion.identificador,
+                        rol=configuracion.rol.value,
+                        escenario=configuracion.escenario,
+                        algoritmo=configuracion.algoritmo,
+                        cohorte=str(cohorte),
+                        filas=len(y),
+                        eventos=int(y.sum()),
+                        metricas={
+                            n: EstimacionResumen(
+                                puntual=_numero(e.puntual),
+                                limite_inferior=_numero(e.limite_inferior),
+                                limite_superior=_numero(e.limite_superior),
+                                replicas_validas=e.replicas_validas,
+                            )
+                            for n, e in estimaciones(y, p, [str(cohorte)] * len(y)).items()
+                        },
+                    )
+                )
+        resumen_frecuencias = tuple(
+            FrecuenciaEscenarioResumen(
+                escenario=f.escenario,
+                algoritmo=algoritmos[f.escenario],
+                folds=f.folds,
+                evaluables=f.evaluables,
+                cumple=f.cumple,
+                elegido=f.elegido,
+            )
+            for f in frecuencias
+        )
+        resumen_reglas = tuple(
+            ReglaFoldResumen(
+                fold=r.fold, cohorte=cohorte_fold[r.fold], estado=r.estado, escenario=r.escenario
+            )
+            for r in reglas
+        )
+        ficticio = any(c.ficticio for c in configuraciones) or bool(
+            evaluacion["configuracion"].get("ficticio")
+        )
+        origen = origen_de_registro(evaluacion["configuracion"])
+        guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
+            lambda: {
+                "frecuencias": [f.model_dump() for f in resumen_frecuencias],
+                "reglas": [r.model_dump() for r in resumen_reglas],
+                "por_cohorte": [c.model_dump() for c in por_cohorte],
+            },
+            modo=ModoExperimento.EXPLORATORIO,
+            configuracion={
+                "tipo": "estabilidad",
+                "evaluacion_final": solicitud.evaluacion,
+                "ficticio": ficticio,
+                CAMPO_ORIGEN: origen.value,
+            },
+            semillas={"bootstrap": experimentos.semilla},
+            huella_datos=None,
+            version_protocolo=str(version),
+        )
+        accesos = sum(
+            1
+            for g in repositorio.listar(TipoRegistro.ACCESO)
+            if g.contenido["operacion"] == OPERACION_EVALUACION_FINAL and g.contenido["permitido"]
+        )
+        return ResultadoEstabilidad(
+            evaluacion=solicitud.evaluacion,
+            version_protocolo=version,
+            ficticio=ficticio,
+            origen_datos=origen.value,
+            frecuencias=resumen_frecuencias,
+            reglas=resumen_reglas,
+            por_cohorte=tuple(por_cohorte),
+            identificador_registro=guardado.contenido["identificador"],
+            accesos_a_la_prueba=accesos,
+        )
+
     def _no_inferioridad(
         self,
         experimentos: ConfiguracionExperimentos,
@@ -550,9 +740,10 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
         seleccionada: ConfiguracionCongelable,
         tablas: Mapping[str, pd.DataFrame],
     ) -> list[ControlResumen]:
-        """Diferencias descriptivas frente a R0-fam y R-ven (CMP-2), en su población común."""
+        """Diferencias descriptivas frente a R0-fam, R-ven (CMP-2) y R-max si existe, en su
+        población común."""
         ventana = seleccionada.escenario.split("|", 1)[0]
-        buscados = {f"R0-fam-{seleccionada.algoritmo}", f"R-ven-{ventana}"}
+        buscados = {f"R0-fam-{seleccionada.algoritmo}", f"R-ven-{ventana}", "R-max"}
         intervalos = experimentos.metricas
         resumen = []
         for control in configuraciones:

@@ -1,0 +1,161 @@
+# EJEMPLO FICTICIO: config/ejemplos/experimentos_ficticio.yaml con las tres funciones
+# opcionales de F4.2 encendidas: el referente R-max (DP-19d), la estabilidad de la
+# selección por fold (CMP-5; DP-20g) y la estabilidad de las explicaciones entre folds
+# (RF-M5-06). Son descriptivas (N3). NO es la configuración del proyecto.
+version_experimentos: 1
+nombre: "Experimentos ficticios con las funciones opcionales de F4.2"
+ficticio: true
+
+# DP-07: validación interna cronológica por cohortes (rolling-origin). Con estos
+# valores inventados, 8 cohortes de desarrollo dan 6 folds, como la base de
+# trabajo del informe del OE3.
+validacion:
+  esquema: expansivo          # expansivo | deslizante (este último exige 'ancho')
+  cohortes_iniciales: 2       # cohortes anteriores a la primera de validación
+  cohorte_calibracion: true   # reservar la cohorte anterior a la de validación
+
+# DP-03 y DP-15: cómo se lee cada variable del diccionario sintético en el corte
+# de cada ventana. primer_registro solo vale para variables disponibles desde T0.
+matrices:
+  agregacion:
+    puntaje_admision: primer_registro
+    beca_al_ingreso: primer_registro
+    tipo_colegio: primer_registro
+    promedio_ciclo: ultimo_ciclo
+    creditos_aprobados_ciclo: ultimo_ciclo
+    deuda_vencida_ciclo: ultimo_ciclo
+    rango_ingreso_familiar: ultimo_ciclo
+    horas_plataforma_ciclo: ultimo_ciclo
+
+# DP-12: perfiles de preprocesamiento, ajustados solo con el ajuste de cada fold.
+# Cada familia de modelos elige uno (sección 'modelos').
+preprocesamiento:
+  perfiles:
+    lineal:                   # pensado para modelos sensibles a la escala
+      imputacion_numerica: mediana
+      indicador_faltante: true
+      escalado: estandar
+      imputacion_categorica: categoria_faltante
+    arboles:                  # pensado para modelos de árboles
+      imputacion_numerica: mediana
+      indicador_faltante: true
+      escalado: ninguno
+      imputacion_categorica: categoria_faltante
+
+# DP-07: búsqueda de hiperparámetros (F3.2). Cada combinación se ajusta con el
+# ajuste del fold y se compara en su cohorte de calibración; las combinaciones son
+# las mismas en todos los escenarios. Valores inventados para que la prueba tarde
+# poco; no son una propuesta.
+busqueda:
+  metodo: malla               # malla | aleatoria (esta exige 'intentos')
+  metrica: auc_roc            # auc_roc | log_loss
+
+# DP-07: perfil y espacio de hiperparámetros de cada familia (RF-M3-01). Los
+# nombres son los de cada biblioteca. La semilla, el desbalance y el número de
+# hilos los fija el programa y no pueden ir aquí.
+modelos:
+  lr:
+    perfil: lineal
+    espacio:
+      C: [0.1, 1.0]
+      max_iter: [1000]
+  rf:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      max_depth: [4, 8]
+      min_samples_leaf: [5]
+  xgboost:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      max_depth: [2, 4]
+      learning_rate: [0.05]
+  lightgbm:
+    perfil: arboles
+    espacio:
+      n_estimators: [200]
+      num_leaves: [7, 15]
+      learning_rate: [0.05]
+      min_child_samples: [10]
+  svm:
+    perfil: lineal
+    espacio:
+      C: [0.5, 2.0]
+      kernel: [rbf]
+
+# DP-06: desbalance dentro de cada fold: ninguno | pesos_clase
+desbalance: pesos_clase
+
+# DP-09: calibración con la cohorte de calibración de cada fold:
+# ninguna | platt | isotonica
+calibracion: platt
+
+# RF-M3-06: semilla de todos los componentes aleatorios (inventada).
+semilla: 20261111
+
+# DP-08a: métricas que se calculan sobre las probabilidades de validación fuera de
+# fold (F3.3): auc_roc | brier | brier_escalado | recall_q
+metricas:
+  calcular: [auc_roc, brier, brier_escalado, recall_q]
+  q: 0.2                      # DP-08i: capacidad de alerta; la aporta la institución (inventada)
+
+# DP-08e: intervalos bootstrap. Se remuestrean estudiantes dentro de cada grupo de
+# la estratificación, con la semilla de arriba. Valores inventados.
+intervalos:
+  metodo: percentil           # percentil
+  nivel: 0.95
+  replicas: 1000
+  estratificacion: cohorte_resultado   # cohorte_resultado | resultado | ninguna
+
+# DP-10: selección del modelo representativo de cada escenario (F3.4), solo con las
+# probabilidades de validación. Entre las familias dentro del margen respecto de la
+# mejor, gana la primera de 'orden_familias'. Valores y orden inventados.
+seleccion:
+  metrica: auc_roc            # una de las métricas de probabilidad
+  margen: 0.01
+  orden_familias: [lr, rf, xgboost, lightgbm, svm]
+  reentrenamiento: todo_desarrollo   # ultimo_fold | todo_desarrollo
+
+# DP-06: regla del umbral, con las probabilidades de validación del modelo
+# seleccionado: fijo (con 'valor') | cuantil_q (usa q) | recall_minimo (con 'valor')
+umbral:
+  regla: cuantil_q
+
+# DP-19: referencia convencional R0 (F3.5). Ventana de referencia t_ref (DP-19a),
+# su conjunto más completo (DP-19b) y la familia con mejor métrica en validación,
+# sin compuerta ni umbrales; empates por 'seleccion.orden_familias' (DP-19c). Los
+# controles R0-fam y R-ven se construyen siempre (DP-19d). Valores inventados.
+referencia:
+  ventana: T3
+  conjunto: mas_completo
+  metrica: auc_roc
+  r_max: true                 # DP-19d: referente opcional R-max (N3; F4.2)
+
+# DP-20: no inferioridad frente a R0. Métricas (DP-20a), margen de cada una
+# (DP-20b) y nivel (1 − α) de los intervalos (DP-20d). Valores inventados.
+comparacion:
+  metricas: [auc_roc, brier_escalado]
+  margenes:
+    auc_roc: 0.05
+    brier_escalado: 0.05
+  nivel: 0.95
+  estabilidad: true           # DP-20g: estabilidad de la selección por fold (CMP-5; F4.2)
+
+# DP-11: alcance de la interpretabilidad (F3.6). Qué configuraciones congeladas se
+# explican (escenario_suficiente o todas_congeladas), con qué niveles (global,
+# bloque, local), sobre qué partición (solo desarrollo: la prueba no se vuelve a
+# abrir) y con qué muestras. Las explicaciones son asociaciones del modelo, no
+# causas. Valores inventados.
+interpretabilidad:
+  alcance: todas_congeladas
+  niveles: [global, bloque, local]
+  particion: desarrollo
+  muestra_fondo: 50
+  muestra_explicar: 100
+  kernel_muestras: 100
+  local:
+    registros: 3
+    variables: 5
+    lime_muestras: 500
+  estabilidad: folds          # RF-M5-06: ninguna | folds (F4.2)

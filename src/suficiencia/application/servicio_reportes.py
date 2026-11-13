@@ -28,6 +28,7 @@ from suficiencia.application.contratos import (
     ResultadoComparacion,
     ResultadoConsultaRegistro,
     ResultadoDemostracion,
+    ResultadoEstabilidad,
     ResultadoEstadoDecisiones,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
@@ -242,9 +243,11 @@ class ServicioReportes(ServicioCasosDeUso):
         evaluacion: ResultadoEvaluacionFinal,
         comparacion: ResultadoComparacion | None,
         explicacion: ResultadoExplicacion | None,
+        estabilidad: ResultadoEstabilidad | None = None,
     ) -> ReporteResultados:
-        """Reporte de una evaluación final con su comparación y su explicación (F3.7)."""
-        return construir_reporte(evaluacion, comparacion, explicacion)
+        """Reporte de una evaluación final con su comparación, su explicación (F3.7) y su
+        estabilidad (F4.2), si existen."""
+        return construir_reporte(evaluacion, comparacion, explicacion, estabilidad)
 
     def reporte_validacion(self, metricas: ResultadoMetricas) -> ReporteResultados:
         """Reporte de los escenarios en validación por ventana y conjunto (F4.1)."""

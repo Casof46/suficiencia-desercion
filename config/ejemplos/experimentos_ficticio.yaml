@@ -133,6 +133,7 @@ referencia:
   ventana: T3
   conjunto: mas_completo
   metrica: auc_roc
+  r_max: false                # DP-19d: referente opcional R-max (N3; F4.2); apagado
 
 # DP-20: no inferioridad frente a R0. Métricas (DP-20a), margen de cada una
 # (DP-20b) y nivel (1 − α) de los intervalos (DP-20d). Valores inventados.
@@ -142,6 +143,7 @@ comparacion:
     auc_roc: 0.05
     brier_escalado: 0.05
   nivel: 0.95
+  estabilidad: false          # DP-20g: estabilidad de la selección por fold (CMP-5; F4.2); apagada
 
 # DP-11: alcance de la interpretabilidad (F3.6). Qué configuraciones congeladas se
 # explican (escenario_suficiente o todas_congeladas), con qué niveles (global,
@@ -159,3 +161,4 @@ interpretabilidad:
     registros: 3
     variables: 5
     lime_muestras: 500
+  estabilidad: ninguna        # RF-M5-06: ninguna | folds (F4.2); apagada

@@ -22,6 +22,7 @@ from collections.abc import Sequence
 from suficiencia.application.contratos import (
     ReporteResultados,
     ResultadoComparacion,
+    ResultadoEstabilidad,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
     ResultadoMetricas,
@@ -84,6 +85,7 @@ def _tablas(
     comparacion: ResultadoComparacion | None,
     explicacion: ResultadoExplicacion | None,
     origen: OrigenDatos,
+    estabilidad: ResultadoEstabilidad | None = None,
 ) -> tuple[TablaReporte, ...]:
     metricas = [
         (
@@ -204,6 +206,57 @@ def _tablas(
                 origen,
             )
         )
+        con_estabilidad = [c for c in explicacion.configuraciones if c.estabilidad is not None]
+        if con_estabilidad:
+            tablas.append(
+                _tabla(
+                    "estabilidad_explicaciones",
+                    "Importancia por bloque de cada fold y Spearman con el congelado",
+                    ("configuracion", "fold", "bloque", "proporcion", "spearman_con_congelado"),
+                    [
+                        (c.identificador, f, b, v, c.estabilidad.correlaciones.get(f))
+                        for c in con_estabilidad
+                        if c.estabilidad is not None
+                        for f, bloques in c.estabilidad.bloques_por_fold.items()
+                        for b, v in bloques.items()
+                    ],
+                    origen,
+                )
+            )
+    if estabilidad is not None:
+        tablas += [
+            _tabla(
+                "estabilidad_seleccion",
+                "Folds de desarrollo en que cada escenario cumple el criterio y en que la regla "
+                "lo elige (CMP-5)",
+                ("escenario", "algoritmo", "folds", "evaluables", "cumple", "elegido"),
+                [
+                    (f.escenario, f.algoritmo, f.folds, f.evaluables, f.cumple, f.elegido)
+                    for f in estabilidad.frecuencias
+                ],
+                origen,
+            ),
+            _tabla(
+                "regla_por_fold",
+                "Resultado de la regla en cada fold de desarrollo",
+                ("fold", "cohorte", "estado", "escenario"),
+                [(r.fold, r.cohorte, r.estado, r.escenario) for r in estabilidad.reglas],
+                origen,
+            ),
+            _tabla(
+                "metricas_por_cohorte",
+                "Métricas de prueba por cohorte, sin inferencia entre cohortes",
+                ("configuracion", "rol", "escenario", "algoritmo", "cohorte", "n", "eventos")
+                + ("metrica", "valor", "limite_inferior", "limite_superior"),
+                [
+                    (c.identificador, c.rol, c.escenario, c.algoritmo, c.cohorte, c.filas)
+                    + (c.eventos, m, e.puntual, e.limite_inferior, e.limite_superior)
+                    for c in estabilidad.por_cohorte
+                    for m, e in c.metricas.items()
+                ],
+                origen,
+            ),
+        ]
     return tuple(tablas)
 
 
@@ -260,6 +313,7 @@ def _texto(
     explicacion: ResultadoExplicacion | None,
     origen: OrigenDatos,
     ficticio: bool,
+    estabilidad: ResultadoEstabilidad | None = None,
 ) -> str:
     lineas: list[str] = []
     if origen is OrigenDatos.SINTETICO:
@@ -305,7 +359,34 @@ def _texto(
                 f"- {c.identificador} ({c.escenario}, {c.algoritmo}; explicador {c.explicador}, "
                 f"escala {c.escala}): {bloques or 'sin importancia por bloque'}"
             )
+            if c.estabilidad is not None:
+                media = c.estabilidad.correlacion_media
+                minima = c.estabilidad.correlacion_minima
+                lineas.append(
+                    f"  - Entre los {c.estabilidad.folds} modelos de los folds (RF-M5-06): "
+                    f"Spearman con el congelado, media {_numero(media)} y mínima "
+                    f"{_numero(minima)}."
+                )
         lineas.append("")
+    if estabilidad is not None:
+        lineas += [
+            "## Estabilidad de la selección (CMP-5)",
+            "",
+            "Descriptiva, sin inferencia entre cohortes (DP-20g). En cada fold de desarrollo "
+            "se aplicó el criterio del protocolo a las probabilidades de validación.",
+            "",
+            "| Escenario | Algoritmo | Folds | Cumple | Elegido por la regla |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        lineas += [
+            f"| {f.escenario} | {f.algoritmo} | {f.folds} | {f.cumple} | {f.elegido} |"
+            for f in estabilidad.frecuencias
+        ]
+        lineas += [
+            "",
+            "Las métricas de prueba por cohorte están en la tabla `metricas_por_cohorte`.",
+            "",
+        ]
     lineas += ["## Limitaciones", ""]
     lineas += [f"- {limitacion}" for limitacion in LIMITACIONES]
     return "\n".join(lineas) + "\n"
@@ -315,18 +396,20 @@ def construir_reporte(
     evaluacion: ResultadoEvaluacionFinal,
     comparacion: ResultadoComparacion | None,
     explicacion: ResultadoExplicacion | None,
+    estabilidad: ResultadoEstabilidad | None = None,
 ) -> ReporteResultados:
-    """Reporte de una evaluación final con su comparación y su explicación, si existen."""
+    """Reporte de una evaluación final con su comparación, su explicación y su
+    estabilidad, si existen."""
     origenes = [evaluacion.origen_datos]
-    origenes += [r.origen_datos for r in (comparacion, explicacion) if r is not None]
+    origenes += [r.origen_datos for r in (comparacion, explicacion, estabilidad) if r is not None]
     origen = _origen(*origenes)
     ficticio = evaluacion.ficticio or bool(comparacion and comparacion.ficticio)
     return ReporteResultados(
         origen_datos=origen.value,
         ficticio=ficticio,
         leyenda=LEYENDA_SINTETICA if origen is OrigenDatos.SINTETICO else "",
-        texto=_texto(evaluacion, comparacion, explicacion, origen, ficticio),
-        tablas=_tablas(evaluacion, comparacion, explicacion, origen),
+        texto=_texto(evaluacion, comparacion, explicacion, origen, ficticio, estabilidad),
+        tablas=_tablas(evaluacion, comparacion, explicacion, origen, estabilidad),
     )
 
 

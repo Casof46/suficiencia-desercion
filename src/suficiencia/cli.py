@@ -85,6 +85,7 @@ from suficiencia.application.contratos import (
     ResultadoDiccionario,
     ResultadoEntrenamiento,
     ResultadoEscenarios,
+    ResultadoEstabilidad,
     ResultadoEstadoDecisiones,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
@@ -104,6 +105,7 @@ from suficiencia.application.contratos import (
     SolicitudConsultarRegistro,
     SolicitudDemostracionFinal,
     SolicitudEntrenar,
+    SolicitudEstabilidad,
     SolicitudEvaluacionFinal,
     SolicitudExplicar,
     SolicitudExportarRegistro,
@@ -478,6 +480,19 @@ def construir_analizador() -> argparse.ArgumentParser:
         "--poblaciones",
         type=Path,
         help="Periodos índice de las ventanas (por omisión, config/poblaciones.yaml).",
+    )
+    estabilidad_p = acciones_evaluacion.add_parser(
+        "estabilidad",
+        help="Estabilidad de la selección por fold y métricas por cohorte, sin abrir la "
+        "prueba (CMP-5; F4.2).",
+    )
+    estabilidad_p.add_argument(
+        "--evaluacion", required=True, help="Identificador de la evaluación final registrada."
+    )
+    estabilidad_p.add_argument(
+        "--experimentos",
+        type=Path,
+        help="Configuración con las métricas e intervalos (por omisión, config/experimentos.yaml).",
     )
     explicar_p = acciones_evaluacion.add_parser(
         "explicar",
@@ -1194,6 +1209,39 @@ def _mostrar_demostracion_final(resultado: ResultadoDemostracionFinal, salida: T
     _mostrar_evaluacion_final(resultado.evaluacion, salida)
     _mostrar_comparacion(resultado.comparacion, salida)
     _mostrar_explicacion(resultado.explicacion, salida)
+    if resultado.estabilidad is not None:
+        _mostrar_estabilidad(resultado.estabilidad, salida)
+
+
+def _mostrar_estabilidad(resultado: ResultadoEstabilidad, salida: TextIO) -> None:
+    print(
+        f"\nEstabilidad de la selección de {resultado.evaluacion} (CMP-5), descriptiva y sin "
+        "inferencia entre cohortes:",
+        file=salida,
+    )
+    for f in resultado.frecuencias:
+        print(
+            f"  {f.escenario} ({f.algoritmo}): cumple el criterio en {f.cumple} de {f.folds} "
+            f"folds ({f.evaluables} evaluables); elegido por la regla en {f.elegido}",
+            file=salida,
+        )
+    for r in resultado.reglas:
+        print(
+            f"  Fold {r.fold} ({r.cohorte}): {r.estado}"
+            + (f" ({r.escenario})" if r.escenario else ""),
+            file=salida,
+        )
+    cohortes = sorted({c.cohorte for c in resultado.por_cohorte})
+    print(
+        f"  Métricas de prueba por cohorte ({', '.join(cohortes)}): "
+        f"{len(resultado.por_cohorte)} filas, con las predicciones guardadas. "
+        f"Accesos permitidos a la prueba: {resultado.accesos_a_la_prueba}",
+        file=salida,
+    )
+
+
+def _numero_texto(valor: float | None) -> str:
+    return "—" if valor is None else f"{valor:.3f}"
 
 
 def _contribuciones_texto(contribuciones: Sequence[ContribucionResumen]) -> str:
@@ -1233,6 +1281,13 @@ def _mostrar_explicacion(resultado: ResultadoExplicacion, salida: TextIO) -> Non
             print(
                 "      Variables (de mayor a menor): "
                 + "; ".join(f"{v} {i:.3f}" for v, i in ordenadas),
+                file=salida,
+            )
+        if c.estabilidad is not None:
+            print(
+                f"      Entre los {c.estabilidad.folds} modelos de los folds: Spearman con el "
+                f"congelado, media {_numero_texto(c.estabilidad.correlacion_media)} y mínima "
+                f"{_numero_texto(c.estabilidad.correlacion_minima)}",
                 file=salida,
             )
         for local in c.locales:
@@ -1406,6 +1461,16 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
             sys.stdout,
         )
         return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion" and argumentos.accion == "estabilidad":
+        _mostrar_estabilidad(
+            servicios.evaluacion_final.estabilidad(
+                SolicitudEstabilidad(
+                    evaluacion=argumentos.evaluacion, experimentos=argumentos.experimentos
+                )
+            ),
+            sys.stdout,
+        )
+        return SALIDA_CORRECTA
     if argumentos.comando == "evaluacion" and argumentos.accion == "reporte":
         registrados = servicios.evaluacion_final.resultados_registrados(
             SolicitudResultadosRegistrados(evaluacion=argumentos.evaluacion)
@@ -1448,7 +1513,10 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
             _exportar_reporte(
                 servicios,
                 servicios.reportes.reporte_resultados(
-                    demostracion.evaluacion, demostracion.comparacion, demostracion.explicacion
+                    demostracion.evaluacion,
+                    demostracion.comparacion,
+                    demostracion.explicacion,
+                    demostracion.estabilidad,
                 ),
                 argumentos.reporte,
             )

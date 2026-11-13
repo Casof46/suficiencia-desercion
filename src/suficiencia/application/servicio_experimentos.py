@@ -56,6 +56,7 @@ from suficiencia.domain.escenarios.matrices import MatrizEscenario
 from suficiencia.domain.escenarios.poblaciones import ConfiguracionPoblaciones
 from suficiencia.domain.evaluacion.comparacion import (
     elegir_familia_referencia,
+    elegir_r_max,
     referentes_a_construir,
 )
 from suficiencia.domain.evaluacion.congelamiento import configuracion_desde_datos, congelar
@@ -541,6 +542,41 @@ class ServicioExperimentos(ServicioCasosDeUso):
                     ),
                 )
             )
+        if referencia.r_max:
+            # R-max (DP-19d, opcional; F4.2): mejor escenario y familia en validación entre
+            # todos los escenarios pedidos, con la métrica de R0. Descriptivo.
+            validaciones = {
+                m.escenario: self._validacion_familias(
+                    repositorio, experimentos, historial, m.escenario, referencia.metrica
+                )
+                for m in matrices
+            }
+            escenario_max, familia_max = elegir_r_max(
+                {e: v[2] for e, v in validaciones.items()},
+                # Orden del catálogo (ventana más temprana, menos bloques), no el del pedido.
+                [m.escenario for m in preparacion.matrices if m.escenario in validaciones],
+                regla.orden_familias,
+                MAYOR_ES_MEJOR[referencia.metrica],
+            )
+            corridas, predicciones, valores = validaciones[escenario_max]
+            referentes.append(
+                ReferenteResumen(
+                    codigo="R-max",
+                    tipo="r_max",
+                    rol="control",
+                    seleccion=self._modelo_final(
+                        experimentos,
+                        historial,
+                        preparacion,
+                        por_codigo[escenario_max],
+                        Familia(familia_max),
+                        corridas[familia_max],
+                        regla.reentrenamiento,
+                        valores,
+                        self._umbral(experimentos, predicciones[familia_max]),
+                    ),
+                )
+            )
         guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
             lambda: {
                 "escenarios": [e.model_dump() for e in escenarios],
@@ -563,6 +599,7 @@ class ServicioExperimentos(ServicioCasosDeUso):
                     "valor": experimentos.umbral.valor,
                     "q": experimentos.metricas.q,
                 },
+                "r_max": referencia.r_max,
             },
             semillas={"modelos": experimentos.semilla},
             huella_datos=historial.huella_dataset.valor,

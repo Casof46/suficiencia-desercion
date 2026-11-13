@@ -61,6 +61,8 @@ class DefinicionReferencia:
     ventana: str
     conjunto: ConjuntoReferencia
     metrica: MetricaProbabilidad
+    r_max: bool = False
+    """Construir el referente opcional R-max (DP-19d; N3). Apagado por omisión (F4.2)."""
 
 
 def definicion_referencia_desde_datos(datos: Any, ventanas: Sequence[str]) -> DefinicionReferencia:
@@ -68,7 +70,7 @@ def definicion_referencia_desde_datos(datos: Any, ventanas: Sequence[str]) -> De
         raise DecisionPendiente("DP-19", "la sección 'referencia' de la configuración")
     if not isinstance(datos, Mapping):
         raise _invalida("'referencia' debe ser un conjunto de campos.")
-    extra = sorted(set(datos) - {"ventana", "conjunto", "metrica"})
+    extra = sorted(set(datos) - {"ventana", "conjunto", "metrica", "r_max"})
     if extra:
         raise _invalida(f"campos desconocidos en 'referencia': {', '.join(extra)}.")
     ventana = _campo(datos, "ventana", "DP-19a", "referencia")
@@ -81,7 +83,10 @@ def definicion_referencia_desde_datos(datos: Any, ventanas: Sequence[str]) -> De
         raise _invalida(
             "'conjunto' debe ser mas_completo y 'metrica', una métrica de probabilidad."
         ) from None
-    return DefinicionReferencia(str(ventana), conjunto, metrica)
+    r_max = datos.get("r_max", False)
+    if not isinstance(r_max, bool):
+        raise _invalida("'referencia.r_max' debe ser true o false (DP-19d).")
+    return DefinicionReferencia(str(ventana), conjunto, metrica, r_max)
 
 
 def escenario_mas_completo(ventana: str, factibles: Mapping[str, int]) -> str:
@@ -115,6 +120,32 @@ def elegir_familia_referencia(
         raise _invalida("la métrica de R0 no está definida para alguna familia.")
     mejor = max(signo * valores[f] for f in orden_familias)
     return next(f for f in orden_familias if signo * valores[f] == mejor)
+
+
+def elegir_r_max(
+    valores: Mapping[str, Mapping[str, float]],
+    orden_escenarios: Sequence[str],
+    orden_familias: Sequence[str],
+    mayor_es_mejor: bool,
+) -> tuple[str, str]:
+    """Escenario y familia de R-max: el mejor valor en validación entre todos los
+    escenarios evaluables (DP-19d). Empates: primero el escenario que va antes en
+    ``orden_escenarios`` (ventana más temprana, menos bloques) y después la familia que va
+    antes en ``orden_familias``. Es descriptivo y optimista por construcción.
+
+    Raises:
+        ConfiguracionInvalida: si no hay valores o alguno no está definido.
+    """
+    candidatos = [
+        (e, f) for e in orden_escenarios if e in valores for f in orden_familias if f in valores[e]
+    ]
+    if not candidatos:
+        raise _invalida("no hay resultados de validación para elegir R-max.")
+    if any(not math.isfinite(valores[e][f]) for e, f in candidatos):
+        raise _invalida("la métrica de R-max no está definida para algún escenario.")
+    signo = 1 if mayor_es_mejor else -1
+    mejor = max(signo * valores[e][f] for e, f in candidatos)
+    return next((e, f) for e, f in candidatos if signo * valores[e][f] == mejor)
 
 
 @dataclass(frozen=True)
@@ -160,6 +191,9 @@ class DefinicionComparacion:
     metricas: tuple[MetricaProbabilidad, ...]
     margenes: Mapping[str, float]
     nivel: float
+    estabilidad: bool = False
+    """Describir la estabilidad de la selección por fold (CMP-5; DP-20g; N3). Apagado por
+    omisión (F4.2)."""
 
 
 def definicion_comparacion_desde_datos(datos: Any) -> DefinicionComparacion:
@@ -167,7 +201,7 @@ def definicion_comparacion_desde_datos(datos: Any) -> DefinicionComparacion:
         raise DecisionPendiente("DP-20", "la sección 'comparacion' de la configuración")
     if not isinstance(datos, Mapping):
         raise _invalida("'comparacion' debe ser un conjunto de campos.")
-    extra = sorted(set(datos) - {"metricas", "margenes", "nivel"})
+    extra = sorted(set(datos) - {"metricas", "margenes", "nivel", "estabilidad"})
     if extra:
         raise _invalida(f"campos desconocidos en 'comparacion': {', '.join(extra)}.")
     nombres = _campo(datos, "metricas", "DP-20a", "comparacion")
@@ -190,7 +224,10 @@ def definicion_comparacion_desde_datos(datos: Any) -> DefinicionComparacion:
     nivel = _campo(datos, "nivel", "DP-20d", "comparacion")
     if isinstance(nivel, bool) or not isinstance(nivel, int | float) or not 0 < nivel < 1:
         raise _invalida("'comparacion.nivel' debe estar entre 0 y 1, sin incluirlos.")
-    return DefinicionComparacion(metricas, leidos, float(nivel))
+    estabilidad = datos.get("estabilidad", False)
+    if not isinstance(estabilidad, bool):
+        raise _invalida("'comparacion.estabilidad' debe ser true o false (DP-20g).")
+    return DefinicionComparacion(metricas, leidos, float(nivel), estabilidad)
 
 
 class EstadoNoInferioridad(Enum):

@@ -89,6 +89,8 @@ class DefinicionInterpretabilidad:
     muestra_explicar: int
     kernel_muestras: int
     local: DefinicionLocal | None
+    estabilidad_folds: bool = False
+    """Comparar con los modelos de cada fold (RF-M5-06; N3). Apagado por omisión (F4.2)."""
 
 
 _CLAVES = {
@@ -99,6 +101,7 @@ _CLAVES = {
     "muestra_explicar",
     "kernel_muestras",
     "local",
+    "estabilidad",
 }
 
 
@@ -159,6 +162,13 @@ def definicion_interpretabilidad_desde_datos(datos: Any) -> DefinicionInterpreta
         )
     elif "local" in datos:
         raise _invalida("'local' solo se indica si 'niveles' incluye local.")
+    estabilidad = datos.get("estabilidad", "ninguna")
+    if estabilidad not in ("ninguna", "folds"):
+        raise _invalida("'estabilidad' debe ser ninguna o folds (RF-M5-06).")
+    if estabilidad == "folds" and NivelExplicacion.BLOQUE not in niveles:
+        raise _invalida(
+            "la estabilidad entre folds compara la importancia por bloque: incluya 'bloque'."
+        )
     definicion = DefinicionInterpretabilidad(
         alcance=alcance,
         niveles=niveles,
@@ -167,6 +177,7 @@ def definicion_interpretabilidad_desde_datos(datos: Any) -> DefinicionInterpreta
         muestra_explicar=_entero(_campo(datos, "muestra_explicar", donde), "muestra_explicar"),
         kernel_muestras=_entero(_campo(datos, "kernel_muestras", donde), "kernel_muestras"),
         local=local,
+        estabilidad_folds=estabilidad == "folds",
     )
     if local is not None and local.registros > definicion.muestra_explicar:
         raise _invalida("'local.registros' no puede superar 'muestra_explicar'.")

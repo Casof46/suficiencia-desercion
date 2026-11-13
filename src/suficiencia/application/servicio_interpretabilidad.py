@@ -20,6 +20,7 @@ import pandas as pd
 from suficiencia.application._base import DefinicionCasoDeUso, ServicioCasosDeUso
 from suficiencia.application.contratos import (
     ContribucionResumen,
+    EstabilidadExplicacionResumen,
     ExplicacionConfiguracionResumen,
     ExplicacionLocalResumen,
     ResultadoExplicacion,
@@ -43,6 +44,7 @@ from suficiencia.domain.evaluacion.congelamiento import (
     HuellaNoCoincide,
     configuracion_desde_datos,
 )
+from suficiencia.domain.evaluacion.estabilidad import estabilidad_explicaciones
 from suficiencia.domain.evaluacion.interpretabilidad import (
     AlcanceInterpretabilidad,
     NivelExplicacion,
@@ -253,6 +255,34 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
                         }
                         for v in nombres
                     )
+            estabilidad = None
+            if definicion.estabilidad_folds:
+                estabilidad = self._estabilidad_folds(
+                    repositorio,
+                    datos,
+                    configuracion.algoritmo,
+                    nombres,
+                    particion.iloc[list(muestras.fondo)],
+                    explicar,
+                    definicion.kernel_muestras,
+                    semilla,
+                    globales,
+                    por_bloque,
+                    bloque_de,
+                    orden_bloques,
+                )
+                tablas[f"configuracion_{numero}_estabilidad"] = pd.DataFrame(
+                    [
+                        {"fold": f, "bloque": b, "proporcion": v}
+                        for f, bloques in estabilidad.bloques_por_fold.items()
+                        for b, v in bloques.items()
+                    ]
+                    + [
+                        {"fold": "congelado", "bloque": b, "proporcion": v}
+                        for b, v in estabilidad.bloques_congelado.items()
+                    ],
+                    columns=["fold", "bloque", "proporcion"],
+                )
             con_global = NivelExplicacion.GLOBAL in definicion.niveles
             con_bloque = NivelExplicacion.BLOQUE in definicion.niveles
             tablas[f"configuracion_{numero}_importancias"] = pd.DataFrame(
@@ -302,6 +332,7 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
                     importancia_variables=globales if con_global else {},
                     importancia_bloques=por_bloque if con_bloque else {},
                     locales=tuple(locales),
+                    estabilidad=estabilidad,
                 )
             )
 
@@ -418,6 +449,62 @@ class ServicioInterpretabilidad(ServicioCasosDeUso):
             if configuracion.huella().valor != huellas.get(configuracion.identificador):
                 raise HuellaNoCoincide(configuracion.identificador)
         return configuraciones
+
+    def _estabilidad_folds(
+        self,
+        repositorio: RepositorioRegistros,
+        datos: Mapping[str, Any],
+        familia: str,
+        variables: Sequence[str],
+        fondo: pd.DataFrame,
+        explicar: pd.DataFrame,
+        kernel_muestras: int,
+        semilla: int,
+        globales: Mapping[str, float],
+        por_bloque: Mapping[str, float],
+        bloque_de: Mapping[str, str],
+        orden_bloques: Sequence[str],
+    ) -> EstabilidadExplicacionResumen:
+        """SHAP de los modelos de cada fold con las mismas filas que el congelado (RF-M5-06).
+
+        Los modelos de los folds son los de la corrida de la que salió la configuración;
+        se comprueba la huella de cada uno. Solo filas de desarrollo.
+        """
+        carpeta_seleccion = self._raiz / Path(datos["modelo"]).parent
+        manifiesto = json.loads((carpeta_seleccion / "manifiesto.json").read_text(encoding="utf-8"))
+        corrida = next(
+            g.contenido
+            for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+            if g.contenido.get("identificador") == manifiesto["corrida"]
+        )
+        resultados = corrida["resultados"]
+        archivos = sorted(
+            (n for n in resultados["huellas_archivos"] if n.startswith("modelo_fold_")),
+            key=lambda n: int(n.removeprefix("modelo_fold_").removesuffix(".joblib")),
+        )
+        folds_variables: dict[int, dict[str, float]] = {}
+        folds_bloques: dict[int, dict[str, float]] = {}
+        for nombre in archivos:
+            fold = int(nombre.removeprefix("modelo_fold_").removesuffix(".joblib"))
+            modelo = self._leer_modelo(
+                self._raiz / resultados["carpeta"] / nombre, resultados["huellas_archivos"][nombre]
+            )
+            explicacion = self._explicar_modelo(
+                modelo, familia, variables, fondo, explicar, (), kernel_muestras, 1, semilla
+            )
+            folds_variables[fold] = importancia_global(explicacion.shap, list(variables))
+            folds_bloques[fold] = importancia_por_bloque(
+                folds_variables[fold], bloque_de, orden_bloques
+            )
+        resumen = estabilidad_explicaciones(globales, por_bloque, folds_variables, folds_bloques)
+        return EstabilidadExplicacionResumen(
+            folds=len(folds_variables),
+            bloques_por_fold={f: dict(v) for f, v in resumen.bloques_por_fold.items()},
+            bloques_congelado=dict(resumen.bloques_congelado),
+            correlaciones=dict(resumen.correlaciones),
+            correlacion_media=resumen.correlacion_media,
+            correlacion_minima=resumen.correlacion_minima,
+        )
 
 
 def _contribuciones(pares: Sequence[tuple[str, float]]) -> tuple[ContribucionResumen, ...]:
