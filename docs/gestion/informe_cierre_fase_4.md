@@ -6,7 +6,7 @@
 | Fecha | 13 de noviembre de 2026 |
 | Base | Especificación Fase 1 v0.6; plan de la Fase 4 (`docs/gestion/plan_fase_4_propuesta.md`); informe de cierre de la Fase 3 |
 | Repositorio | `Casof46/suficiencia-desercion`, rama `main` |
-| Estado | **Propuesta de cierre.** Los cuatro hitos de construcción están aceptados por el equipo (el último, el 13 de noviembre de 2026; comunicado por Jorge, pendiente de confirmación de Javier). **La asesoría no se ha pronunciado** sobre el plan de la Fase 4 ni sobre este informe |
+| Estado | **Fase 4 cerrada: los cuatro hitos de construcción y este informe aceptados por el equipo** el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). **La asesoría dio su conformidad con este informe** el 13 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, la conformidad con REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
 
 ## 1. Resumen
 
@@ -81,7 +81,7 @@ Ninguna biblioteca nueva en la Fase 4. El generador del dataset del OE3 usa nump
 
 ## 8. Qué sigue (propuesta, no aprobada)
 
-1. **Asesoría:** su opinión sobre el plan y el cierre de la Fase 4; la aprobación formal de la Fase 1; la conformidad con REC-01 a REC-03; el comparador B del OE3.
+1. **Asesoría:** la aprobación formal de la Fase 1; la conformidad con REC-01 a REC-03; el comparador B del OE3.
 2. **Decisiones metodológicas:** cerrar, con la asesoría donde corresponda, las que exige el protocolo (DP-06 a DP-12, DP-17, DP-19 y DP-20) y redactar el protocolo real. Las diferencias entre el motor y el generador del OE3 pueden servir de insumo para DP-01. Ninguna decisión debe cerrarse para facilitar la programación.
 3. **Datos reales:** solo después de resolver DP-01, DP-02, DP-14, DP-15 y DP-18 y de cumplir las condiciones de la sección H.1 de la auditoría de la Fase 1, entre ellas la autorización institucional, que hoy no existe. Los datos institucionales no se envían a servicios externos ni a asistentes de IA.
 
@@ -91,6 +91,6 @@ La validación del OE3 con estudiantes reales exige los datos autorizados y el p
 
 | Rol | Nombre | Fecha | Conformidad |
 | --- | --- | --- | --- |
-| Equipo | Javier Barquinero | | Pendiente |
-| Equipo | Jorge Caso | | Pendiente |
-| Asesoría | | | Pendiente |
+| Equipo | Javier Barquinero | | Pendiente de confirmación |
+| Equipo | Jorge Caso | 13-11-2026 | Aceptación del informe y de los cuatro hitos comunicada en nombre del equipo |
+| Asesoría | | 13-11-2026 | Conformidad con este informe (comunicada por Jorge) |
