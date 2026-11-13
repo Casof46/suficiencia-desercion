@@ -16,7 +16,9 @@ from fixtures import resultados_ficticios as ficticios
 from suficiencia.application.contratos import ReporteResultados, TablaReporte
 from suficiencia.application.reporte_resultados import (
     LIMITACIONES,
+    LIMITACIONES_VALIDACION,
     construir_reporte,
+    construir_reporte_validacion,
     exigir_rotulos,
 )
 from suficiencia.domain.trazabilidad.rotulo import (
@@ -170,3 +172,46 @@ def test_los_graficos_dibujan_lo_que_devolvieron_los_servicios() -> None:
     # Proporción de cada bloque en la importancia de su configuración.
     assert [t.name for t in bloques.data] == ["A", "F"]
     assert bloques.data[0].y == pytest.approx((0.75,))
+
+
+# --- F4.1: reporte sin comparación y escenarios en validación ---------------------------
+
+
+def test_reporte_sin_comparacion_lo_dice_y_no_tiene_sus_tablas() -> None:
+    reporte = construir_reporte(ficticios.evaluacion(), None, None)
+    assert "No hay una evaluación comparativa registrada" in reporte.texto
+    assert [t.nombre for t in reporte.tablas] == ["metricas_prueba"]
+    exigir_rotulos(reporte)
+
+
+def test_rf_m4_10_y_14_reporte_de_validacion_por_ventana_y_conjunto() -> None:
+    reporte = construir_reporte_validacion(ficticios.metricas())
+    exigir_rotulos(reporte)  # PI-16
+    assert reporte.texto.lstrip().startswith(f"> **{LEYENDA_SINTETICA}**")
+    assert "## auc_roc por ventana y conjunto" in reporte.texto
+    # Matriz de lr: T0 solo tiene A; T1 tiene A y A+F. svm solo existe en T1|A.
+    assert "| Ventana | A | A+F |" in reporte.texto
+    assert "| T0 | 0.550 | · |" in reporte.texto
+    assert "| T1 | 0.620 | 0.640 |" in reporte.texto
+    assert "| T0 | · | · |" in reporte.texto.split("**svm**")[1]
+    assert all(limitacion in reporte.texto for limitacion in LIMITACIONES_VALIDACION)
+    (tabla,) = reporte.tablas
+    assert tabla.nombre == "validacion_escenarios"
+    familias = {(f[0], f[3]) for f in tabla.filas}
+    assert len(familias) == 13  # cinco familias en T1|A y cuatro en los otros dos
+    assert len(tabla.filas) == 13 * 2  # dos métricas por corrida
+    assert all(f[-1] == ROTULO_SINTETICO for f in tabla.filas)
+
+
+def test_pi16_graficos_de_validacion_rotulados_con_los_valores_registrados() -> None:
+    metricas = ficticios.metricas()
+    matriz = graficos.figura_matriz_escenarios(metricas, "auc_roc", "rf")
+    assert matriz.layout.title.text.startswith("DATOS SINTÉTICOS · ")
+    assert list(matriz.data[0].y) == ["T0", "T1"] and list(matriz.data[0].x) == ["A", "A+F"]
+    assert matriz.data[0].z[0][0] == pytest.approx(0.56) and matriz.data[0].z[0][1] is None
+    familias = graficos.figura_familias(metricas, "T1|A", "auc_roc")
+    assert list(familias.data[0].x) == ["lr", "rf", "xgboost", "lightgbm", "svm"]
+    assert familias.data[0].y == pytest.approx((0.62, 0.63, 0.64, 0.65, 0.66))
+    assert any(a.text == LEYENDA_SINTETICA for a in familias.layout.annotations)
+    real = graficos.figura_familias(ficticios.metricas("real"), "T1|A", "auc_roc")
+    assert "SINTÉTICOS" not in real.layout.title.text

@@ -432,6 +432,8 @@ def test_metricas_de_las_corridas_registradas(proyecto: Path) -> None:
         assert auc.limite_inferior is not None and auc.limite_superior is not None
         assert auc.limite_inferior <= auc.puntual <= auc.limite_superior
         assert set(corrida.metricas) == {"auc_roc", "brier", "brier_escalado", "recall_q"}
+        assert (corrida.ventana, corrida.conjunto) == ("T1", "A+F")  # F4.1
+    assert resultado.origen_datos == "sintetico"
     calculo = registros[resultado.identificador_registro]
     assert calculo["modo"] == "exploratorio"
     assert calculo["configuracion"]["tipo"] == "metricas_validacion"
@@ -494,6 +496,17 @@ def test_linea_de_comandos_metricas(proyecto: Path, capsys: pytest.CaptureFixtur
     assert "Intervalos percentil al 95% con 1000 réplicas" in salida
     assert "auc_roc" in salida and "prevalencia=" in salida
     assert "no es una estimación final" in salida
+    # F4.1 (RF-M4-10, RF-M4-14, PI-16): reporte rotulado de los escenarios en validación.
+    filtros = ["--escenario", "T1|A+F", "--familia", "rf"]
+    codigo = main([*argumentos, *filtros, "--reporte", "reports/validacion"])
+    assert codigo == SALIDA_CORRECTA
+    carpeta = proyecto / "reports" / "validacion"
+    texto = (carpeta / "reporte.md").read_text(encoding="utf-8")
+    assert texto.startswith("> **DATOS SINTÉTICOS")
+    assert "## auc_roc por ventana y conjunto" in texto and "**rf**" in texto
+    tabla = pd.read_csv(carpeta / "validacion_escenarios.csv")
+    assert set(tabla["origen_datos"]) == {"SINTÉTICO"}
+    assert set(tabla["familia"]) == {"rf"} and set(tabla["ventana"]) == {"T1"}
 
 
 def test_rutas_del_registro_con_la_raiz_por_otro_camino(proyecto: Path, tmp_path: Path) -> None:

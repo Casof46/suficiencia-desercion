@@ -49,7 +49,7 @@ suficiencia-desercion/
 │   │   ├── demostracion_protocolo.py # ciclo del protocolo FICTICIO en un registro temporal; H2.6
 │   │   ├── preparacion_desarrollo.py # matrices y folds solo con desarrollo; F3.1
 │   │   ├── demostracion_final.py # selección, congelamiento, evaluación final, comparación y explicaciones FICTICIOS en un proyecto temporal; F3.4 a F3.6
-│   │   ├── reporte_resultados.py # reporte rotulado de evaluación, comparación e interpretabilidad; F3.7
+│   │   ├── reporte_resultados.py # reporte rotulado de evaluación, comparación e interpretabilidad (F3.7); de escenarios en validación (F4.1)
 │   │   ├── servicio_*.py       # siete servicios de casos de uso y el del proyecto
 │   │   └── composicion.py      # construye los servicios con sus adaptadores
 │   ├── experimentation/        # pipelines.py: preprocesamiento por fold (F3.1); modelos.py: las cinco familias (F3.2); explicadores.py: SHAP y LIME (F3.6)
@@ -68,7 +68,7 @@ suficiencia-desercion/
 │   │   ├── repositorio_sqlite.py # registro de solo agregar (DP-16: SQLite); H2.7; protocolos, desviaciones y congelamientos desde H2.6
 │   │   ├── entorno.py          # captura del entorno (RNF-17); H2.7
 │   │   └── exportacion.py      # CSV y Excel con filtro de identificadores; H2.7; archivos del reporte de resultados; F3.7
-│   └── ui/                     # visor de demostración (H2.D); graficos.py: gráficos Plotly de resultados (F3.7)
+│   └── ui/                     # visor de demostración (H2.D); graficos.py: gráficos Plotly de resultados (F3.7) y de escenarios en validación (F4.1)
 └── tests/
     ├── conftest.py             # bloqueo de red durante las pruebas
     ├── fixtures/               # generador de historiales SINTÉTICOS (H2.3); ayudas del protocolo FICTICIO (H2.6); solo pruebas

@@ -24,11 +24,13 @@ Uso, desde la raíz del repositorio y con el entorno del proyecto:
     suficiencia experimentos entrenar ARCHIVO (mismas opciones que preparar)
                                       [--escenario T1|A+F ...] [--familia lr ...]
     suficiencia experimentos metricas [--experimentos RUTA] [--escenario ...] [--familia ...]
+                                      [--reporte CARPETA]
     suficiencia experimentos seleccionar ARCHIVO (mismas opciones que preparar) [--escenario ...]
     suficiencia evaluacion final ARCHIVO (mismas opciones que preparar) --particion CARPETA
                                  --configuracion ID [...] --version N [--justificacion T]
     suficiencia evaluacion comparar --evaluacion ID [--experimentos R] [--poblaciones R]
     suficiencia evaluacion explicar ARCHIVO (mismas opciones que preparar) --evaluacion ID
+    suficiencia evaluacion reporte --evaluacion ID --reporte CARPETA
     suficiencia evaluacion demostracion ARCHIVO --diccionario R --definicion R --poblaciones R
                                         --escenarios R --experimentos R --protocolo R
                                         --escenario T1|A+F [...] [--reporte CARPETA]
@@ -72,6 +74,7 @@ from suficiencia.application.contratos import (
     EstadoProyecto,
     EstimacionResumen,
     RegistroResumen,
+    ReporteResultados,
     ResultadoComparacion,
     ResultadoConsultaProtocolo,
     ResultadoConsultaRegistro,
@@ -112,6 +115,7 @@ from suficiencia.application.contratos import (
     SolicitudMetricas,
     SolicitudPrepararDesarrollo,
     SolicitudRegistrarDecision,
+    SolicitudResultadosRegistrados,
     SolicitudSeleccionar,
     SolicitudValidarConfiguracion,
     SolicitudValidarDiccionario,
@@ -195,6 +199,15 @@ def _opciones_desarrollo(analizador: argparse.ArgumentParser) -> None:
     analizador.add_argument(
         "--separador", type=_separador, default=",", help="Separador del CSV (por omisión, ,)."
     )
+
+
+def _exportar_reporte(servicios: Servicios, reporte: ReporteResultados, carpeta: Path) -> None:
+    exportado = servicios.reportes.exportar_resultados(
+        SolicitudExportarResultados(reporte=reporte, carpeta=carpeta)
+    )
+    print(f"\nReporte rotulado en {exportado.carpeta}:")
+    for nombre, huella in exportado.archivos.items():
+        print(f"  {nombre}  {huella[:16]}...")
 
 
 def _comunes_desarrollo(argumentos: argparse.Namespace) -> dict[str, object]:
@@ -416,6 +429,11 @@ def construir_analizador() -> argparse.ArgumentParser:
         choices=["lr", "rf", "xgboost", "lightgbm", "svm"],
         help="Solo esa familia; se puede repetir.",
     )
+    metricas_p.add_argument(
+        "--reporte",
+        type=Path,
+        help="Carpeta nueva dentro de reports/ para el reporte rotulado de los escenarios (F4.1).",
+    )
     seleccionar_p = acciones_experimentos.add_parser(
         "seleccionar",
         help="Modelo y umbral por escenario solo con desarrollo (F3.4).",
@@ -469,6 +487,17 @@ def construir_analizador() -> argparse.ArgumentParser:
     _opciones_desarrollo(explicar_p)
     explicar_p.add_argument(
         "--evaluacion", required=True, help="Identificador de la evaluación final registrada."
+    )
+    reporte_p = acciones_evaluacion.add_parser(
+        "reporte",
+        help="Reporte rotulado de una evaluación final registrada, con su comparación y su "
+        "explicación (F4.1).",
+    )
+    reporte_p.add_argument(
+        "--evaluacion", required=True, help="Identificador de la evaluación final registrada."
+    )
+    reporte_p.add_argument(
+        "--reporte", type=Path, required=True, help="Carpeta nueva dentro de reports/."
     )
     demostracion_final_p = acciones_evaluacion.add_parser(
         "demostracion",
@@ -1377,6 +1406,20 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
             sys.stdout,
         )
         return SALIDA_CORRECTA
+    if argumentos.comando == "evaluacion" and argumentos.accion == "reporte":
+        registrados = servicios.evaluacion_final.resultados_registrados(
+            SolicitudResultadosRegistrados(evaluacion=argumentos.evaluacion)
+        )
+        _exportar_reporte(
+            servicios,
+            servicios.reportes.reporte_resultados(
+                registrados.evaluacion, registrados.comparacion, registrados.explicacion
+            ),
+            argumentos.reporte,
+        )
+        if registrados.comparacion is None:
+            print("La evaluación no tiene una comparación registrada: el reporte lo indica.")
+        return SALIDA_CORRECTA
     if argumentos.comando == "evaluacion" and argumentos.accion == "explicar":
         _mostrar_explicacion(
             servicios.interpretabilidad.explicar(
@@ -1402,29 +1445,27 @@ def _ejecutar(argumentos: argparse.Namespace, servicios: Servicios) -> int:
         )
         _mostrar_demostracion_final(demostracion, sys.stdout)
         if argumentos.reporte is not None:
-            exportado = servicios.reportes.exportar_resultados(
-                SolicitudExportarResultados(
-                    reporte=servicios.reportes.reporte_resultados(
-                        demostracion.evaluacion, demostracion.comparacion, demostracion.explicacion
-                    ),
-                    carpeta=argumentos.reporte,
-                )
+            _exportar_reporte(
+                servicios,
+                servicios.reportes.reporte_resultados(
+                    demostracion.evaluacion, demostracion.comparacion, demostracion.explicacion
+                ),
+                argumentos.reporte,
             )
-            print(f"\nReporte rotulado en {exportado.carpeta}:")
-            for nombre, huella in exportado.archivos.items():
-                print(f"  {nombre}  {huella[:16]}...")
         return SALIDA_CORRECTA
     if argumentos.comando == "experimentos" and argumentos.accion == "metricas":
-        _mostrar_metricas(
-            servicios.experimentos.metricas(
-                SolicitudMetricas(
-                    experimentos=argumentos.experimentos,
-                    seleccion_escenarios=tuple(argumentos.escenario),
-                    seleccion_familias=tuple(argumentos.familia),
-                )
-            ),
-            sys.stdout,
+        metricas = servicios.experimentos.metricas(
+            SolicitudMetricas(
+                experimentos=argumentos.experimentos,
+                seleccion_escenarios=tuple(argumentos.escenario),
+                seleccion_familias=tuple(argumentos.familia),
+            )
         )
+        _mostrar_metricas(metricas, sys.stdout)
+        if argumentos.reporte is not None:
+            _exportar_reporte(
+                servicios, servicios.reportes.reporte_validacion(metricas), argumentos.reporte
+            )
         return SALIDA_CORRECTA
     if argumentos.comando == "experimentos" and argumentos.accion == "entrenar":
         entrenamiento = servicios.experimentos.entrenar(

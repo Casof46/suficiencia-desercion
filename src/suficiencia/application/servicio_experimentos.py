@@ -96,6 +96,7 @@ from suficiencia.domain.trazabilidad.registros import (
     ModoExperimento,
     TipoRegistro,
 )
+from suficiencia.domain.trazabilidad.rotulo import OrigenDatos, origen_de_registro
 
 ARCHIVO_EXPERIMENTOS = Path("config") / "experimentos.yaml"
 ARCHIVO_POBLACIONES = Path("config") / "poblaciones.yaml"
@@ -419,6 +420,8 @@ class ServicioExperimentos(ServicioCasosDeUso):
                 MetricasCorridaResumen(
                     identificador=contenido["identificador"],
                     escenario=contenido["configuracion"]["escenario"],
+                    ventana=contenido["configuracion"]["escenario"].split("|", 1)[0],
+                    conjunto=contenido["configuracion"]["escenario"].split("|", 1)[-1],
                     familia=contenido["configuracion"]["familia"],
                     filas=len(y),
                     eventos=int(y.sum()),
@@ -453,9 +456,13 @@ class ServicioExperimentos(ServicioCasosDeUso):
             huella_datos=None,
             version_protocolo=None,
         )
+        origenes = {origen_de_registro(c["configuracion"]) for c in corridas}
         return ResultadoMetricas(
             configuracion_experimentos=experimentos.nombre,
             configuraciones_ficticias=experimentos.ficticio,
+            origen_datos=(
+                OrigenDatos.REAL if origenes == {OrigenDatos.REAL} else OrigenDatos.SINTETICO
+            ).value,
             metodo=definicion.metodo.value,
             nivel=definicion.nivel,
             replicas=definicion.replicas,

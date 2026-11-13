@@ -16,7 +16,7 @@ from streamlit.testing.v1 import AppTest
 
 from fixtures.generador_sintetico import COHORTES_AMPLIADAS, generar_historial
 from suficiencia.application.composicion import crear_servicios
-from suficiencia.application.contratos import SolicitudConsultarRegistro
+from suficiencia.application.contratos import SolicitudConsultarRegistro, SolicitudEntrenar
 from suficiencia.ui import presentacion
 
 PAGINAS = (
@@ -25,6 +25,7 @@ PAGINAS = (
     "pagina_escenarios",
     "pagina_objetivo",
     "pagina_poblaciones",
+    "pagina_validacion",
     "pagina_resultados",
     "pagina_registro",
 )
@@ -168,3 +169,40 @@ def test_la_pagina_de_resultados_muestra_graficos_rotulados_y_descargas(proyecto
         SolicitudConsultarRegistro(tipo="experimentos")
     )
     assert registro.registros == ()
+
+
+def test_la_pagina_de_validacion_compara_escenarios_con_graficos_rotulados(
+    proyecto: Path,
+) -> None:
+    """F4.1 (RF-M4-10, RF-M4-14): matriz ventana × conjunto y familias de cada escenario."""
+    archivo = proyecto / "data" / "sintetico" / "ampliado.csv"
+    generar_historial(700, semilla=11, cohortes=COHORTES_AMPLIADAS).to_csv(archivo, index=False)
+    ejemplos = proyecto / "config" / "ejemplos"
+    crear_servicios(proyecto).experimentos.entrenar(
+        SolicitudEntrenar(
+            archivo=archivo,
+            diccionario=ejemplos / "diccionario_sintetico.yaml",
+            definicion=ejemplos / "objetivo_ficticio.yaml",
+            poblaciones=ejemplos / "poblaciones_ampliado_ficticio.yaml",
+            escenarios=ejemplos / "escenarios_ficticio.yaml",
+            experimentos=ejemplos / "experimentos_ficticio.yaml",
+            clave_efimera=True,
+            seleccion_escenarios=("T0|A", "T1|A"),
+            seleccion_familias=("lr", "rf"),
+        )
+    )
+    app = AppTest.from_function(_pagina, args=("pagina_validacion",), default_timeout=120).run()
+    assert not app.exception, app.exception
+    app.button[0].click().run()
+    assert not app.exception, app.exception
+    assert not app.error, [e.value for e in app.error]
+    graficos = app.get("plotly_chart")
+    assert len(graficos) == 2
+    titulos = [json.loads(g.proto.spec)["layout"]["title"]["text"] for g in graficos]
+    assert all(t.startswith("DATOS SINTÉTICOS · ") for t in titulos)
+    assert "por ventana y conjunto" in titulos[0] and "las familias de" in titulos[1]
+    assert [d.proto.label for d in app.get("download_button")] == [
+        "Descargar reporte.md",
+        "Descargar resultados.xlsx",
+    ]
+    assert "4 corridas de 2 escenarios" in " ".join(str(m.value) for m in app.markdown)

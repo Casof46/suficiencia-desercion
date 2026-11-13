@@ -707,6 +707,8 @@ class EstimacionResumen(Contrato):
 class MetricasCorridaResumen(Contrato):
     identificador: str
     escenario: str
+    ventana: str
+    conjunto: str
     familia: str
     filas: int
     eventos: int
@@ -717,6 +719,7 @@ class MetricasCorridaResumen(Contrato):
 class ResultadoMetricas(Contrato):
     configuracion_experimentos: str
     configuraciones_ficticias: bool
+    origen_datos: str
     metodo: str
     nivel: float
     replicas: int
@@ -859,7 +862,9 @@ class ControlResumen(Contrato):
     diferencias: dict[str, EstimacionResumen]
 
 
-class ResultadoComparacion(Contrato):
+class ResumenComparacion(Contrato):
+    """Resultado de la comparación tal como se guarda en el registro (F4.1)."""
+
     evaluacion: str
     version_protocolo: int
     ficticio: bool
@@ -878,6 +883,9 @@ class ResultadoComparacion(Contrato):
     bloques_evitados: tuple[str, ...]
     variables_evitadas: tuple[str, ...]
     controles: tuple[ControlResumen, ...]
+
+
+class ResultadoComparacion(ResumenComparacion):
     identificador_registro: str
     accesos_a_la_prueba: int
 
@@ -986,3 +994,20 @@ class ResultadoExportacionResultados(Contrato):
     carpeta: str
     archivos: dict[str, str]
     """Nombre de cada archivo y su huella."""
+
+
+# --- F4.1: reportes desde el registro -------------------------------------------------
+
+
+class SolicitudResultadosRegistrados(Contrato):
+    """Resultados de una evaluación final leídos del registro, para su reporte (F4.1)."""
+
+    evaluacion: str = Field(min_length=1)
+
+
+class ResultadosRegistrados(Contrato):
+    """La evaluación final con su última comparación y su última explicación, si existen."""
+
+    evaluacion: ResultadoEvaluacionFinal
+    comparacion: ResultadoComparacion | None
+    explicacion: ResultadoExplicacion | None

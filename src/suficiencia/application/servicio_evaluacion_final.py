@@ -30,10 +30,14 @@ from suficiencia.application.contratos import (
     ResultadoComparacion,
     ResultadoDemostracionFinal,
     ResultadoEvaluacionFinal,
+    ResultadoExplicacion,
+    ResultadosRegistrados,
     ResultadoVerificacionEvaluacionFinal,
+    ResumenComparacion,
     SolicitudComparar,
     SolicitudDemostracionFinal,
     SolicitudEvaluacionFinal,
+    SolicitudResultadosRegistrados,
     SolicitudVerificarEvaluacionFinal,
 )
 from suficiencia.application.registro_corridas import RegistradorCorridas
@@ -310,6 +314,26 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
             [EstadoNoInferioridad(n.estado) for n in no_inferioridad] or None,
             anticipa is not None and anticipa.ventanas > 0,
         )
+        resumen = {
+            "evaluacion": solicitud.evaluacion,
+            "version_protocolo": version,
+            "ficticio": ficticio,
+            "origen_datos": origen.value,
+            "estado": estado.value,
+            "motivos_no_validez": validez.motivos(),
+            "seleccionada": seleccionada.identificador if seleccionada else None,
+            "escenario_seleccionado": seleccionada.escenario if seleccionada else None,
+            "referencia": r0.identificador if r0 else None,
+            "escenario_referencia": r0.escenario if r0 else None,
+            "poblacion_comparada": comparados,
+            "eventos_comparados": eventos,
+            "no_inferioridad": tuple(no_inferioridad),
+            "anticipacion_ventanas": anticipa.ventanas if anticipa else None,
+            "anticipacion_ciclos": anticipa.ciclos if anticipa else None,
+            "bloques_evitados": reduccion.bloques_evitados if reduccion else (),
+            "variables_evitadas": reduccion.variables_evitadas if reduccion else (),
+            "controles": tuple(controles),
+        }
         resultado = {
             "estado": estado.value,
             "motivos_no_validez": list(validez.motivos()),
@@ -324,6 +348,8 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                 "bloques_evitados": list(reduccion.bloques_evitados),
                 "variables_evitadas": list(reduccion.variables_evitadas),
             },
+            # Todo el resultado, para reconstruir el reporte desde el registro (F4.1).
+            "resumen": ResumenComparacion(**resumen).model_dump(mode="json"),
         }
         guardado = RegistradorCorridas(repositorio, self._capturador).ejecutar(
             lambda: resultado,
@@ -355,24 +381,7 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                 "Es un defecto del programa; informe el caso.",
             )
         return ResultadoComparacion(
-            evaluacion=solicitud.evaluacion,
-            version_protocolo=version,
-            ficticio=ficticio,
-            origen_datos=origen.value,
-            estado=estado.value,
-            motivos_no_validez=validez.motivos(),
-            seleccionada=seleccionada.identificador if seleccionada else None,
-            escenario_seleccionado=seleccionada.escenario if seleccionada else None,
-            referencia=r0.identificador if r0 else None,
-            escenario_referencia=r0.escenario if r0 else None,
-            poblacion_comparada=comparados,
-            eventos_comparados=eventos,
-            no_inferioridad=tuple(no_inferioridad),
-            anticipacion_ventanas=anticipa.ventanas if anticipa else None,
-            anticipacion_ciclos=anticipa.ciclos if anticipa else None,
-            bloques_evitados=reduccion.bloques_evitados if reduccion else (),
-            variables_evitadas=reduccion.variables_evitadas if reduccion else (),
-            controles=tuple(controles),
+            **resumen,
             identificador_registro=guardado.contenido["identificador"],
             accesos_a_la_prueba=sum(
                 1
@@ -380,6 +389,113 @@ class ServicioEvaluacionFinal(ServicioCasosDeUso):
                 if g.contenido["operacion"] == OPERACION_EVALUACION_FINAL
                 and g.contenido["permitido"]
             ),
+        )
+
+    def resultados_registrados(
+        self, solicitud: SolicitudResultadosRegistrados
+    ) -> ResultadosRegistrados:
+        """La evaluación final, su última comparación y su última explicación, del registro.
+
+        Sirve para el reporte de una evaluación del proyecto (RF-M6-07; F4.1). Solo lee el
+        registro: no abre la prueba ni recalcula nada. Los accesos a la prueba son los
+        permitidos hasta la evaluación.
+
+        Raises:
+            ConfiguracionInvalida: si la evaluación no existe, o si su comparación se
+                registró antes de F4.1 y no guarda el resultado completo.
+        """
+        repositorio = self._repositorio(self._archivo_registro())
+        guardada = next(
+            (
+                g
+                for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+                if g.contenido["identificador"] == solicitud.evaluacion
+            ),
+            None,
+        )
+        evaluacion = evaluacion_final_registrada(repositorio, solicitud.evaluacion)
+        assert guardada is not None
+        congeladas = {
+            g.contenido["configuracion"]["identificador"]: configuracion_desde_datos(
+                g.contenido["configuracion"]
+            )
+            for g in repositorio.listar(TipoRegistro.CONGELAMIENTO)
+        }
+        configuracion = evaluacion["configuracion"]
+        regla = evaluacion["resultados"]["regla"]
+        accesos = sum(
+            1
+            for g in repositorio.listar(TipoRegistro.ACCESO)
+            if g.contenido["operacion"] == OPERACION_EVALUACION_FINAL
+            and g.contenido["permitido"]
+            and g.fecha <= guardada.fecha
+        )
+        resultado_evaluacion = ResultadoEvaluacionFinal(
+            version_protocolo=int(evaluacion["version_protocolo"]),
+            ficticio=bool(configuracion.get("ficticio"))
+            or any(
+                congeladas[i].ficticio for i in configuracion["configuraciones"] if i in congeladas
+            ),
+            origen_datos=origen_de_registro(configuracion).value,
+            configuraciones=tuple(
+                MetricasPruebaResumen(**c) for c in evaluacion["resultados"]["configuraciones"]
+            ),
+            estado_regla=regla["estado"],
+            escenario_suficiente=regla["escenario"],
+            detalle_regla=tuple(regla["detalle"]),
+            identificador_registro=solicitud.evaluacion,
+            accesos_a_la_prueba=accesos,
+        )
+
+        def ultima(tipo: str) -> dict[str, Any] | None:
+            return next(
+                (
+                    g.contenido
+                    for g in reversed(repositorio.listar(TipoRegistro.EXPERIMENTO))
+                    if g.contenido["configuracion"].get("tipo") == tipo
+                    and g.contenido["configuracion"].get("evaluacion_final") == solicitud.evaluacion
+                    and g.contenido["estado"] == "exitosa"
+                ),
+                None,
+            )
+
+        comparacion = None
+        registro_comparacion = ultima("evaluacion_comparativa")
+        if registro_comparacion is not None:
+            if "resumen" not in registro_comparacion["resultados"]:
+                raise ConfiguracionInvalida(
+                    f"La comparación {registro_comparacion['identificador']} se registró antes "
+                    "de F4.1 y no guarda su resultado completo.",
+                    "Repita la comparación (`suficiencia evaluacion comparar`): no abre la prueba.",
+                )
+            resumen = ResumenComparacion(**registro_comparacion["resultados"]["resumen"])
+            comparacion = ResultadoComparacion(
+                **resumen.model_dump(),
+                identificador_registro=registro_comparacion["identificador"],
+                accesos_a_la_prueba=accesos,
+            )
+        explicacion = None
+        registro_explicacion = ultima("explicacion")
+        if registro_explicacion is not None:
+            datos = registro_explicacion["configuracion"]
+            explicacion = ResultadoExplicacion(
+                evaluacion=solicitud.evaluacion,
+                version_protocolo=int(registro_explicacion["version_protocolo"]),
+                ficticio=bool(datos.get("ficticio")),
+                origen_datos=origen_de_registro(datos).value,
+                alcance=datos["alcance"],
+                niveles=tuple(datos["niveles"]),
+                particion=datos["particion"],
+                semilla=int(registro_explicacion["semillas"]["explicacion"]),
+                configuraciones=tuple(registro_explicacion["resultados"]["configuraciones"]),
+                carpeta=registro_explicacion["resultados"]["archivos"]["carpeta"],
+                identificador_registro=registro_explicacion["identificador"],
+                accesos_a_la_prueba=accesos,
+            )
+        return ResultadosRegistrados(
+            evaluacion=resultado_evaluacion,
+            comparacion=comparacion,
+            explicacion=explicacion,
         )
 
     def _no_inferioridad(

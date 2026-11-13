@@ -1,4 +1,9 @@
-"""Reporte de resultados: evaluación final, comparación con R0 e interpretabilidad (F3.7).
+"""Reportes de resultados (F3.7 y F4.1).
+
+Reporte de una evaluación final, con su comparación con R0 y su interpretabilidad
+(F3.7; desde F4.1 también leído del registro), y reporte de los escenarios en validación
+por ventana y conjunto, con los cinco modelos de cada escenario (RF-M4-10, RF-M4-14;
+F4.1).
 
 Arma, con lo que ya devolvieron los servicios, el reporte comparativo que pide
 RF-M6-07 (definición de R0 y de los controles, diferencias con intervalos,
@@ -19,6 +24,7 @@ from suficiencia.application.contratos import (
     ResultadoComparacion,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
+    ResultadoMetricas,
     TablaReporte,
 )
 from suficiencia.domain.trazabilidad.rotulo import (
@@ -75,7 +81,7 @@ def _tabla(
 
 def _tablas(
     evaluacion: ResultadoEvaluacionFinal,
-    comparacion: ResultadoComparacion,
+    comparacion: ResultadoComparacion | None,
     explicacion: ResultadoExplicacion | None,
     origen: OrigenDatos,
 ) -> tuple[TablaReporte, ...]:
@@ -107,11 +113,11 @@ def _tablas(
             n.margen,
             n.estado,
         )
-        for n in comparacion.no_inferioridad
+        for n in (comparacion.no_inferioridad if comparacion else ())
     ]
     controles = [
         (c.codigo, c.escenario, c.algoritmo, m, e.puntual, e.limite_inferior, e.limite_superior)
-        for c in comparacion.controles
+        for c in (comparacion.controles if comparacion else ())
         for m, e in c.diferencias.items()
     ]
     tablas = [
@@ -135,37 +141,40 @@ def _tablas(
             metricas,
             origen,
         ),
-        _tabla(
-            "no_inferioridad",
-            "Diferencias pareadas con R0 y no inferioridad (CMP-1)",
-            (
-                "metrica",
-                "diferencia",
-                "limite_unilateral",
-                "limite_inferior",
-                "limite_superior",
-                "margen",
-                "estado",
-            ),
-            no_inferioridad,
-            origen,
-        ),
-        _tabla(
-            "controles",
-            "Diferencias con los controles, descriptivas (CMP-2)",
-            (
-                "control",
-                "escenario",
-                "algoritmo",
-                "metrica",
-                "diferencia",
-                "limite_inferior",
-                "limite_superior",
-            ),
-            controles,
-            origen,
-        ),
     ]
+    if comparacion is not None:
+        tablas += [
+            _tabla(
+                "no_inferioridad",
+                "Diferencias pareadas con R0 y no inferioridad (CMP-1)",
+                (
+                    "metrica",
+                    "diferencia",
+                    "limite_unilateral",
+                    "limite_inferior",
+                    "limite_superior",
+                    "margen",
+                    "estado",
+                ),
+                no_inferioridad,
+                origen,
+            ),
+            _tabla(
+                "controles",
+                "Diferencias con los controles, descriptivas (CMP-2)",
+                (
+                    "control",
+                    "escenario",
+                    "algoritmo",
+                    "metrica",
+                    "diferencia",
+                    "limite_inferior",
+                    "limite_superior",
+                ),
+                controles,
+                origen,
+            ),
+        ]
     if explicacion is not None:
         tablas.append(
             _tabla(
@@ -198,42 +207,8 @@ def _tablas(
     return tuple(tablas)
 
 
-def _texto(
-    evaluacion: ResultadoEvaluacionFinal,
-    comparacion: ResultadoComparacion,
-    explicacion: ResultadoExplicacion | None,
-    origen: OrigenDatos,
-    ficticio: bool,
-) -> str:
-    lineas: list[str] = []
-    if origen is OrigenDatos.SINTETICO:
-        lineas += [f"> **{LEYENDA_SINTETICA}**", ""]
-    lineas += [
-        "# Reporte de resultados",
-        "",
-        f"Protocolo versión {evaluacion.version_protocolo}"
-        + (" (FICTICIO)" if ficticio else "")
-        + f". Evaluación final {evaluacion.identificador_registro}; accesos permitidos a "
-        f"la prueba: {evaluacion.accesos_a_la_prueba}.",
-        "",
-        "## Evaluación final",
-        "",
-        f"Regla de suficiencia: **{evaluacion.estado_regla}**"
-        + (f" ({evaluacion.escenario_suficiente})" if evaluacion.escenario_suficiente else "")
-        + ".",
-        "",
-        "| Configuración | Rol | Escenario | Algoritmo | n | Eventos | Prevalencia |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    lineas += [
-        f"| {c.identificador} | {c.rol} | {c.escenario} | {c.algoritmo} | {c.filas} | "
-        f"{c.eventos} | {c.prevalencia:.3f} |"
-        for c in evaluacion.configuraciones
-    ]
-    lineas += [
-        "",
-        "## Comparación con la referencia R0",
-        "",
+def _texto_comparacion(comparacion: ResultadoComparacion) -> list[str]:
+    lineas = [
         f"Seleccionada: {comparacion.seleccionada or 'ninguna'} "
         f"({comparacion.escenario_seleccionado or '—'}). Referencia R0: "
         f"{comparacion.referencia or 'ninguna'} ({comparacion.escenario_referencia or '—'}), "
@@ -276,6 +251,46 @@ def _texto(
         f"Estado del resultado: **{comparacion.estado}**{motivos}. No se declara superioridad.",
         "",
     ]
+    return lineas
+
+
+def _texto(
+    evaluacion: ResultadoEvaluacionFinal,
+    comparacion: ResultadoComparacion | None,
+    explicacion: ResultadoExplicacion | None,
+    origen: OrigenDatos,
+    ficticio: bool,
+) -> str:
+    lineas: list[str] = []
+    if origen is OrigenDatos.SINTETICO:
+        lineas += [f"> **{LEYENDA_SINTETICA}**", ""]
+    lineas += [
+        "# Reporte de resultados",
+        "",
+        f"Protocolo versión {evaluacion.version_protocolo}"
+        + (" (FICTICIO)" if ficticio else "")
+        + f". Evaluación final {evaluacion.identificador_registro}; accesos permitidos a "
+        f"la prueba: {evaluacion.accesos_a_la_prueba}.",
+        "",
+        "## Evaluación final",
+        "",
+        f"Regla de suficiencia: **{evaluacion.estado_regla}**"
+        + (f" ({evaluacion.escenario_suficiente})" if evaluacion.escenario_suficiente else "")
+        + ".",
+        "",
+        "| Configuración | Rol | Escenario | Algoritmo | n | Eventos | Prevalencia |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    lineas += [
+        f"| {c.identificador} | {c.rol} | {c.escenario} | {c.algoritmo} | {c.filas} | "
+        f"{c.eventos} | {c.prevalencia:.3f} |"
+        for c in evaluacion.configuraciones
+    ]
+    lineas += ["", "## Comparación con la referencia R0", ""]
+    if comparacion is None:
+        lineas += ["No hay una evaluación comparativa registrada para esta evaluación final.", ""]
+    else:
+        lineas += _texto_comparacion(comparacion)
     if explicacion is not None:
         lineas += [
             "## Interpretabilidad",
@@ -298,15 +313,14 @@ def _texto(
 
 def construir_reporte(
     evaluacion: ResultadoEvaluacionFinal,
-    comparacion: ResultadoComparacion,
+    comparacion: ResultadoComparacion | None,
     explicacion: ResultadoExplicacion | None,
 ) -> ReporteResultados:
-    """Reporte de una evaluación final con su comparación y, si existe, su explicación."""
-    origenes = [evaluacion.origen_datos, comparacion.origen_datos]
-    if explicacion is not None:
-        origenes.append(explicacion.origen_datos)
+    """Reporte de una evaluación final con su comparación y su explicación, si existen."""
+    origenes = [evaluacion.origen_datos]
+    origenes += [r.origen_datos for r in (comparacion, explicacion) if r is not None]
     origen = _origen(*origenes)
-    ficticio = evaluacion.ficticio or comparacion.ficticio
+    ficticio = evaluacion.ficticio or bool(comparacion and comparacion.ficticio)
     return ReporteResultados(
         origen_datos=origen.value,
         ficticio=ficticio,
@@ -332,3 +346,99 @@ def exigir_rotulos(reporte: ReporteResultados) -> None:
             [] if posicion is None else [fila[posicion] for fila in tabla.filas],
             origen,
         )
+
+
+LIMITACIONES_VALIDACION = (
+    "Con datos sintéticos solo se prueba el software, nunca la eficacia del método.",
+    "Son métricas de validación, en modo exploratorio: el máximo de muchas puntuaciones de "
+    "validación es optimista y no es una estimación final.",
+    "No se elige ningún escenario ni ningún modelo: eso lo hace la regla de selección (DP-10).",
+)
+
+
+def construir_reporte_validacion(metricas: ResultadoMetricas) -> ReporteResultados:
+    """Reporte de los escenarios en validación por ventana y conjunto (RF-M4-10, RF-M4-14).
+
+    Una fila por escenario, familia y métrica, con su intervalo, y en el texto una matriz
+    ventana × conjunto por familia con la primera métrica declarada (DP-08a). No calcula
+    nada: reordena las métricas de las corridas registradas.
+    """
+    origen = _origen(metricas.origen_datos)
+    nombres = list(dict.fromkeys(m for c in metricas.corridas for m in c.metricas))
+    tabla = _tabla(
+        "validacion_escenarios",
+        "Métricas de validación de cada escenario y familia, con intervalos",
+        (
+            "escenario",
+            "ventana",
+            "conjunto",
+            "familia",
+            "filas",
+            "eventos",
+            "prevalencia",
+            "metrica",
+            "puntual",
+            "limite_inferior",
+            "limite_superior",
+        ),
+        [
+            (c.escenario, c.ventana, c.conjunto, c.familia, c.filas, c.eventos, c.prevalencia)
+            + (m, e.puntual, e.limite_inferior, e.limite_superior)
+            for c in metricas.corridas
+            for m, e in c.metricas.items()
+        ],
+        origen,
+    )
+    lineas: list[str] = []
+    if origen is OrigenDatos.SINTETICO:
+        lineas += [f"> **{LEYENDA_SINTETICA}**", ""]
+    lineas += [
+        "# Escenarios en validación",
+        "",
+        f"Configuración de experimentos: {metricas.configuracion_experimentos}"
+        + (" (FICTICIA)" if metricas.configuraciones_ficticias else "")
+        + f". Intervalos {metricas.metodo} al {metricas.nivel:.0%} con {metricas.replicas} "
+        f"réplicas, estratificados por {metricas.estratificacion}. Corridas: "
+        f"{len(metricas.corridas)}; registro {metricas.identificador_registro}.",
+        "",
+    ]
+    if nombres:
+        principal = nombres[0]
+        ventanas = sorted({c.ventana for c in metricas.corridas})
+        conjuntos = list(dict.fromkeys(c.conjunto for c in metricas.corridas))
+        lineas += [f"## {principal} por ventana y conjunto", ""]
+        for familia in dict.fromkeys(c.familia for c in metricas.corridas):
+            valores = {
+                (c.ventana, c.conjunto): c.metricas[principal].puntual
+                for c in metricas.corridas
+                if c.familia == familia and principal in c.metricas
+            }
+            lineas += [
+                f"**{familia}**",
+                "",
+                "| Ventana | " + " | ".join(conjuntos) + " |",
+                "| --- |" + " --- |" * len(conjuntos),
+            ]
+            lineas += [
+                f"| {v} | "
+                + " | ".join(
+                    _numero(valores[(v, k)]) if (v, k) in valores else "·" for k in conjuntos
+                )
+                + " |"
+                for v in ventanas
+            ]
+            lineas.append("")
+        lineas += [
+            "«·»: escenario sin corrida de esa familia (no factible o no entrenado). "
+            "La tabla `validacion_escenarios` tiene todas las métricas con sus intervalos.",
+            "",
+        ]
+    lineas += ["## Limitaciones", ""]
+    lineas += [f"- {limitacion}" for limitacion in LIMITACIONES_VALIDACION]
+    return ReporteResultados(
+        origen_datos=origen.value,
+        ficticio=metricas.configuraciones_ficticias,
+        leyenda=LEYENDA_SINTETICA if origen is OrigenDatos.SINTETICO else "",
+        texto="\n".join(lineas) + "\n",
+        tablas=(tabla,),
+    )

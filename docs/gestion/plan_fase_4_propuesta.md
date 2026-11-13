@@ -1,9 +1,9 @@
-# Plan de la Fase 4 — propuesta: completar el motor con datos sintéticos
+# Plan de la Fase 4 — completar el motor con datos sintéticos
 
 | Campo | Valor |
 | --- | --- |
 | Fecha | 12 de noviembre de 2026 |
-| Estado | **Propuesta, no aprobada.** Preparada a pedido del equipo después de la conformidad de la asesoría con el informe de cierre de la Fase 3. No se programa nada hasta que el equipo la apruebe |
+| Estado | **Aprobada por el equipo** el 12 de noviembre de 2026, con el orden F4.1, F4.3, F4.2, F4.4 (comunicado por Jorge; pendiente de confirmación de Javier). Para F4.3, el dataset del OE3 se regenera con su script y su semilla. La asesoría **no** se ha pronunciado sobre este plan |
 | Base | Especificación Fase 1 v0.6 (requisitos N2 y N3 pendientes); informe de cierre de la Fase 3, secciones 6 a 8; README del dataset sintético del OE3 |
 
 ## 1. Por qué una Fase 4 sin datos reales
@@ -53,8 +53,8 @@ Orden propuesto: F4.1 (N2, más útil para el protocolo real), F4.3, F4.2, F4.4.
 | Tiempo de verificación en Windows (14 a 20 minutos por hito, más si la PC se suspende) | Desactivar la suspensión mientras corre la verificación |
 | La asesoría cambia el protocolo o una recomendación | Todo valor está parametrizado; los hitos afectados se ajustan |
 
-## 6. Qué necesita el equipo decidir
+## 6. Decisiones del equipo sobre este plan
 
-1. Aprobar, ajustar o descartar esta propuesta.
-2. Si se aprueba, qué hitos y en qué orden.
-3. Para F4.3: si se trae el dataset del OE3 tal como se generó o se regenera con su script.
+1. Aprobado el 12 de noviembre de 2026.
+2. Orden: F4.1, F4.3, F4.2, F4.4 y el cierre.
+3. F4.3: el dataset del OE3 se regenera con su script y su semilla, y se comprueban sus huellas.

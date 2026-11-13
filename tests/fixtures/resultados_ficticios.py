@@ -12,11 +12,13 @@ from suficiencia.application.contratos import (
     EstimacionResumen,
     ExplicacionConfiguracionResumen,
     ExplicacionLocalResumen,
+    MetricasCorridaResumen,
     MetricasPruebaResumen,
     NoInferioridadResumen,
     ResultadoComparacion,
     ResultadoEvaluacionFinal,
     ResultadoExplicacion,
+    ResultadoMetricas,
 )
 
 
@@ -143,4 +145,41 @@ def explicacion(origen: str = "sintetico") -> ResultadoExplicacion:
         carpeta="workspace/explicaciones/ficticia",
         identificador_registro="EXP-ficticio-3",
         accesos_a_la_prueba=1,
+    )
+
+
+def metricas(origen: str = "sintetico") -> ResultadoMetricas:
+    """Métricas de validación de tres escenarios; svm solo en T1|A (EJEMPLO FICTICIO)."""
+    corridas = []
+    for escenario, base in (("T0|A", 0.55), ("T1|A", 0.62), ("T1|A+F", 0.64)):
+        for posicion, familia in enumerate(("lr", "rf", "xgboost", "lightgbm", "svm")):
+            if familia == "svm" and escenario != "T1|A":
+                continue
+            corridas.append(
+                MetricasCorridaResumen(
+                    identificador=f"EXP-{escenario}-{familia}",
+                    escenario=escenario,
+                    ventana=escenario.split("|")[0],
+                    conjunto=escenario.split("|")[1],
+                    familia=familia,
+                    filas=300,
+                    eventos=60,
+                    prevalencia=0.2,
+                    metricas={
+                        "auc_roc": _estimacion(base + posicion / 100, 0.04),
+                        "brier": _estimacion(0.15, 0.01),
+                    },
+                )
+            )
+    return ResultadoMetricas(
+        configuracion_experimentos="Experimentos ficticios",
+        configuraciones_ficticias=True,
+        origen_datos=origen,
+        metodo="percentil",
+        nivel=0.95,
+        replicas=200,
+        estratificacion="cohorte_resultado",
+        q=None,
+        corridas=tuple(corridas),
+        identificador_registro="EXP-ficticio-4",
     )

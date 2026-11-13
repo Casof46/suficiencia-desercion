@@ -1,4 +1,4 @@
-"""Exportación del reporte de resultados y rótulo en el registro (F3.7).
+"""Exportación del reporte de resultados y rótulo en el registro (F3.7 y F4.1).
 
 PI-16: con datos sintéticos, el rótulo está en las exportaciones (texto, cada CSV y
 cada hoja del Excel) y en la exportación de experimentos del registro; una exportación
@@ -19,6 +19,7 @@ from suficiencia.application.composicion import crear_servicios
 from suficiencia.application.contratos import (
     SolicitudExportarRegistro,
     SolicitudExportarResultados,
+    SolicitudResultadosRegistrados,
     TablaReporte,
 )
 from suficiencia.application.registro_corridas import RegistradorCorridas
@@ -129,3 +130,36 @@ def test_pi16_la_exportacion_de_experimentos_del_registro_lleva_el_rotulo(
     tabla = pd.read_csv(exportacion.archivo)
     # La corrida sin origen declarado también se rotula como sintética.
     assert list(tabla[CAMPO_ORIGEN]) == [ROTULO_SINTETICO, ROTULO_SINTETICO]
+
+
+def test_una_comparacion_sin_resultado_completo_pide_repetirla(proyecto: Path) -> None:
+    """F4.1: las comparaciones registradas antes de F4.1 no guardan todo su resultado."""
+    servicios = crear_servicios(proyecto)
+    registrador = RegistradorCorridas(
+        servicios.reportes.repositorio(), CapturadorEntornoLocal(proyecto)
+    )
+    evaluacion = registrador.ejecutar(
+        lambda: {
+            "configuraciones": [],
+            "regla": {"estado": "ningun_escenario_cumple", "escenario": None, "detalle": []},
+        },
+        modo=ModoExperimento.EXPLORATORIO,
+        configuracion={"tipo": "evaluacion_final", "configuraciones": [], "ficticio": True},
+        semillas={},
+        huella_datos=None,
+        version_protocolo="1",
+    ).contenido["identificador"]
+    solicitud = SolicitudResultadosRegistrados(evaluacion=evaluacion)
+    registrados = servicios.evaluacion_final.resultados_registrados(solicitud)
+    assert registrados.comparacion is None and registrados.explicacion is None
+    assert registrados.evaluacion.origen_datos == "sintetico"  # sin origen declarado
+    registrador.ejecutar(
+        lambda: {"estado": "C5_ningun_escenario_suficiente"},
+        modo=ModoExperimento.EXPLORATORIO,
+        configuracion={"tipo": "evaluacion_comparativa", "evaluacion_final": evaluacion},
+        semillas={},
+        huella_datos=None,
+        version_protocolo="1",
+    )
+    with pytest.raises(ConfiguracionInvalida, match="antes de F4.1"):
+        servicios.evaluacion_final.resultados_registrados(solicitud)

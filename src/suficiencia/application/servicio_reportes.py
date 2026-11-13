@@ -34,13 +34,18 @@ from suficiencia.application.contratos import (
     ResultadoExportacion,
     ResultadoExportacionResultados,
     ResultadoIntegridad,
+    ResultadoMetricas,
     SolicitudConsultarRegistro,
     SolicitudExportarRegistro,
     SolicitudExportarResultados,
     SolicitudRegistrarDecision,
 )
 from suficiencia.application.registro_corridas import RegistradorCorridas
-from suficiencia.application.reporte_resultados import construir_reporte, exigir_rotulos
+from suficiencia.application.reporte_resultados import (
+    construir_reporte,
+    construir_reporte_validacion,
+    exigir_rotulos,
+)
 from suficiencia.domain.errores import ConfiguracionInvalida
 from suficiencia.domain.huella import Huella
 from suficiencia.domain.proyecto import ConfiguracionProyecto
@@ -235,11 +240,15 @@ class ServicioReportes(ServicioCasosDeUso):
     def reporte_resultados(
         self,
         evaluacion: ResultadoEvaluacionFinal,
-        comparacion: ResultadoComparacion,
+        comparacion: ResultadoComparacion | None,
         explicacion: ResultadoExplicacion | None,
     ) -> ReporteResultados:
         """Reporte de una evaluación final con su comparación y su explicación (F3.7)."""
         return construir_reporte(evaluacion, comparacion, explicacion)
+
+    def reporte_validacion(self, metricas: ResultadoMetricas) -> ReporteResultados:
+        """Reporte de los escenarios en validación por ventana y conjunto (F4.1)."""
+        return construir_reporte_validacion(metricas)
 
     def contenido_resultados(self, reporte: ReporteResultados) -> dict[str, bytes]:
         """Archivos del reporte en memoria (texto, CSV y Excel), para descargarlos.

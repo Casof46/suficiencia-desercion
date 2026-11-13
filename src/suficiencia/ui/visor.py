@@ -29,12 +29,14 @@ from suficiencia.application.contratos import (
     ResultadoDemostracionObjetivo,
     ResultadoEscenarios,
     ResultadoImportacion,
+    ResultadoMetricas,
     SolicitudConstruirPoblaciones,
     SolicitudConsultarRegistro,
     SolicitudDemostracionFinal,
     SolicitudGenerarEscenarios,
     SolicitudImportarDataset,
     SolicitudLeerPrueba,
+    SolicitudMetricas,
     SolicitudValidarObjetivo,
 )
 from suficiencia.application.errores import AccesoPruebaDenegado, ErrorSuficiencia
@@ -381,6 +383,53 @@ def pagina_registro() -> None:
         st.caption(f"Archivo: {accesos.archivo}")
 
 
+def pagina_validacion() -> None:
+    _encabezado(
+        "Escenarios en validación: ventana × conjunto",
+        "Compara los escenarios con las métricas de validación de las corridas ya "
+        "registradas en este proyecto (modo exploratorio): una matriz por ventana y conjunto "
+        "para cada familia y las cinco familias de cada escenario (RF-M4-10, RF-M4-14). No "
+        "elige ningún escenario: eso lo hace la regla de selección.",
+    )
+    servicios = _servicios(str(_raiz()))
+    st.caption(
+        "Calcular guarda un registro de métricas exploratorias. Para tener corridas, "
+        "entrene primero con `suficiencia experimentos entrenar` y la configuración de "
+        f"{EXPERIMENTOS}."
+    )
+    if st.button("Calcular las métricas de las corridas registradas", type="primary"):
+        metricas = _ejecutar(
+            lambda: servicios.experimentos.metricas(
+                SolicitudMetricas(experimentos=_raiz() / EXPERIMENTOS)
+            )
+        )
+        if metricas is not None:
+            st.session_state["validacion"] = metricas
+    resultado: ResultadoMetricas | None = st.session_state.get("validacion")
+    if resultado is None:
+        return
+    nombres = list(dict.fromkeys(m for c in resultado.corridas for m in c.metricas))
+    familias = list(dict.fromkeys(c.familia for c in resultado.corridas))
+    escenarios = list(dict.fromkeys(c.escenario for c in resultado.corridas))
+    st.write(
+        f"{len(resultado.corridas)} corridas de {len(escenarios)} escenarios; intervalos "
+        f"{resultado.metodo} al {resultado.nivel:.0%}."
+    )
+    izquierda, derecha = st.columns(2)
+    metrica = izquierda.selectbox("Métrica", nombres)
+    familia = derecha.selectbox("Familia", familias)
+    st.plotly_chart(g.figura_matriz_escenarios(resultado, metrica, familia), width="stretch")
+    escenario = st.selectbox("Escenario", escenarios)
+    st.plotly_chart(g.figura_familias(resultado, escenario, metrica), width="stretch")
+    reporte = servicios.reportes.reporte_validacion(resultado)
+    archivos = _ejecutar(lambda: servicios.reportes.contenido_resultados(reporte))
+    if archivos is not None:
+        for nombre in ("reporte.md", "resultados.xlsx"):
+            st.download_button(
+                f"Descargar {nombre}", archivos[nombre], file_name=f"validacion_{nombre}"
+            )
+
+
 def pagina_resultados() -> None:
     _encabezado(
         "Resultados: evaluación final, comparación con R0 y explicaciones",
@@ -474,6 +523,7 @@ def main() -> None:
         st.Page(pagina_escenarios, title="Escenarios", url_path="escenarios"),
         st.Page(pagina_objetivo, title="Objetivo de deserción", url_path="objetivo"),
         st.Page(pagina_poblaciones, title="Poblaciones y partición", url_path="poblaciones"),
+        st.Page(pagina_validacion, title="Escenarios en validación", url_path="validacion"),
         st.Page(pagina_resultados, title="Resultados (Fase 3)", url_path="resultados"),
         st.Page(pagina_registro, title="Registro", url_path="registro"),
     ]

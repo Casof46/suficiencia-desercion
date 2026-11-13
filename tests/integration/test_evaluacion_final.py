@@ -14,6 +14,8 @@
   filas de desarrollo, y registran partición, muestras y semilla; no abren la prueba.
 - F3.7 (PI-16): la evaluación, la comparación y la explicación declaran en el registro
   que los datos son sintéticos; la demostración exporta su reporte rotulado.
+- F4.1 (RF-M6-07): los resultados leídos del registro coinciden con los devueltos al
+  ejecutarse, y su reporte se exporta rotulado.
 - Demostración completa en un proyecto temporal, sin tocar el registro del proyecto.
 
 Todo es sintético y ficticio: ningún resultado es una conclusión sobre el método.
@@ -43,6 +45,7 @@ from suficiencia.application.contratos import (
     SolicitudEntrenar,
     SolicitudEvaluacionFinal,
     SolicitudExplicar,
+    SolicitudResultadosRegistrados,
     SolicitudSeleccionar,
 )
 from suficiencia.application.demostracion_protocolo import _SinAjusteFicticio
@@ -350,6 +353,27 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
     with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
         servicios.evaluacion_final.comparar(SolicitudComparar(evaluacion="EXP-inexistente"))
     _explicaciones(proyecto, servicios, resultado, identificadores)
+    # F4.1: lo leído del registro es lo que devolvieron los servicios al ejecutarse.
+    registrados = servicios.evaluacion_final.resultados_registrados(
+        SolicitudResultadosRegistrados(evaluacion=resultado.identificador_registro)
+    )
+    assert registrados.evaluacion == resultado
+    assert registrados.comparacion == comparacion
+    ultima = [
+        g.contenido["identificador"]
+        for g in repositorio.listar(TipoRegistro.EXPERIMENTO)
+        if g.contenido["configuracion"].get("tipo") == "explicacion"
+        and g.contenido["estado"] == "exitosa"
+    ][-1]
+    assert registrados.explicacion is not None
+    assert registrados.explicacion.identificador_registro == ultima
+    assert servicios.reportes.reporte_resultados(
+        registrados.evaluacion, registrados.comparacion, None
+    ) == servicios.reportes.reporte_resultados(resultado, comparacion, None)
+    with pytest.raises(ConfiguracionInvalida, match="No hay una evaluación final"):
+        servicios.evaluacion_final.resultados_registrados(
+            SolicitudResultadosRegistrados(evaluacion=ultima)
+        )
     # RF-M4-09: repetir sin justificación se rechaza antes de abrir la prueba.
     with pytest.raises(EvaluacionFinalRepetida):
         servicios.evaluacion_final.evaluar(solicitud(identificadores), procedimientos)
@@ -363,6 +387,23 @@ def test_evaluacion_final_unica_con_huellas_y_repeticion_justificada(
         solicitud(identificadores, "Repetición de prueba del programa"), procedimientos
     )
     assert otra.accesos_a_la_prueba == 2
+    # Cada evaluación registrada cuenta los accesos hasta ella; la nueva no tiene comparación.
+    primera = servicios.evaluacion_final.resultados_registrados(
+        SolicitudResultadosRegistrados(evaluacion=resultado.identificador_registro)
+    )
+    segunda = servicios.evaluacion_final.resultados_registrados(
+        SolicitudResultadosRegistrados(evaluacion=otra.identificador_registro)
+    )
+    assert primera.evaluacion.accesos_a_la_prueba == 1
+    assert segunda.evaluacion.accesos_a_la_prueba == 2 and segunda.comparacion is None
+    argumentos = ["--raiz", str(proyecto), "evaluacion", "reporte"]
+    assert (
+        main([*argumentos, "--evaluacion", otra.identificador_registro, "--reporte", "reports/r"])
+        == SALIDA_CORRECTA
+    )
+    texto = (proyecto / "reports" / "r" / "reporte.md").read_text(encoding="utf-8")
+    assert texto.startswith("> **DATOS SINTÉTICOS")
+    assert "No hay una evaluación comparativa registrada" in texto
     ultimo = repositorio.listar(TipoRegistro.ACCESO)[-1].contenido
     assert "REPETICIÓN justificada: Repetición de prueba del programa" in ultimo["motivo"]
     # Un modelo modificado después de congelarse se rechaza.
