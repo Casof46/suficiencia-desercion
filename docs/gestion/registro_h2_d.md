@@ -5,9 +5,9 @@
 | Fecha de ejecución | 29 de octubre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, porque el profesor pidió ver la aplicación funcionando |
 | Base | Contexto maestro (Streamlit como interfaz local; principios 1, 3, 10 y 13); arquitectura de capas de la especificación v0.6 (RF-UI-02) |
-| Autorización | Pedido del equipo del 29 de octubre de 2026, fuera del orden del plan de la Fase 2. Comunicado por Jorge; pendiente de confirmación de Javier |
+| Autorización | Pedido del equipo del 29 de octubre de 2026, fuera del orden del plan de la Fase 2. Comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026 |
 | Riesgo aceptado | Ninguno metodológico: el visor no decide nada. Si la asesoría cambia REC-01 o REC-03, el visor muestra lo que muestren H2.4 y H2.5 ajustados |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `9ae248a`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `9ae248a`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 

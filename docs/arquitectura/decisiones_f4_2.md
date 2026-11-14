@@ -17,7 +17,7 @@ Son decisiones **técnicas y reversibles**. Ninguna resuelve una decisión metod
 
 | Documento | Qué preveía | Qué se hizo | Motivo |
 | --- | --- | --- | --- |
-| Plan de la Fase 4, F4.2 | Estabilidad de la selección por fold y de las explicaciones entre semillas y folds; R-max | Todo, con las explicaciones solo entre folds (D-212) | Entre semillas habría que reentrenar los modelos. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Plan de la Fase 4, F4.2 | Estabilidad de la selección por fold y de las explicaciones entre semillas y folds; R-max | Todo, con las explicaciones solo entre folds (D-212) | Entre semillas habría que reentrenar los modelos. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## No implementado en F4.2
 

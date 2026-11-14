@@ -5,8 +5,8 @@
 | Fecha de ejecución | 29 de octubre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5 (M6; RF-M6-01, 03, 05 y 06; RNF-05, 16 y 17; PI-03, 04, 05 y 12); plan de la Fase 2 (paquete de cierre, sección E) |
-| Autorización | H2.7 autorizado y DP-16 decidida (SQLite) el 29 de octubre de 2026 (acta), pendiente de confirmación de Javier |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `0689a32`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Autorización | H2.7 autorizado y DP-16 decidida (SQLite) el 29 de octubre de 2026 (acta), confirmado por Javier el 13 de noviembre de 2026 |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `0689a32`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 

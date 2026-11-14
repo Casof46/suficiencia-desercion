@@ -6,7 +6,7 @@
 | Fecha | 12 de noviembre de 2026 |
 | Base | Especificación Fase 1 v0.6; plan de la Fase 3 (`docs/gestion/plan_fase_3.md`); informe de cierre de la Fase 2 |
 | Repositorio | `Casof46/suficiencia-desercion`, rama `main` |
-| Estado | **Fase 3 cerrada: los siete hitos aceptados por el equipo** (el último, el 12 de noviembre de 2026; comunicado por Jorge, pendiente de confirmación de Javier). **La asesoría dio su conformidad con este informe** el 12 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, la conformidad con REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
+| Estado | **Fase 3 cerrada: los siete hitos aceptados por el equipo** (el último, el 12 de noviembre de 2026; comunicado por Jorge, confirmado por Javier el 13 de noviembre de 2026). **La asesoría dio su conformidad con este informe** el 12 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, la conformidad con REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
 
 ## 1. Resumen
 
@@ -35,7 +35,7 @@ En el registro del proyecto todo es **exploratorio**: no hay protocolo aprobado,
 | F3.6 | Interpretabilidad con SHAP y LIME, importancia por bloque | `3080984` | Cinco `OK`; 875 pasan y 1 se omite | 12-11-2026 |
 | F3.7 | Rótulo de datos sintéticos, reporte de resultados y página de resultados con Plotly | `6769282` | Cinco `OK`; 902 pasan y 1 se omite | 12-11-2026 |
 
-La prueba que se omite en Windows crea un enlace simbólico, que Windows no permite sin permisos especiales. Todas las aceptaciones las comunicó Jorge en nombre del equipo y están pendientes de confirmación de Javier. El detalle de cada hito está en `docs/gestion/registro_f3_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_f3_*.md` (D-127 a D-194) y sus pruebas en `docs/desarrollo/pruebas_f3_*.md`.
+La prueba que se omite en Windows crea un enlace simbólico, que Windows no permite sin permisos especiales. Todas las aceptaciones las comunicó Jorge en nombre del equipo y están confirmadas por Javier el 13 de noviembre de 2026. El detalle de cada hito está en `docs/gestion/registro_f3_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_f3_*.md` (D-127 a D-194) y sus pruebas en `docs/desarrollo/pruebas_f3_*.md`.
 
 Al cierre, el proyecto tiene 402 funciones de prueba (903 casos con sus parámetros). En cada hito se introdujeron errores a propósito para comprobar que las pruebas los detectan: 52 controles negativos en la fase, todos detectados.
 
@@ -65,7 +65,7 @@ Todas se instalan en el equipo y no envían datos a ningún servicio. Están fij
 ## 5. Decisiones metodológicas
 
 - **Ninguna DP-xx se resolvió en la Fase 3.** Todas las que el entrenamiento necesita entraron como datos obligatorios con valores inventados (sección 3).
-- **Decididas por el equipo antes de esta fase:** DP-16 (SQLite) y el subcódigo DP-08h (se permite un piloto), pendientes de confirmación de Javier; DP-08h además espera la conformidad de la asesoría.
+- **Decididas por el equipo antes de esta fase:** DP-16 (SQLite) y el subcódigo DP-08h (se permite un piloto), confirmadas por Javier el 13 de noviembre de 2026; DP-08h además espera la conformidad de la asesoría.
 - **Abiertas:** las otras 19. Bloquean el uso de datos reales DP-01, DP-02, DP-14, DP-15 y DP-18. Deben cerrarse antes de aprobar el protocolo DP-06, DP-07, DP-08, DP-09, DP-10, DP-12, DP-17, DP-19 y DP-20; DP-11 decide el alcance de la interpretabilidad.
 - **Recomendaciones:** REC-04 y REC-05 aceptadas por el equipo. REC-01 a REC-03 aceptadas por el equipo, pendientes de la conformidad de la asesoría.
 
@@ -115,6 +115,6 @@ La validación del OE3 con estudiantes reales exige los datos autorizados y el p
 
 | Rol | Nombre | Fecha | Conformidad |
 | --- | --- | --- | --- |
-| Equipo | Javier Barquinero | | Pendiente de confirmación |
+| Equipo | Javier Barquinero | 13-11-2026 | Confirma la aceptación del equipo |
 | Equipo | Jorge Caso | 12-11-2026 | Aceptación de los siete hitos comunicada en nombre del equipo |
 | Asesoría | | 12-11-2026 | Conformidad con este informe (comunicada por Jorge) |

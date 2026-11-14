@@ -3,7 +3,7 @@
 | Campo | Valor |
 | --- | --- |
 | Fecha | 12 de noviembre de 2026 |
-| Estado | **Aprobada por el equipo** el 12 de noviembre de 2026, con el orden F4.1, F4.3, F4.2, F4.4 (comunicado por Jorge; pendiente de confirmación de Javier). Para F4.3, el dataset del OE3 se regenera con su script y su semilla. La asesoría **no** se ha pronunciado sobre este plan |
+| Estado | **Aprobada por el equipo** el 12 de noviembre de 2026, con el orden F4.1, F4.3, F4.2, F4.4 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). Para F4.3, el dataset del OE3 se regenera con su script y su semilla. La asesoría **no** se ha pronunciado sobre este plan |
 | Base | Especificación Fase 1 v0.6 (requisitos N2 y N3 pendientes); informe de cierre de la Fase 3, secciones 6 a 8; README del dataset sintético del OE3 |
 
 ## 1. Por qué una Fase 4 sin datos reales

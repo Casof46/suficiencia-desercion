@@ -5,9 +5,9 @@
 | Fecha de ejecución | 11 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, después de cerrar la Fase 2 |
 | Base | Plan de la Fase 3 (sección 2, F3.1); especificación Fase 1 v0.6 (M3: RF-M3-02, RF-M3-03; PI-01, PI-07, PI-08, PU-12) |
-| Autorización | El equipo aprobó empezar la Fase 3 por F3.1 el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría dio su conformidad con el informe de cierre de la Fase 2; no se ha pronunciado sobre el plan de la Fase 3 |
+| Autorización | El equipo aprobó empezar la Fase 3 por F3.1 el 11 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). La asesoría dio su conformidad con el informe de cierre de la Fase 2; no se ha pronunciado sobre el plan de la Fase 3 |
 | Riesgo aceptado | Si la asesoría cambia REC-01 a REC-03 o el diseño comparativo, las matrices y los folds se ajustan; todo valor está parametrizado |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `0917025`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `0917025`); aceptado por el equipo** el 11 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -60,5 +60,5 @@ Ninguna DP-xx se resolvió. DP-03, DP-07 y DP-12 entran como datos obligatorios;
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 11 de noviembre de 2026 | Acepta F3.1 y pide empezar F3.2 |

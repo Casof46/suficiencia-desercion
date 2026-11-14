@@ -19,7 +19,7 @@ Son decisiones **técnicas y reversibles**. Ninguna resuelve una decisión metod
 
 | Documento | Qué preveía | Qué se hizo | Motivo |
 | --- | --- | --- | --- |
-| Plan de la Fase 4, F4.3 | Usar solo el archivo ancho (`wide`), ya integrado, salvo que el equipo decidiera otra cosa | Combinar el ancho y el longitudinal del mismo generador en un solo archivo, con un script fuera del motor (D-202) | El ancho no tiene el estado de matrícula por ciclo que el motor necesita para el objetivo. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Plan de la Fase 4, F4.3 | Usar solo el archivo ancho (`wide`), ya integrado, salvo que el equipo decidiera otra cosa | Combinar el ancho y el longitudinal del mismo generador en un solo archivo, con un script fuera del motor (D-202) | El ancho no tiene el estado de matrícula por ciclo que el motor necesita para el objetivo. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 | Plan de la Fase 4, regla 1 ("solo datos sintéticos") | — | Se cumple: cada fila lleva `origen_datos = SINTETICO` y el importador la acepta solo por eso | — |
 
 ## Diferencias entre el motor y el generador (datos para DP-01, no decisiones)

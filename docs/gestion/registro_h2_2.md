@@ -5,8 +5,8 @@
 | Fecha de ejecución | 28 de octubre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.5 (M2; RF-M2-01 a RF-M2-04; PU-01, 02, 03, 18 y 19); plan de la Fase 2 (paquete de cierre, sección E) |
-| Autorización | H2.1 a H2.3 autorizados el 28 de octubre de 2026 (acta, apartado 5.1), pendiente de confirmación de Javier |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git (commit `0abfc82`); aceptado por el equipo** el 28 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Autorización | H2.1 a H2.3 autorizados el 28 de octubre de 2026 (acta, apartado 5.1), confirmado por Javier el 13 de noviembre de 2026 |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git (commit `0abfc82`); aceptado por el equipo** el 28 de octubre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 

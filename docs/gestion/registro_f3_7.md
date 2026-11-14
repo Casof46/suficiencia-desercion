@@ -5,9 +5,9 @@
 | Fecha de ejecución | 12 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, al aceptar F3.6 |
 | Base | Plan de la Fase 3 (sección 2, F3.7); especificación Fase 1 v0.6 (RF-M6-03, RF-M6-04, RF-M6-07; RF-UI-02, RF-UI-03; RNF-19; PI-16) |
-| Autorización | El equipo aceptó F3.6, pidió empezar F3.7 y aprobó agregar Plotly el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Autorización | El equipo aceptó F3.6, pidió empezar F3.7 y aprobó agregar Plotly el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 | Riesgo aceptado | La página de resultados y el reporte usan la demostración con protocolo ficticio; cuando exista un protocolo aprobado se agregará el reporte leído del registro |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `6769282`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `6769282`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -59,5 +59,5 @@ Ninguna DP-xx se resolvió.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 12 de noviembre de 2026 | Acepta F3.7 y pide preparar el informe de cierre de la Fase 3 |

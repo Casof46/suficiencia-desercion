@@ -6,7 +6,7 @@
 | Fecha | 13 de noviembre de 2026 |
 | Base | Especificación Fase 1 v0.6; plan de la Fase 4 (`docs/gestion/plan_fase_4_propuesta.md`); informe de cierre de la Fase 3 |
 | Repositorio | `Casof46/suficiencia-desercion`, rama `main` |
-| Estado | **Fase 4 cerrada: los cuatro hitos de construcción y este informe aceptados por el equipo** el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). **La asesoría dio su conformidad con este informe** el 13 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, la conformidad con REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
+| Estado | **Fase 4 cerrada: los cuatro hitos de construcción y este informe aceptados por el equipo** el 13 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). **La asesoría dio su conformidad con este informe** el 13 de noviembre de 2026 (comunicado por Jorge). Esa conformidad no incluye la aprobación formal de la Fase 1, la conformidad con REC-01 a REC-03 ni el comparador B del OE3, que siguen pendientes |
 
 ## 1. Resumen
 
@@ -28,7 +28,7 @@ En el registro del proyecto todo sigue siendo **exploratorio**: no hay protocolo
 | F4.2 | Estabilidad de la selección y de las explicaciones, y R-max (opcionales) | `00ede20` | Cinco `OK`; 956 pasan y 1 se omite | 13-11-2026 |
 | F4.4 | Decisiones abiertas e historial de experimentos en el visor | `d117698` | Cinco `OK`; 971 pasan y 1 se omite | 13-11-2026 |
 
-El orden fue el que aprobó el equipo: F4.1, F4.3, F4.2 y F4.4. La prueba que se omite en Windows crea un enlace simbólico, que el sistema no permite sin permisos especiales. Todas las aceptaciones las comunicó Jorge en nombre del equipo y están pendientes de confirmación de Javier. El detalle de cada hito está en `docs/gestion/registro_f4_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_f4_*.md` (D-195 a D-219) y sus pruebas en `docs/desarrollo/pruebas_f4_*.md`.
+El orden fue el que aprobó el equipo: F4.1, F4.3, F4.2 y F4.4. La prueba que se omite en Windows crea un enlace simbólico, que el sistema no permite sin permisos especiales. Todas las aceptaciones las comunicó Jorge en nombre del equipo y están confirmadas por Javier el 13 de noviembre de 2026. El detalle de cada hito está en `docs/gestion/registro_f4_*.md`, sus decisiones técnicas en `docs/arquitectura/decisiones_f4_*.md` (D-195 a D-219) y sus pruebas en `docs/desarrollo/pruebas_f4_*.md`.
 
 Al cierre, el proyecto tiene 439 funciones de prueba (972 casos con sus parámetros). En cada hito se introdujeron errores a propósito para comprobar que las pruebas los detectan: 29 controles negativos en la fase, todos detectados.
 
@@ -51,7 +51,7 @@ Ninguna biblioteca nueva en la Fase 4. El generador del dataset del OE3 usa nump
 ## 5. Decisiones metodológicas
 
 - **Ninguna DP-xx se resolvió en la Fase 4.**
-- **Decididas antes:** DP-16 (SQLite), que está en el registro del proyecto, y el subcódigo DP-08h (se permite un piloto; informe de cierre de la Fase 3), ambas pendientes de confirmación de Javier. Según `suficiencia decisiones` en la PC del proyecto, hoy hay 1 decisión registrada (DP-16) y 19 abiertas.
+- **Decididas antes:** DP-16 (SQLite), que está en el registro del proyecto, y el subcódigo DP-08h (se permite un piloto; informe de cierre de la Fase 3), ambas confirmadas por Javier el 13 de noviembre de 2026. Según `suficiencia decisiones` en la PC del proyecto, hoy hay 1 decisión registrada (DP-16) y 19 abiertas.
 - **Nuevas como opciones apagadas:** el referente R-max (DP-19d), la estabilidad de la selección (CMP-5; DP-20g) y la estabilidad de las explicaciones entre folds (RF-M5-06; DP-11). Solo se encienden en ejemplos ficticios.
 - **Datos para DP-01, no decisiones:** el ensayo con el OE3 mostró que el motor y el generador difieren en cómo confirman el evento cuando hay reservas al final del horizonte o en el ciclo H+1, y en el fallecimiento en H+1. En desarrollo coinciden 2655 de 2681 etiquetas. El equipo decidió dejarlo documentado (`decisiones_f4_3.md`).
 
@@ -91,6 +91,6 @@ La validación del OE3 con estudiantes reales exige los datos autorizados y el p
 
 | Rol | Nombre | Fecha | Conformidad |
 | --- | --- | --- | --- |
-| Equipo | Javier Barquinero | | Pendiente de confirmación |
+| Equipo | Javier Barquinero | 13-11-2026 | Confirma la aceptación del equipo |
 | Equipo | Jorge Caso | 13-11-2026 | Aceptación del informe y de los cuatro hitos comunicada en nombre del equipo |
 | Asesoría | | 13-11-2026 | Conformidad con este informe (comunicada por Jorge) |

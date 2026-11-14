@@ -16,7 +16,7 @@ Son decisiones **técnicas y reversibles**. Ninguna resuelve una decisión metod
 
 | Documento | Qué preveía | Qué se hizo | Motivo |
 | --- | --- | --- | --- |
-| Plan de la Fase 4, F4.4 | Estado de las decisiones, funciones desactivadas, historial de experimentos y revisión visual en Windows | Todo; la revisión visual se hizo en Linux y en Windows se ejecutan las pruebas de las páginas (D-219). El equipo puede abrir el visor en Windows y revisarlo | Ver D-219. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Plan de la Fase 4, F4.4 | Estado de las decisiones, funciones desactivadas, historial de experimentos y revisión visual en Windows | Todo; la revisión visual se hizo en Linux y en Windows se ejecutan las pruebas de las páginas (D-219). El equipo puede abrir el visor en Windows y revisarlo | Ver D-219. Aceptada por el equipo el 13 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## No implementado en F4.4
 

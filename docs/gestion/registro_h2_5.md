@@ -5,9 +5,9 @@
 | Fecha de ejecución | 29 de octubre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.6 (M2; RF-M2-05 a 09 y 12; CU-04 y CU-11; PU-10, 11, 13 y 17; PI-02 y PI-07); plan de la Fase 2 (paquete de cierre, sección E) |
-| Autorización | El equipo pidió seguir con H2.5 el 29 de octubre de 2026, sin esperar la conformidad de la asesoría con REC-01. El equipo ya había aceptado REC-01 con un plan de contingencia obligatorio en DP-05, y DP-08h con el piloto permitido. Comunicado por Jorge; pendiente de confirmación de Javier |
+| Autorización | El equipo pidió seguir con H2.5 el 29 de octubre de 2026, sin esperar la conformidad de la asesoría con REC-01. El equipo ya había aceptado REC-01 con un plan de contingencia obligatorio en DP-05, y DP-08h con el piloto permitido. Comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026 |
 | Riesgo aceptado | Si la asesoría pide cambios en REC-01 o en DP-08h, este hito se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `69e9efe`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `69e9efe`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 

@@ -5,9 +5,9 @@
 | Fecha de ejecución | 12 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, al aceptar F3.3 |
 | Base | Plan de la Fase 3 (sección 2, F3.4); especificación Fase 1 v0.6 (M4: RF-M4-05 a 09, RF-M4-12; CU-07, CU-08; PI-09, PI-10, PI-15; selección del modelo representativo) |
-| Autorización | El equipo aceptó F3.3 y pidió empezar F3.4 el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Autorización | El equipo aceptó F3.3 y pidió empezar F3.4 el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 | Riesgo aceptado | Si la asesoría cambia REC-01 a REC-03 o el diseño comparativo, la selección y la evaluación se ajustan; todo valor está parametrizado |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `df5d69c`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `df5d69c`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -58,5 +58,5 @@ Ninguna DP-xx se resolvió. DP-06 y DP-10 entran como datos obligatorios; DP-08 
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 12 de noviembre de 2026 | Acepta F3.4 y pide empezar F3.5 |

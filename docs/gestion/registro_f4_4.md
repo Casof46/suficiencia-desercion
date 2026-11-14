@@ -5,9 +5,9 @@
 | Fecha de ejecución | 13 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, al aceptar F4.2 |
 | Base | Plan de la Fase 4 (sección 3, F4.4); especificación Fase 1 v0.6 (RF-UI-04, RF-M6-02) |
-| Autorización | El equipo pidió empezar F4.4 el 13 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría no se ha pronunciado sobre el plan de la Fase 4 |
+| Autorización | El equipo pidió empezar F4.4 el 13 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). La asesoría no se ha pronunciado sobre el plan de la Fase 4 |
 | Riesgo aceptado | Ninguno nuevo: no depende de decisiones abiertas |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `d117698`); aceptado por el equipo** el 13 de noviembre de 2026, con la revisión en Windows por medio de las pruebas de las páginas (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `d117698`); aceptado por el equipo** el 13 de noviembre de 2026, con la revisión en Windows por medio de las pruebas de las páginas (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -47,5 +47,5 @@ Ninguna DP-xx se resolvió. El visor no registra decisiones.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 13 de noviembre de 2026 | Acepta F4.4 y pide preparar el cierre de la Fase 4 (F4.5) |

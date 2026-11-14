@@ -6,7 +6,7 @@
 | Fecha | 29 de octubre de 2026 |
 | Decide | Equipo y asesoría (especificación, sección 12.2) |
 | Comunicada por | Jorge, en nombre del equipo |
-| Estado | Decidida por el equipo; **pendiente de confirmación de Javier y de la conformidad de la asesoría** (acta, apartado 5.2) |
+| Estado | Decidida por el equipo; **confirmada por Javier el 13 de noviembre de 2026; pendiente de la conformidad de la asesoría** (acta, apartado 5.2) |
 | Bloqueaba | DP-05 (partición cronológica) y CU-04 |
 
 ## Opciones consideradas

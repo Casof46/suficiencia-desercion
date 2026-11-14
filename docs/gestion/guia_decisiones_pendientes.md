@@ -121,7 +121,7 @@ Este orden sale de la columna "resolver antes de" y de las dependencias de la es
 
 ### DP-16: SQLite para el registro de experimentos (registrada)
 
-- Decidida por el equipo el 29 de octubre de 2026 (comunicada por Jorge; pendiente de confirmación de Javier); ficha en `docs/decisiones/DP-16.md`.
+- Decidida por el equipo el 29 de octubre de 2026 (comunicada por Jorge; confirmada por Javier el 13 de noviembre de 2026); ficha en `docs/decisiones/DP-16.md`.
 
 ### DP-17: análisis complementario de población (D2, D3)
 

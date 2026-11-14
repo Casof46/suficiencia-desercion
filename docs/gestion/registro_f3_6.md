@@ -5,9 +5,9 @@
 | Fecha de ejecución | 12 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, al aceptar F3.5 |
 | Base | Plan de la Fase 3 (sección 2, F3.6); especificación Fase 1 v0.6 (M5; RF-M5-01 a 05; CU-09; PU-21; PI-13; DP-11) |
-| Autorización | El equipo aceptó F3.5 y pidió empezar F3.6 el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La misma respuesta aceptó agregar SHAP y LIME, que se instalan en el equipo y no envían datos a ningún servicio |
+| Autorización | El equipo aceptó F3.5 y pidió empezar F3.6 el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). La misma respuesta aceptó agregar SHAP y LIME, que se instalan en el equipo y no envían datos a ningún servicio |
 | Riesgo aceptado | Si la asesoría o el equipo cambian el alcance de la interpretabilidad, se ajusta; todo valor está parametrizado (DP-11) |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `3080984`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `3080984`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -62,5 +62,5 @@ Ninguna DP-xx se resolvió. DP-11 entra como dato obligatorio.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 12 de noviembre de 2026 | Acepta F3.6 y pide empezar F3.7, con Plotly |

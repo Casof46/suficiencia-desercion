@@ -72,9 +72,9 @@ De los 15 criterios cumplidos documentalmente:
 - [ ] Responsable asignado a cada uno de los 29 riesgos de la sección 11 (CA-21).
 - [x] Alcance de la Fase 2: se autorizan los hitos **H2.1 a H2.3** (28 de octubre de 2026) (CA-24). H2.4 en adelante esperan al apartado 5.2.
 
-Las tres confirmaciones del 29 de octubre de 2026 las comunicó Jorge en nombre del equipo; falta la confirmación de Javier. CA-21 (responsables de los riesgos) sigue pendiente.
+Las tres confirmaciones del 29 de octubre de 2026 las comunicó Jorge en nombre del equipo; Javier las confirmó el 13 de noviembre de 2026. CA-21 (responsables de los riesgos) sigue pendiente.
 
-**Decisiones del equipo sobre REC-01 a REC-03 y el diseño comparativo** (29 de octubre de 2026; comunicadas por Jorge en nombre del equipo; pendientes de confirmación de Javier). No reemplazan la conformidad de la asesoría del apartado 5.2:
+**Decisiones del equipo sobre REC-01 a REC-03 y el diseño comparativo** (29 de octubre de 2026; comunicadas por Jorge en nombre del equipo; confirmadas por Javier el 13 de noviembre de 2026). No reemplazan la conformidad de la asesoría del apartado 5.2:
 
 | Punto | Decisión del equipo | Condición o cambio |
 | --- | --- | --- |
@@ -114,25 +114,25 @@ Recomendación técnica, no vinculante: la segunda opción. H2.0 a H2.3 no depen
 - [x] Que el equipo decida REC-05 y, si cambia el nombre del paquete o la lista de dependencias, que se ajuste el repositorio. Aceptada sin cambios; no hubo que ajustar nada.
 - [x] Que un miembro del equipo reproduzca la instalación y las comprobaciones en Windows siguiendo `docs/desarrollo/entorno_reproducible.md`. Hecho el 28 de octubre de 2026 en la PC de Jorge.
 
-Aceptación de H2.0 por el equipo: **aceptado**. Comunicado por: Jorge, en nombre del equipo; pendiente de confirmación de Javier. Fecha: 28 de octubre de 2026. Verificado en Windows con Python 3.13.0 en la PC de Jorge (84 pruebas pasan); ver `docs/gestion/registro_h2_0.md`.
+Aceptación de H2.0 por el equipo: **aceptado**. Comunicado por: Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026. Fecha: 28 de octubre de 2026. Verificado en Windows con Python 3.13.0 en la PC de Jorge (84 pruebas pasan); ver `docs/gestion/registro_h2_0.md`.
 
 Aceptación de los hitos siguientes por el equipo:
 
 | Hito | Decisión | Comunicado por | Fecha | Evidencia |
 | --- | --- | --- | --- | --- |
-| H2.1 — Arquitectura y contratos | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_1.md`; 150 pruebas en Windows; commit `10aefee` |
-| H2.2 — Ventanas, conjuntos, escenarios y anti-fuga | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 28 de octubre de 2026 | `docs/gestion/registro_h2_2.md`; 206 pruebas en Windows; commit `0abfc82` |
-| H2.3 — Datos sintéticos, diccionario, importación, auditoría y seudonimización | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_3.md`; 281 pruebas en Windows; commit `d8d8319` |
-| H2.7 — Trazabilidad y registro (DP-16: SQLite) | **Aceptado** | Jorge, en nombre del equipo; pendiente de confirmación de Javier | 29 de octubre de 2026 | `docs/gestion/registro_h2_7.md`; 326 pruebas en Windows; commit `0689a32` |
+| H2.1 — Arquitectura y contratos | **Aceptado** | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | 28 de octubre de 2026 | `docs/gestion/registro_h2_1.md`; 150 pruebas en Windows; commit `10aefee` |
+| H2.2 — Ventanas, conjuntos, escenarios y anti-fuga | **Aceptado** | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | 28 de octubre de 2026 | `docs/gestion/registro_h2_2.md`; 206 pruebas en Windows; commit `0abfc82` |
+| H2.3 — Datos sintéticos, diccionario, importación, auditoría y seudonimización | **Aceptado** | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | 29 de octubre de 2026 | `docs/gestion/registro_h2_3.md`; 281 pruebas en Windows; commit `d8d8319` |
+| H2.7 — Trazabilidad y registro (DP-16: SQLite) | **Aceptado** | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | 29 de octubre de 2026 | `docs/gestion/registro_h2_7.md`; 326 pruebas en Windows; commit `0689a32` |
 
 Decisiones y autorizaciones posteriores del equipo:
 
 | Fecha | Decisión | Comunicado por | Registro |
 | --- | --- | --- | --- |
-| 29 de octubre de 2026 | **DP-16 decidida: SQLite** para el registro de experimentos, decisiones y accesos (`workspace/registro.sqlite`) | Jorge, en nombre del equipo; pendiente de confirmación de Javier | `docs/decisiones/DP-16.md` |
-| 29 de octubre de 2026 | **Se autoriza H2.7** (trazabilidad y registro), que dependía de H2.3 y DP-16 | Jorge, en nombre del equipo; pendiente de confirmación de Javier | Este apartado |
-| 29 de octubre de 2026 | **Se aceptan REC-01 a REC-03** y el diseño comparativo, con las condiciones del apartado 5.1 | Jorge, en nombre del equipo; pendiente de confirmación de Javier y de la conformidad de la asesoría | Apartado 5.1 |
-| 29 de octubre de 2026 | **DP-08h decidida: se permite un piloto** con cohortes que luego se excluyen del análisis confirmatorio | Jorge, en nombre del equipo; pendiente de confirmación de Javier y de la conformidad de la asesoría | `docs/decisiones/DP-08h.md` |
+| 29 de octubre de 2026 | **DP-16 decidida: SQLite** para el registro de experimentos, decisiones y accesos (`workspace/registro.sqlite`) | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | `docs/decisiones/DP-16.md` |
+| 29 de octubre de 2026 | **Se autoriza H2.7** (trazabilidad y registro), que dependía de H2.3 y DP-16 | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026 | Este apartado |
+| 29 de octubre de 2026 | **Se aceptan REC-01 a REC-03** y el diseño comparativo, con las condiciones del apartado 5.1 | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026; pendiente de la conformidad de la asesoría | Apartado 5.1 |
+| 29 de octubre de 2026 | **DP-08h decidida: se permite un piloto** con cohortes que luego se excluyen del análisis confirmatorio | Jorge, en nombre del equipo; confirmado por Javier el 13 de noviembre de 2026; pendiente de la conformidad de la asesoría | `docs/decisiones/DP-08h.md` |
 | 29 de octubre de 2026 | **Vía de cierre elegida: aprobación formal** de la Fase 1 (primera opción del apartado 5.3). Se marcará cuando los apartados 5.1 y 5.2 estén completos | Jorge, en nombre del equipo | Apartado 5.3 |
 
 H2.4 a H2.6 siguen esperando la conformidad de la asesoría (apartado 5.2), aunque el equipo ya aceptó REC-01 a REC-03.

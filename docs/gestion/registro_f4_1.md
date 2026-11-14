@@ -5,9 +5,9 @@
 | Fecha de ejecución | 12 de noviembre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo, al aprobar el plan de la Fase 4 |
 | Base | Plan de la Fase 4 (sección 3, F4.1); especificación Fase 1 v0.6 (RF-M6-07, RF-M4-10, RF-M4-14; RNF-19; PI-16) |
-| Autorización | El equipo aprobó el plan de la Fase 4 y pidió empezar por F4.1 el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría no se ha pronunciado sobre ese plan |
+| Autorización | El equipo aprobó el plan de la Fase 4 y pidió empezar por F4.1 el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). La asesoría no se ha pronunciado sobre ese plan |
 | Riesgo aceptado | Si la asesoría cambia el formato del reporte comparativo, se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `028606c`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `028606c`); aceptado por el equipo** el 12 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 
@@ -50,5 +50,5 @@ Ninguna DP-xx se resolvió.
 
 | Rol | Fecha | Observaciones |
 | --- | --- | --- |
-| Javier | Pendiente de confirmación | |
+| Javier | 13 de noviembre de 2026 | Confirma la aceptación |
 | Jorge | 12 de noviembre de 2026 | Acepta F4.1 y pide empezar F4.3, recuperando el generador del dataset del OE3 de la conversación en que se hizo |

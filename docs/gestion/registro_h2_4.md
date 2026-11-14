@@ -5,9 +5,9 @@
 | Fecha de ejecución | 29 de octubre de 2026 |
 | Solicitado por | Jorge, en nombre del equipo |
 | Base | Especificación Fase 1 v0.6 (M1; RF-M1-06, 10 y 11; CU-03; PU-09 y PU-12, con el cambio CP-08); plan de la Fase 2 (paquete de cierre, sección E) |
-| Autorización | El equipo pidió avanzar a H2.4 el 29 de octubre de 2026 sin esperar la conformidad de la asesoría con REC-03, que el equipo ya había aceptado con el cambio CP-08. Comunicado por Jorge; pendiente de confirmación de Javier |
+| Autorización | El equipo pidió avanzar a H2.4 el 29 de octubre de 2026 sin esperar la conformidad de la asesoría con REC-03, que el equipo ya había aceptado con el cambio CP-08. Comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026 |
 | Riesgo aceptado | Si la asesoría pide cambios en REC-03 o en DP-18, este hito se ajusta |
-| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `a572a4b`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier) |
+| Estado del hito | **Ejecutado y verificado en Linux y Windows; versionado en git y en GitHub (commit `a572a4b`); aceptado por el equipo** el 29 de octubre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026) |
 
 ## 1. Qué se construyó
 

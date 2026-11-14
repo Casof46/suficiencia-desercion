@@ -3,7 +3,7 @@
 | Campo | Valor |
 | --- | --- |
 | Fecha | 11 de noviembre de 2026 |
-| Aprobación | El equipo aprobó empezar la Fase 3 con esta secuencia el 11 de noviembre de 2026 (comunicado por Jorge; pendiente de confirmación de Javier). La asesoría dio su conformidad con el informe de cierre de la Fase 2, que propone esta secuencia; **no** se ha pronunciado todavía sobre este plan |
+| Aprobación | El equipo aprobó empezar la Fase 3 con esta secuencia el 11 de noviembre de 2026 (comunicado por Jorge; confirmado por Javier el 13 de noviembre de 2026). La asesoría dio su conformidad con el informe de cierre de la Fase 2, que propone esta secuencia; **no** se ha pronunciado todavía sobre este plan |
 | Base | Especificación Fase 1 v0.6 (M3, M4, M5); informe de cierre de la Fase 2, sección 7; informe de avance del OE3 |
 
 ## 1. Reglas de la fase
